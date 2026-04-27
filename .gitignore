@@ -11,7 +11,6 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
-
 # IntelliJ related
 *.iml
 *.ipr
@@ -32,6 +31,9 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+
+# Firebase options (generated file)
+lib/firebase_options.dart
 
 # Symbolication related
 app.*.symbols
@@ -165,4 +167,3 @@ app.*.symbols
 !**/ios/**/default.perspectivev3
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 !/dev/ci/**/Gemfile.lock
->>>>>>> b73811a56866d2787eafc6dc778ea6c07f3e8674
