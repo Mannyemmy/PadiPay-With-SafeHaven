@@ -1,0 +1,85 @@
+name: card_app
+description: "A new Flutter project."
+publish_to: "none"
+version: 0.1.0
+
+environment:
+  sdk: ^3.9.0
+
+dependencies:
+  android_flutter_wifi: ^0.1.3
+  audioplayers: ^6.1.0
+  app_settings: ^6.1.1
+  cloudcard_flutter: ^0.1.1
+  cloud_firestore: ^6.0.2
+  cloud_functions: ^6.0.3
+  connectivity_plus: ^7.0.0
+  country_code_picker: ^3.4.0
+  device_info_plus: ^12.1.0
+  dotted_border: ^3.1.0
+  dropdown_search: ^6.0.2
+  firebase_auth: ^6.1.0
+  firebase_core: ^4.1.1
+  firebase_messaging: ^16.0.2
+  firebase_storage: ^13.0.2
+  flutter:
+    sdk: flutter
+  flutter_blue_plus: ^2.0.0
+  flutter_contacts: ^1.1.9+2
+  flutter_local_notifications: ^19.5.0
+  flutter_nfc_hce: ^0.1.8
+  flutter_nfc_kit: ^3.6.0
+  flutter_secure_storage: ^9.2.4
+  flutter_svg: ^2.2.1
+  flutter_switch: ^0.3.2
+  flutter_tts: ^4.2.2
+  font_awesome_flutter: ^10.10.0
+  geocoding: ^4.0.0
+  geolocator: ^14.0.2
+  google_fonts: ^6.3.2
+  excel: ^4.0.6
+  file_picker: ^8.1.2
+  flutter_colorpicker: ^1.1.0
+  google_generative_ai: ^0.4.6
+  image_picker: ^1.2.0
+  intl: ^0.20.2
+  local_auth: ^2.3.0
+  location: ^8.0.1
+  material_symbols_icons: ^4.2874.0
+  nearby_connections: ^4.3.0
+  nearby_service: ^0.2.1
+  nfc_manager: ^4.0.2
+  nfc_manager_ndef: ^1.1.0
+  nigerian_states_and_lga: ^1.0.0
+  open_file: ^3.5.11
+  path_provider: ^2.1.5
+  pdf: ^3.11.3
+  permission_handler: ^12.0.1
+  printing: ^5.14.2
+  qoreidsdk: ^1.1.3
+  share_plus: ^12.0.0
+  shared_preferences: ^2.5.3
+  url_launcher: ^6.3.2
+  uuid: ^4.5.1
+  webview_flutter: ^4.10.0
+  in_app_update: ^4.2.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.4
+
+flutter_launcher_icons:
+  image_path: "assets/logo.png"
+  android: true
+  ios: true
+  remove_alpha_ios: true
+
+flutter:
+  uses-material-design: true
+  assets: 
+    - assets/
+    - assets/profile/
+    - assets/airtime_providers/
+    - assets/cable_providers/

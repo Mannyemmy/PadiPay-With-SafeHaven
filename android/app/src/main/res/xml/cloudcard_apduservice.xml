@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sudo Cloud Card HCE service AID groups.
+  category="payment" registers this service as a contactless payment app
+  so the Android NFC stack routes EMV POS taps to the Sudo Cloud Card SDK.
+-->
+<host-apdu-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/app_name"
+    android:requireDeviceUnlock="false">
+    <aid-group android:category="payment" android:description="@string/app_name" />
+</host-apdu-service>

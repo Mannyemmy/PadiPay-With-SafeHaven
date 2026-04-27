@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "508048021289",
+    "project_id": "card-app-829ee",
+    "storage_bucket": "card-app-829ee.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:508048021289:android:5a57b2ec46dffe4a920938",
+        "android_client_info": {
+          "package_name": "com.allgoodtech.padipay"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD0jTGqnQuqoyr-4F2EisjqeWykPChY88E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:508048021289:android:5e5d04477aaaf110920938",
+        "android_client_info": {
+          "package_name": "com.allgoodtechnologies.padi_pay"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD0jTGqnQuqoyr-4F2EisjqeWykPChY88E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:508048021289:android:aa97e55a8b2e3cc2920938",
+        "android_client_info": {
+          "package_name": "com.allgoodtechnologies.padi_pay_business"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD0jTGqnQuqoyr-4F2EisjqeWykPChY88E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
