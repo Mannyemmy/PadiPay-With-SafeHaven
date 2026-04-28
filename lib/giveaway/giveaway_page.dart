@@ -4,7 +4,6 @@ import 'package:card_app/giveaway/targeted_giveaway_page.dart';
 import 'package:card_app/ui/payment_successful_page.dart';
 import 'package:card_app/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_switch/flutter_switch.dart';
@@ -180,10 +179,11 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
         accountName = accountData['attributes']?['accountName']?.toString();
         bankName = accountData['attributes']?['bank']?['name']?.toString();
       });
-      final callable = FirebaseFunctions.instance.httpsCallable(
-        'fetchAccountBalance',
+      final result = await callCloudFunctionLogged(
+        'sudoFetchAccountBalance',
+        source: 'giveaway_page.dart',
+        payload: {'accountId': accountId},
       );
-      final result = await callable.call({'accountId': accountId});
       final balanceKobo =
           result.data['data']['availableBalance']?.toDouble() ?? 0.0;
       final balanceNaira = balanceKobo / 100;
@@ -306,9 +306,10 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
       }
       // Transfer to company account (book transfer — both on Anchor)
       final transferAmountKobo = transferAmount * 100;
-      final transferResult = await FirebaseFunctions.instance
-          .httpsCallable('createBookTransfer')
-          .call({
+      final transferResult = await callCloudFunctionLogged(
+          'sudoTransferIntra',
+          source: 'giveaway_page.dart',
+          payload: {
             'fromAccountId': accountId,
             'toAccountId': companyVa!['id'],
             'amount': transferAmountKobo,
@@ -439,8 +440,6 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
           .get();
       final recipientAccountId = userDoc
           .data()?['getAnchorData']?['virtualAccount']?['data']?['id'];
-      final recipientAccountType = userDoc
-          .data()?['getAnchorData']?['virtualAccount']?['data']?['type'];
       final recipientBankId = userDoc
           .data()?['getAnchorData']?['virtualAccount']?['data']?['attributes']?['bank']?['id'];
       final recipientAccountName = userDoc
@@ -456,9 +455,10 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
       }
       // Transfer from company to recipient (book transfer — both on Anchor)
       final amountKobo = giveawayData['amountPerPerson'] * 100;
-      final transferResult = await FirebaseFunctions.instance
-          .httpsCallable('createBookTransfer')
-          .call({
+      final transferResult = await callCloudFunctionLogged(
+          'sudoTransferIntra',
+          source: 'giveaway_page.dart',
+          payload: {
             'fromAccountId': companyVa!['id'],
             'toAccountId': recipientAccountId,
             'amount': amountKobo,

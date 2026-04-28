@@ -71,7 +71,7 @@ class _AddViaBankTransferState extends State<AddViaBankTransfer> {
 
       // Call the Cloud Function with the accountId
       final callable = FirebaseFunctions.instance.httpsCallable(
-        'fetchDepositAccount',
+        'sudoFetchDepositAccount',
       );
       final result = await callable.call({'accountId': accountId});
 

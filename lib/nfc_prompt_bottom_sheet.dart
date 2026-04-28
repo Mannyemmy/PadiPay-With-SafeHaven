@@ -524,7 +524,7 @@ class _TransferPageState extends State<TransferPage> {
       final amountKobo = (amount * 100).toInt();
       debugPrint('createBookTransfer: from=$accountId to=$toAccountId amount=$amountKobo');
       final transferResult = await FirebaseFunctions.instance
-          .httpsCallable('createBookTransfer')
+          .httpsCallable('sudoTransferIntra')
           .call({
         'fromAccountId': accountId,
         'toAccountId': toAccountId,

@@ -555,7 +555,7 @@ class _AliasFormSheetState extends State<_AliasFormSheet> {
         return;
       }
       final result = await FirebaseFunctions.instance
-          .httpsCallable('verifyAccountNumber')
+          .httpsCallable('sudoNameEnquiry')
           .call({
         'accountNumber': _accountNumberCtrl.text,
         'bankIdOrBankCode': _selectedBankId,

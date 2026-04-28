@@ -569,7 +569,7 @@ class _HomePageState extends State<HomePage> {
 
       // Call the Cloud Function with the accountId
       final callable = FirebaseFunctions.instance.httpsCallable(
-        'fetchAccountBalance',
+        'sudoFetchAccountBalance',
       );
       final result = await callable.call({'accountId': accountId});
 
@@ -606,7 +606,7 @@ class _HomePageState extends State<HomePage> {
       // ── Step 1: fetchDepositAccount → bank.id only ──────────────────────────
       print('Calling fetchDepositAccount for accountId: $accountId');
       final depositResult = await FirebaseFunctions.instance
-          .httpsCallable('fetchDepositAccount')
+          .httpsCallable('sudoFetchDepositAccount')
           .call({'accountId': accountId});
       print('fetchDepositAccount response: ${depositResult.data}');
 
@@ -632,7 +632,7 @@ class _HomePageState extends State<HomePage> {
       try {
         print('Calling fetchAccountNumber for accountId: $accountId');
         final numResult = await FirebaseFunctions.instance
-            .httpsCallable('fetchAccountNumber')
+            .httpsCallable('sudoFetchAccountNumber')
             .call({'accountId': accountId});
         print('fetchAccountNumber response: ${numResult.data}');
 

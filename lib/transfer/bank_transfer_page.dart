@@ -3,7 +3,6 @@ import 'package:card_app/ui/account_image_scanner.dart';
 import 'package:card_app/ui/payment_successful_page.dart';
 import 'package:card_app/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -163,7 +162,10 @@ class _BankTransferPageState extends State<BankTransferPage> {
         });
       }
       if (bankList.isEmpty) {
-        final result = await FirebaseFunctions.instance.httpsCallable('getAllBanks').call();
+        final result = await callCloudFunctionLogged(
+          'sudoBankList',
+          source: 'bank_transfer_page.dart',
+        );
         final data = result.data as Map<String, dynamic>;
         final apiBankList = data['data'] as List<dynamic>;
         final batch = FirebaseFirestore.instance.batch();
@@ -320,9 +322,10 @@ class _BankTransferPageState extends State<BankTransferPage> {
 
     setState(() => isLoading = true);
     try {
-      final result = await FirebaseFunctions.instance
-          .httpsCallable('verifyAccountNumber')
-          .call({
+      final result = await callCloudFunctionLogged(
+          'sudoNameEnquiry',
+          source: 'bank_transfer_page.dart',
+          payload: {
             'accountNumber': accountNumberController.text,
             'bankIdOrBankCode': selectedBank,
           });
@@ -458,9 +461,11 @@ class _BankTransferPageState extends State<BankTransferPage> {
         'bankCode': selectedBank,
       };
       print('createCounterparty payload: $payload');
-      final result = await FirebaseFunctions.instance
-          .httpsCallable('createCounterparty')
-          .call(payload);
+      final result = await callCloudFunctionLogged(
+        'sudoCreateCounterparty',
+        source: 'bank_transfer_page.dart',
+        payload: payload,
+      );
       final counterpartyIdd = result.data['data']['id'];
       await FirebaseFirestore.instance
           .collection('counterparties')
@@ -523,9 +528,10 @@ class _BankTransferPageState extends State<BankTransferPage> {
         return;
       }
 
-      final result = await FirebaseFunctions.instance
-          .httpsCallable('createNipTransfer')
-          .call({
+        final result = await callCloudFunctionLogged(
+          'sudoTransferNip',
+          source: 'bank_transfer_page.dart',
+          payload: {
             'accountType': accountType,
             'accountId': accountId,
             'counterpartyId': counterpartyId,
@@ -671,9 +677,11 @@ class _BankTransferPageState extends State<BankTransferPage> {
         };
         debugPrint('createCompany counterparty payload: $companyPayload');
         try {
-          final createCompanyCpResult = await FirebaseFunctions.instance
-              .httpsCallable('createCounterparty')
-              .call(companyPayload);
+          final createCompanyCpResult = await callCloudFunctionLogged(
+            'sudoCreateCounterparty',
+            source: 'bank_transfer_page.dart',
+            payload: companyPayload,
+          );
           companyCounterpartyId = createCompanyCpResult.data['data']['id'];
           await FirebaseFirestore.instance
               .collection('counterparties')
@@ -708,9 +716,11 @@ class _BankTransferPageState extends State<BankTransferPage> {
           };
       debugPrint('createNipTransfer (to company) payload: $firstPayload');
       try {
-        final firstResult = await FirebaseFunctions.instance
-            .httpsCallable('createNipTransfer')
-            .call(firstPayload);
+        final firstResult = await callCloudFunctionLogged(
+          'sudoTransferNip',
+          source: 'bank_transfer_page.dart',
+          payload: firstPayload,
+        );
         final firstStatus = firstResult.data['data']['attributes']['status'];
         final firstFailureReason =
             firstResult.data['data']['attributes']['failureReason'];
@@ -739,9 +749,10 @@ class _BankTransferPageState extends State<BankTransferPage> {
       if (queryRecipientCp.docs.isNotEmpty) {
         recipientCounterpartyId = queryRecipientCp.docs.first.id;
       } else {
-        final createRecipientCpResult = await FirebaseFunctions.instance
-            .httpsCallable('createCounterparty')
-            .call({
+        final createRecipientCpResult = await callCloudFunctionLogged(
+            'sudoCreateCounterparty',
+            source: 'bank_transfer_page.dart',
+            payload: {
               'bankId': recipientBankId,
               'accountType': "BankAccount",
               'accountName': recipientAccountName,
@@ -778,9 +789,11 @@ class _BankTransferPageState extends State<BankTransferPage> {
       debugPrint('createNipTransfer (to recipient) payload: $secondPayload');
       dynamic secondResult;
       try {
-        secondResult = await FirebaseFunctions.instance
-            .httpsCallable('createNipTransfer')
-            .call(secondPayload);
+        secondResult = await callCloudFunctionLogged(
+          'sudoTransferNip',
+          source: 'bank_transfer_page.dart',
+          payload: secondPayload,
+        );
         final secondStatus = secondResult.data['data']['attributes']['status'];
         final secondFailureReason =
             secondResult.data['data']['attributes']['failureReason'];

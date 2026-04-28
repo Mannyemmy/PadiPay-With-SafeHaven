@@ -4,7 +4,6 @@ import 'package:card_app/cashback/cashback_service.dart';
 import 'package:card_app/ui/success_bottom_sheet.dart';
 import 'package:card_app/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -95,10 +94,11 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
         billerList = List<Map<String, dynamic>>.from(data?['data'] ?? []);
       }
       if (billerList.isEmpty) {
-        final callable = FirebaseFunctions.instance.httpsCallable(
-          'listBillers',
+        final result = await callCloudFunctionLogged(
+          'sudoGetServiceCategories',
+          source: 'buy_airtime.dart',
+          payload: {'category': 'airtime'},
         );
-        final result = await callable.call({'category': 'airtime'});
         final response = Map<String, dynamic>.from(result.data);
         print('Airtime Billers Response: $response');
         if (response['data'] is List) {
@@ -358,10 +358,10 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
         formattedPhone = '234${formattedPhone.substring(1)}';
       }
 
-      final callable = FirebaseFunctions.instance.httpsCallable(
-        'initiateBillPayment',
-      );
-      final result = await callable.call({
+      final result = await callCloudFunctionLogged(
+        'sudoPurchaseVas',
+        source: 'buy_airtime.dart',
+        payload: {
         'type': 'Airtime',
         'accountId': userAccount!['data']['id'],
         'accountType': userAccount!['data']['type'],

@@ -2494,7 +2494,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
             'Attempting to create electronic account for customer: $customerId',
           );
           final createVaRes = await functions
-              .httpsCallable('createElectronicAccount')
+              .httpsCallable('sudoCreateSubAccount')
               .call({
                 'customerId': customerId,
                 'userId': uid,
@@ -2965,7 +2965,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
               'No existing customer found by getAnchorData, BVN, or email; creating new customer',
             );
             HttpsCallable createUserFunc = functions.httpsCallable(
-              'createGetanchorUser',
+              'sudoCreateUser',
             );
             while (customerId == null) {
               final payload = {
@@ -3109,7 +3109,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
           if (needsKycUpgrade && !upgradeKycPreviouslySucceeded) {
             print('Customer is unverified; calling upgradeCustomerKyc');
             HttpsCallable upgradeKycFunc = functions.httpsCallable(
-              'upgradeCustomerKyc',
+              'sudoUpgradeCustomerKyc',
             );
             final String kycLevel = widget.tier == 1 ? 'TIER_1' : 'TIER_2';
             final kycPayload = {
@@ -3204,7 +3204,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
                 }
               }
               HttpsCallable createAccountFunc = functions.httpsCallable(
-                'createElectronicAccount',
+                'sudoCreateSubAccount',
               );
               final idempotencyKey = Uuid().v4();
               final accountPayload = {
@@ -3239,7 +3239,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
                   };
 
                   final recreateResult = await functions
-                      .httpsCallable('createGetanchorUser')
+                      .httpsCallable('sudoCreateUser')
                       .call(recreatePayload);
 
                   final recreatedCustomerId =
@@ -3300,7 +3300,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
                 if (vaAccountId != null && vaAccountId.isNotEmpty) {
                   try {
                     final fetchRes = await FirebaseFunctions.instance
-                        .httpsCallable('fetchAccountNumber')
+                        .httpsCallable('sudoFetchAccountNumber')
                         .call({'accountId': vaAccountId});
                     final dynamic resp = fetchRes.data;
                     if (resp is Map) {
@@ -3459,7 +3459,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
         try {
           final functions = FirebaseFunctions.instance;
           HttpsCallable upgradeKycFunc = functions.httpsCallable(
-            'upgradeCustomerKyc',
+            'sudoUpgradeCustomerKyc',
           );
           final kycPayload = {
             'customerId': customerId,

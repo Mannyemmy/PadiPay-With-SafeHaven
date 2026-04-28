@@ -57,7 +57,7 @@ class CashbackService {
       throw Exception('Company cashback reserve account not configured');
     }
 
-    final result = await _functions.httpsCallable('createBookTransfer').call({
+    final result = await _functions.httpsCallable('sudoTransferIntra').call({
       'fromAccountId': companyAccountId,
       'toAccountId': toAccountId,
       'amount': _toKobo(amountNaira),
@@ -88,7 +88,7 @@ class CashbackService {
       throw Exception('Company cashback reserve account not configured');
     }
 
-    final result = await _functions.httpsCallable('createBookTransfer').call({
+    final result = await _functions.httpsCallable('sudoTransferIntra').call({
       'fromAccountId': fromAccountId,
       'toAccountId': companyAccountId,
       'amount': _toKobo(amountNaira),

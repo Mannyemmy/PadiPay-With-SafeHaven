@@ -136,7 +136,7 @@ class _WithdrawalApprovalPageState extends State<WithdrawalApprovalPage> {
       }
 
       final result = await FirebaseFunctions.instance
-          .httpsCallable('createCounterparty')
+          .httpsCallable('sudoCreateCounterparty')
           .call({
         'accountId': accountId,
         'bankId': recipientBankCode,
@@ -189,7 +189,7 @@ class _WithdrawalApprovalPageState extends State<WithdrawalApprovalPage> {
       }
 
       final result = await FirebaseFunctions.instance
-          .httpsCallable('createNipTransfer')
+          .httpsCallable('sudoTransferNip')
           .call({
         'accountType': accountType,
         'accountId': accountId,

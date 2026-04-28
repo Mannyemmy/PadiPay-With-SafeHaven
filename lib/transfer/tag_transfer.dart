@@ -282,7 +282,7 @@ class _TagTransferPageState extends State<TagTransferPage> {
       }
 
       final result = await FirebaseFunctions.instance
-          .httpsCallable('createCounterparty')
+          .httpsCallable('sudoCreateCounterparty')
           .call({
             'accountId': accountId,
             'bankId': recipientBankId,
@@ -370,7 +370,7 @@ class _TagTransferPageState extends State<TagTransferPage> {
       }
 
       final result = await FirebaseFunctions.instance
-          .httpsCallable('createBookTransfer')
+          .httpsCallable('sudoTransferIntra')
           .call({
             'fromAccountId': accountId,
             'toAccountId': toAccountId,
@@ -525,7 +525,7 @@ class _TagTransferPageState extends State<TagTransferPage> {
       final narration1 =
           'Ghost Mode to Company: ${remarkController.text.isNotEmpty ? remarkController.text : 'Transfer'}';
       final firstResult = await FirebaseFunctions.instance
-          .httpsCallable('createBookTransfer')
+          .httpsCallable('sudoTransferIntra')
           .call({
             'fromAccountId': userAccountId,
             'toAccountId': companyVa['id'],
@@ -559,7 +559,7 @@ class _TagTransferPageState extends State<TagTransferPage> {
         recipientCounterpartyId = queryRecipientCp.docs.first.id;
       } else {
         final createRecipientCpResult = await FirebaseFunctions.instance
-            .httpsCallable('createCounterparty')
+            .httpsCallable('sudoCreateCounterparty')
             .call({
               'accountId': companyVa['id'],
               'bankId': recipientBankId,
@@ -588,7 +588,7 @@ class _TagTransferPageState extends State<TagTransferPage> {
           ? remarkController.text
           : 'Ghost Mode Transfer';
       final secondResult = await FirebaseFunctions.instance
-          .httpsCallable('createNipTransfer')
+          .httpsCallable('sudoTransferNip')
           .call({
             'accountType': companyVa['type'],
             'accountId': companyVa['id'],

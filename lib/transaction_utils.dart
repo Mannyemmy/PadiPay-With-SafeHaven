@@ -43,7 +43,7 @@ Future<void> fetchDepositAccount() async {
     }
 
     // Call the Cloud Function with the accountId
-    final callable = FirebaseFunctions.instance.httpsCallable('fetchDepositAccount');
+    final callable = FirebaseFunctions.instance.httpsCallable('sudoFetchDepositAccount');
     final result = await callable.call({'accountId': accountId});
 
     // Print the response

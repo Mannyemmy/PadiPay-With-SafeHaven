@@ -265,7 +265,7 @@ class _CardsPageState extends State<CardsPage> {
       if (accountId == null) throw Exception('Account ID not found');
 
       final callable = FirebaseFunctions.instance.httpsCallable(
-        'fetchAccountBalance',
+        'sudoFetchAccountBalance',
       );
       final result = await callable.call({'accountId': accountId});
 
@@ -1454,7 +1454,7 @@ class _CardsPageState extends State<CardsPage> {
 
       // Refund: company → user (book transfer — both on Anchor)
       final refundResult = await FirebaseFunctions.instance
-          .httpsCallable('createBookTransfer')
+          .httpsCallable('sudoTransferIntra')
           .call({
             'fromAccountId': companyVa['id'],
             'toAccountId': userAccountId,

@@ -84,7 +84,7 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
         });
       }
       if (bankList.isEmpty) {
-        final result = await FirebaseFunctions.instance.httpsCallable('getAllBanks').call();
+        final result = await FirebaseFunctions.instance.httpsCallable('sudoBankList').call();
         final data = result.data as Map<String, dynamic>;
         final apiBankList = data['data'] as List<dynamic>;
         final batch = FirebaseFirestore.instance.batch();
@@ -138,7 +138,7 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
     setState(() => isLoading = true);
     try {
       final result = await FirebaseFunctions.instance
-          .httpsCallable('verifyAccountNumber')
+          .httpsCallable('sudoNameEnquiry')
           .call({
             'accountNumber': accountNumberController.text,
             'bankIdOrBankCode': selectedBank,
@@ -334,7 +334,7 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
       final narration1 =
           'Ghost Mode to Company: ${remarkController.text.isNotEmpty ? remarkController.text : 'Transfer'}';
       final firstResult = await FirebaseFunctions.instance
-          .httpsCallable('createBookTransfer')
+          .httpsCallable('sudoTransferIntra')
           .call({
             'fromAccountId': userAccountId,
             'toAccountId': companyVa['id'],
@@ -367,7 +367,7 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
         recipientCounterpartyId = queryRecipientCp.docs.first.id;
       } else {
         final createRecipientCpResult = await FirebaseFunctions.instance
-            .httpsCallable('createCounterparty')
+            .httpsCallable('sudoCreateCounterparty')
             .call({
               'accountId': companyVa['id'],
               'bankId': recipientBankId,
@@ -396,7 +396,7 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
           ? remarkController.text
           : 'Ghost Mode Transfer';
       final secondResult = await FirebaseFunctions.instance
-          .httpsCallable('createNipTransfer')
+          .httpsCallable('sudoTransferNip')
           .call({
             'accountType': companyVa['type'],
             'accountId': companyVa['id'],

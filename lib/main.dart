@@ -1236,7 +1236,7 @@ Future<void> preloadBanks() async {
     final snapshot = await FirebaseFirestore.instance.collection('banks').get();
     if (snapshot.docs.isEmpty) {
       final result = await FirebaseFunctions.instance
-          .httpsCallable('getAllBanks')
+          .httpsCallable('sudoBankList')
           .call();
 
       final data = result.data['data'] as List;
@@ -1269,7 +1269,7 @@ Future<void> preloadBalance() async {
     if (accountId == null) return;
 
     final callable = FirebaseFunctions.instance.httpsCallable(
-      'fetchAccountBalance',
+      'sudoFetchAccountBalance',
     );
     final result = await callable.call({'accountId': accountId});
 

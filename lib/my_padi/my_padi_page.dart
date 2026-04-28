@@ -6,14 +6,14 @@ import 'package:card_app/airtimes/buy_airtime.dart';
 import 'package:card_app/transfer/bank_transfer_page.dart';
 import 'package:card_app/bills/pay_bills.dart';
 import 'package:card_app/ghost_mode/ghost_mode.dart';
-import 'package:card_app/account_statement/account_statement.dart';
+import 'package:card_app/giveaway/targeted_giveaway_page.dart';
 import 'package:card_app/home_pages/card_page.dart';
 import 'package:card_app/loans/loan_page.dart';
-import 'package:card_app/giveaway/targeted_giveaway_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
+
 
 class MyPadiPage extends StatefulWidget {
   const MyPadiPage({super.key});

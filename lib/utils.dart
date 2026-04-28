@@ -20,6 +20,38 @@ const Color oxfordBlue = Color(0xFF14213D);
 const Color midnightBlue = Color(0xFF191970);
 const Color navyBlue = Color(0xFF242550);
 
+Future<HttpsCallableResult<dynamic>> callCloudFunctionLogged(
+  String functionName, {
+  dynamic payload,
+  FirebaseFunctions? functions,
+  String source = 'app',
+}) async {
+  final fx = functions ?? FirebaseFunctions.instance;
+  final traceId = DateTime.now().microsecondsSinceEpoch.toString();
+  final payloadKeys = payload is Map
+      ? payload.keys.map((e) => e.toString()).toList()
+      : <String>[];
+
+  debugPrint(
+    '[CF:$functionName][$source][$traceId] start keys=$payloadKeys',
+  );
+
+  try {
+    final callable = fx.httpsCallable(functionName);
+    final result = await callable.call(payload);
+    debugPrint('[CF:$functionName][$source][$traceId] success');
+    return result;
+  } on FirebaseFunctionsException catch (e) {
+    debugPrint(
+      '[CF:$functionName][$source][$traceId] FirebaseFunctionsException code=${e.code} message=${e.message}',
+    );
+    rethrow;
+  } catch (e) {
+    debugPrint('[CF:$functionName][$source][$traceId] error=$e');
+    rethrow;
+  }
+}
+
 enum NavigationType { push, replace, clearStack }
 
 void navigateTo(

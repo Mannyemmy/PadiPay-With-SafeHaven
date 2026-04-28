@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:card_app/my_padi/padi_aliases_page.dart';
+import 'package:card_app/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
@@ -795,8 +795,11 @@ RULES:
 
       final accountId = userDoc.data()!['getAnchorData']['virtualAccount']['data']['id']?.toString();
 
-      final callable = FirebaseFunctions.instance.httpsCallable('fetchAccountBalance');
-      final result = await callable.call({'accountId': accountId});
+      final result = await callCloudFunctionLogged(
+        'sudoFetchAccountBalance',
+        source: 'my_padi_service.dart',
+        payload: {'accountId': accountId},
+      );
       final balance = (result.data['data']['availableBalance']?.toDouble() ?? 0.0) / 100;
 
       _cachedBalance = '₦${NumberFormat('#,##0.00').format(balance)}';

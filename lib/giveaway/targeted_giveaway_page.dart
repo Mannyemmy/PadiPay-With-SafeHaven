@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
@@ -6,7 +6,6 @@ import 'package:card_app/giveaway/giveaway_success.dart';
 import 'package:card_app/ui/permission_explanation_sheet.dart';
 import 'package:card_app/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:excel/excel.dart' as xl;
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -21,7 +20,7 @@ import 'package:uuid/uuid.dart';
 
 const String _kGeminiApiKey = 'AIzaSyAsQ8zSoIKzK89Qh8PwijvYOjp6486VRP8';
 
-// ─── helpers ────────────────────────────────────────────────────────────────
+// --- helpers ----------------------------------------------------------------
 
 class _ThousandsFormatter extends TextInputFormatter {
   @override
@@ -56,7 +55,7 @@ class _InlineTag {
   _InlineTag({required this.username,required this.status});
 }
 
-// ─── main widget ────────────────────────────────────────────────────────────
+// --- main widget ------------------------------------------------------------
 
 class TargetedGiveawayPage extends StatefulWidget {
   final List<String>? initialTags;
@@ -133,7 +132,7 @@ class _TargetedGiveawayPageState extends State<TargetedGiveawayPage> {
     super.dispose();
   }
 
-  // ── financial helpers ────────────────────────────────────────────────────
+  // -- financial helpers ----------------------------------------------------
 
   bool get _isTagsChecking =>
       _tags.any((t) => t.status == _TagStatus.checking);
@@ -159,7 +158,7 @@ class _TargetedGiveawayPageState extends State<TargetedGiveawayPage> {
           ? _amountPerPerson
           : _amountPerPerson - (_amountPerPerson * _feeRate);
 
-  // ── data fetching ────────────────────────────────────────────────────────
+  // -- data fetching --------------------------------------------------------
 
   Future<void> _fetchCurrentUserUsername() async {
     try {
@@ -198,14 +197,16 @@ class _TargetedGiveawayPageState extends State<TargetedGiveawayPage> {
         _accountId = accountData['id']?.toString();
         _accountType = accountData['type']?.toString();
       });
-      final callable =
-          FirebaseFunctions.instance.httpsCallable('fetchAccountBalance');
-      final result = await callable.call({'accountId': _accountId});
+      final result = await callCloudFunctionLogged(
+        'sudoFetchAccountBalance',
+        source: 'targeted_giveaway_page.dart',
+        payload: {'accountId': _accountId},
+      );
       final balanceKobo =
           result.data['data']['availableBalance']?.toDouble() ?? 0.0;
       setState(() {
         _balance =
-            '₦ ${NumberFormat('#,##0.00').format(balanceKobo / 100)}';
+            '? ${NumberFormat('#,##0.00').format(balanceKobo / 100)}';
       });
     } catch (e) {
       debugPrint('Error fetching balance: $e');
@@ -236,7 +237,7 @@ class _TargetedGiveawayPageState extends State<TargetedGiveawayPage> {
     }
   }
 
-  // ── unique code generation ───────────────────────────────────────────────
+  // -- unique code generation -----------------------------------------------
 
   Future<String> _generateUniqueCode() async {
     String code;
@@ -255,7 +256,7 @@ class _TargetedGiveawayPageState extends State<TargetedGiveawayPage> {
     return code;
   }
 
-  // ── Gemini extraction ────────────────────────────────────────────────────
+  // -- Gemini extraction ----------------------------------------------------
 
   Future<List<String>> _extractUsernamesViaGemini({
     Uint8List? bytes,
@@ -266,7 +267,7 @@ class _TargetedGiveawayPageState extends State<TargetedGiveawayPage> {
 You are extracting Padi-tag usernames from the provided content.
 Padi-tags are short usernames that identify users on the Padi app.
 They may appear with or without a "@" prefix.
-They follow the pattern: lower-case letters, numbers, underscores, 3–20 characters.
+They follow the pattern: lower-case letters, numbers, underscores, 3�20 characters.
 
 Extract ALL usernames/tags/handles you can find. They might be:
 - Listed one per line
@@ -315,7 +316,7 @@ If none found, return an empty array: []
         .toList();
   }
 
-  // ── tag input helpers ────────────────────────────────────────────────────
+  // -- tag input helpers ----------------------------------------------------
 
   void _addManualTag() {
     final raw = _tagInputCtrl.text;
@@ -353,7 +354,7 @@ If none found, return an empty array: []
     if (dupes > 0) msgs.add('$dupes duplicate(s) skipped');
     if (invalid > 0) msgs.add('$invalid invalid format(s) skipped');
     if (msgs.isNotEmpty && (dupes > 0 || invalid > 0)) {
-      showSimpleDialog(msgs.join(' · '), Colors.orange);
+      showSimpleDialog(msgs.join(' � '), Colors.orange);
     }
   }
 
@@ -398,7 +399,7 @@ If none found, return an empty array: []
     }
   }
 
-  // ── file import ──────────────────────────────────────────────────────────
+  // -- file import ----------------------------------------------------------
 
   Future<void> _pickFromFile() async {
     if (!await _ensureCameraGalleryConsent()) return;
@@ -451,7 +452,7 @@ If none found, return an empty array: []
           mimeType: 'application/pdf',
         );
       } else if (ext == 'docx' || ext == 'doc') {
-        // Gemini supports OOXML — try it; fallback to raw UTF-8 read
+        // Gemini supports OOXML � try it; fallback to raw UTF-8 read
         try {
           extracted = await _extractUsernamesViaGemini(
             bytes: bytes,
@@ -495,7 +496,7 @@ If none found, return an empty array: []
     }
   }
 
-  // ── image import ─────────────────────────────────────────────────────────
+  // -- image import ---------------------------------------------------------
 
   Future<bool> _ensureCameraGalleryConsent() async {
     final prefs = await SharedPreferences.getInstance();
@@ -634,7 +635,7 @@ If none found, return an empty array: []
     }
   }
 
-  // ── validation (step 0 → 1 transition; tags already validated inline) ────
+  // -- validation (step 0 ? 1 transition; tags already validated inline) ----
 
   void _validateTags() {
     if (_tags.isEmpty) {
@@ -644,7 +645,7 @@ If none found, return an empty array: []
     setState(() => _step = 1);
   }
 
-  // ── create giveaway ──────────────────────────────────────────────────────
+  // -- create giveaway ------------------------------------------------------
 
   Future<void> _createGiveaway() async {
     final included = _validTags;
@@ -663,7 +664,7 @@ If none found, return an empty array: []
 
     final balanceValue =
         double.tryParse(
-              _balance?.replaceAll('₦ ', '').replaceAll(',', '') ?? '0',
+              _balance?.replaceAll('? ', '').replaceAll(',', '') ?? '0',
             ) ??
             0.0;
     if (balanceValue < _transferAmount) {
@@ -703,11 +704,12 @@ If none found, return an empty array: []
         code = await _generateUniqueCode();
       }
 
-      // Transfer to company (book transfer — both on Anchor)
+      // Transfer to company (book transfer � both on Anchor)
       final transferAmountKobo = _transferAmount * 100;
-      final transferResult = await FirebaseFunctions.instance
-          .httpsCallable('createBookTransfer')
-          .call({
+      final transferResult = await callCloudFunctionLogged(
+          'sudoTransferIntra',
+          source: 'targeted_giveaway_page.dart',
+          payload: {
             'fromAccountId': _accountId,
             'toAccountId': _companyVa!['id'],
             'amount': transferAmountKobo,
@@ -781,9 +783,9 @@ If none found, return an empty array: []
     }
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------------
   // BUILD
-  // ─────────────────────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
@@ -822,7 +824,7 @@ If none found, return an empty array: []
     );
   }
 
-  // ── STEP 0: collect tags ─────────────────────────────────────────────────
+  // -- STEP 0: collect tags -------------------------------------------------
 
   Widget _buildStepCollect() {
     return SingleChildScrollView(
@@ -846,7 +848,7 @@ If none found, return an empty array: []
                     color: primaryColor, size: 20),
                 const SizedBox(width: 8),
                 Text(
-                  'Balance: ${_balance ?? '—'}',
+                  'Balance: ${_balance ?? '�'}',
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     color: primaryColor,
@@ -875,7 +877,7 @@ If none found, return an empty array: []
           ),
           const SizedBox(height: 16),
 
-          // manual entry – textarea with comma/newline separation
+          // manual entry � textarea with comma/newline separation
           TextField(
             controller: _tagInputCtrl,
             textCapitalization: TextCapitalization.none,
@@ -1029,7 +1031,7 @@ If none found, return an empty array: []
           _buildImportButton(
             icon: FontAwesomeIcons.fileCsv,
             label: 'Import from File',
-            subtitle: 'CSV · TXT · Excel · PDF · DOCX',
+            subtitle: 'CSV � TXT � Excel � PDF � DOCX',
             onTap: _isExtracting ? null : _pickFromFile,
             color: const Color(0xFF34C759),
           ),
@@ -1039,7 +1041,7 @@ If none found, return an empty array: []
           _buildImportButton(
             icon: FontAwesomeIcons.image,
             label: 'Import from Image / Screenshot',
-            subtitle: 'Camera · Gallery — Padi AI extracts usernames',
+            subtitle: 'Camera � Gallery � Padi AI extracts usernames',
             onTap: _isExtracting ? null : _pickFromImage,
             color: const Color(0xFFFF9500),
           ),
@@ -1053,7 +1055,7 @@ If none found, return an empty array: []
                   CircularProgressIndicator(color: primaryColor),
                   SizedBox(height: 10),
                   Text(
-                    'Extracting usernames with Padi AI…',
+                    'Extracting usernames with Padi AI�',
                     style: TextStyle(color: Colors.grey),
                   ),
                 ],
@@ -1071,11 +1073,11 @@ If none found, return an empty array: []
                 _hasInvalidTags;
             final String label;
             if (_isTagsChecking) {
-              label = 'Validating tags…';
+              label = 'Validating tags�';
             } else if (_hasInvalidTags) {
               label = 'Remove or clear invalid tags to continue';
             } else {
-              label = 'Continue  →';
+              label = 'Continue  ?';
             }
             return GestureDetector(
               onTap: blocked ? null : _validateTags,
@@ -1153,7 +1155,7 @@ If none found, return an empty array: []
     );
   }
 
-  // ── STEP 1: configure amount & create ────────────────────────────────────
+  // -- STEP 1: configure amount & create ------------------------------------
 
   Widget _buildStepConfigure() {
     final fmt = NumberFormat('#,##0.00');
@@ -1180,7 +1182,7 @@ If none found, return an empty array: []
 
           // amount per person
           const Text(
-            'Amount Per Person (₦)',
+            'Amount Per Person (?)',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
           ),
           const SizedBox(height: 8),
@@ -1192,7 +1194,7 @@ If none found, return an empty array: []
               filled: true,
               fillColor: Colors.white,
               hintText: 'e.g. 5,000',
-              prefixText: ' ₦  ',
+              prefixText: ' ?  ',
               prefixStyle: const TextStyle(color: Colors.black87),
               contentPadding:
                   const EdgeInsets.symmetric(vertical: 15, horizontal: 4),
@@ -1237,23 +1239,23 @@ If none found, return an empty array: []
                 children: [
                   _buildSummaryRow(
                       'Amount per person',
-                      '₦ ${fmt.format(_amountPerPerson)}'),
+                      '? ${fmt.format(_amountPerPerson)}'),
                   _buildSummaryRow(
                       'Recipients', '${_validTags.length}'),
                   _buildSummaryRow(
                       'Total amount',
-                      '₦ ${fmt.format(_totalAmount)}'),
+                      '? ${fmt.format(_totalAmount)}'),
                   _buildSummaryRow(
-                      'Fee (1%)', '₦ ${fmt.format(_fee)}'),
+                      'Fee (1%)', '? ${fmt.format(_fee)}'),
                   const Divider(height: 20),
                   _buildSummaryRow(
                     'You will pay',
-                    '₦ ${fmt.format(_transferAmount)}',
+                    '? ${fmt.format(_transferAmount)}',
                     bold: true,
                   ),
                   _buildSummaryRow(
                     'Each person receives',
-                    '₦ ${fmt.format(_distributePerPerson)}',
+                    '? ${fmt.format(_distributePerPerson)}',
                     bold: true,
                     color: const Color(0xFF34C759),
                   ),
@@ -1315,7 +1317,7 @@ If none found, return an empty array: []
                   size: 16, color: Colors.grey),
               const SizedBox(width: 6),
               Text(
-                'Balance: ${_balance ?? '—'}',
+                'Balance: ${_balance ?? '�'}',
                 style: TextStyle(
                     color: Colors.grey.shade600, fontSize: 13),
               ),
@@ -1421,7 +1423,7 @@ If none found, return an empty array: []
     );
   }
 
-  // ── step indicator ───────────────────────────────────────────────────────
+  // -- step indicator -------------------------------------------------------
 
   Widget _buildStepIndicator(int current) {
     const labels = ['Add Recipients', 'Configure'];

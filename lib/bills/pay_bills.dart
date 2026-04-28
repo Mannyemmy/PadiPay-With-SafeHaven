@@ -4,7 +4,6 @@ import 'package:card_app/cashback/cashback_service.dart';
 import 'package:card_app/ui/success_bottom_sheet.dart';
 import 'package:card_app/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -232,10 +231,11 @@ class _PayBillsPageState extends State<PayBillsPage> {
         billerList = List<Map<String, dynamic>>.from(data?['data'] ?? []);
       }
       if (billerList.isEmpty) {
-        final callable = FirebaseFunctions.instance.httpsCallable(
-          'listBillers',
+        final result = await callCloudFunctionLogged(
+          'sudoGetServiceCategories',
+          source: 'pay_bills.dart',
+          payload: {'category': category},
         );
-        final result = await callable.call({'category': category});
         final response = Map<String, dynamic>.from(result.data);
         print('$category Billers Response: $response');
         if (response['data'] is List) {
@@ -277,10 +277,11 @@ class _PayBillsPageState extends State<PayBillsPage> {
       }
       if (productList.isEmpty) {
         try {
-          final callable = FirebaseFunctions.instance.httpsCallable(
-            'getBillerProducts',
+          final result = await callCloudFunctionLogged(
+            'sudoGetCategoryProducts',
+            source: 'pay_bills.dart',
+            payload: {'billerId': billerId},
           );
-          final result = await callable.call({'billerId': billerId});
           final response = Map<String, dynamic>.from(result.data);
           print('Products Response for $category: $response');
           if (response['data'] is List) {
@@ -679,10 +680,10 @@ class _PayBillsPageState extends State<PayBillsPage> {
         formattedPhone = '234${formattedPhone.substring(1)}';
       }
 
-      final callable = FirebaseFunctions.instance.httpsCallable(
-        'initiateBillPayment',
-      );
-      final result = await callable.call({
+      final result = await callCloudFunctionLogged(
+        'sudoPurchaseVas',
+        source: 'pay_bills.dart',
+        payload: {
         'type': 'Data',
         'accountId': userAccount!['data']['id'],
         'accountType': userAccount!['data']['type'],
@@ -842,10 +843,10 @@ class _PayBillsPageState extends State<PayBillsPage> {
         cashbackUsed = selectedCashbackUsage;
       }
 
-      final callable = FirebaseFunctions.instance.httpsCallable(
-        'initiateBillPayment',
-      );
-      final result = await callable.call({
+      final result = await callCloudFunctionLogged(
+        'sudoPurchaseVas',
+        source: 'pay_bills.dart',
+        payload: {
         'type': 'Television',
         'accountId': userAccount!['data']['id'],
         'accountType': userAccount!['data']['type'],
@@ -1014,10 +1015,10 @@ class _PayBillsPageState extends State<PayBillsPage> {
         cashbackUsed = selectedCashbackUsage;
       }
 
-      final callable = FirebaseFunctions.instance.httpsCallable(
-        'initiateBillPayment',
-      );
-      final result = await callable.call({
+      final result = await callCloudFunctionLogged(
+        'sudoPurchaseVas',
+        source: 'pay_bills.dart',
+        payload: {
         'type': 'Electricity',
         'accountId': userAccount!['data']['id'],
         'accountType': userAccount!['data']['type'],
