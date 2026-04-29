@@ -1,3 +1,5 @@
+// ignore_for_file: unused_element, unused_field, dead_code, unnecessary_cast, unused_import
+
 import 'package:cloud_functions/cloud_functions.dart';
 
 final _functions = FirebaseFunctions.instance;

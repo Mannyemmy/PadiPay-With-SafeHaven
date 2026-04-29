@@ -3,6 +3,8 @@ import 'dart:io' show Platform;
 import 'package:card_app/utils.dart';
 import 'package:cloud_functions/cloud_functions.dart' as cf;
 import 'package:cloudcard_flutter/cloudcard_flutter.dart';
+// ignore_for_file: unused_element, unused_field, dead_code, unnecessary_cast, unused_import
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -293,7 +295,7 @@ class _NfcPosSheetState extends State<NfcPosSheet> {
       } else {
         setState(() {
           _step = _Step.error;
-          _errorMessage = result.message ?? 'Registration failed. Please try again.';
+          _errorMessage = result.message;
         });
       }
     } on PlatformException catch (e) {

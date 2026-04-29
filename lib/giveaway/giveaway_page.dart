@@ -88,7 +88,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
   @override
   void initState() {
     super.initState();
-    _fetchAccountBalance();
+    _safehavenFetchAccountBalance();
     _fetchCompanyVirtualAccount();
     totalAmountController.addListener(_updateCalculations);
     numPeoplePoolController.addListener(_updateCalculations);
@@ -131,7 +131,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
     return getDistributeTotal() / num;
   }
 
-  Future<void> _fetchAccountBalance() async {
+  Future<void> _safehavenFetchAccountBalance() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
@@ -147,40 +147,51 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
         return;
       }
       final data = userDoc.data()!;
-      final anchorData = data['getAnchorData'] as Map<String, dynamic>?;
-      if (anchorData == null) {
-        showSimpleDialog('Anchor data not found', Colors.red);
+      final safehavenData = data['safehavenData'] as Map<String, dynamic>?;
+      final accountData = safehavenData?['virtualAccount']?['data'] as Map<String, dynamic>?;
+
+      String? resolvedAccountId = accountData?['id']?.toString();
+      String? resolvedAccountType = accountData?['type']?.toString();
+      String? resolvedAccountNumber = accountData?['attributes']?['accountNumber']?.toString();
+      String? resolvedAccountName = accountData?['attributes']?['accountName']?.toString();
+      String? resolvedBankName = accountData?['attributes']?['bank']?['name']?.toString();
+      String? rawBankId = accountData?['attributes']?['bank']?['id']?.toString();
+
+      // Fallback to safehavenUserSetup when safehavenData is unavailable
+      if (resolvedAccountId == null) {
+        final setupDoc = await FirebaseFirestore.instance
+            .collection('safehavenUserSetup')
+            .doc(user.uid)
+            .get();
+        if (!setupDoc.exists) {
+          showSimpleDialog('Account not set up. Please complete onboarding.', Colors.red);
+          return;
+        }
+        final setup = setupDoc.data()!;
+        resolvedAccountId = setup['accountId']?.toString();
+        resolvedAccountNumber = setup['safehavenAccountNumber']?.toString();
+        resolvedAccountName = setup['safehavenAccountName']?.toString();
+        resolvedBankName = setup['safehavenBankName']?.toString();
+        rawBankId = setup['safehavenBankCode']?.toString();
+      }
+
+      if (resolvedAccountId == null) {
+        showSimpleDialog('Virtual account not found. Please contact support.', Colors.red);
         return;
       }
-      final virtualAccount =
-          anchorData['virtualAccount'] as Map<String, dynamic>?;
-      if (virtualAccount == null) {
-        showSimpleDialog('Virtual account data not found', Colors.red);
-        return;
-      }
-      final accountData = virtualAccount['data'] as Map<String, dynamic>?;
-      if (accountData == null) {
-        showSimpleDialog('Account data not found', Colors.red);
-        return;
-      }
-      // Resolve bank id: prefer explicit id, otherwise try to lookup by bank name
-      final resolvedBankId = await resolveBankId(
-        bankId: accountData['attributes']?['bank']?['id']?.toString(),
-        bankName: accountData['attributes']?['bank']?['name']?.toString(),
-      );
-      // If resolution failed, log for diagnostics
-      if (resolvedBankId == null) debugPrint('🔍 Failed to resolve bank id for giveaway account');
+      final resolvedBankId = await resolveBankId(bankId: rawBankId, bankName: resolvedBankName);
+      if (resolvedBankId == null) debugPrint('Failed to resolve bank id for giveaway account');
 
       setState(() {
-        accountId = accountData['id']?.toString();
-        accountType = accountData['type']?.toString();
+        accountId = resolvedAccountId;
+        accountType = resolvedAccountType;
         bankId = resolvedBankId;
-        accountNumber = accountData['attributes']?['accountNumber']?.toString();
-        accountName = accountData['attributes']?['accountName']?.toString();
-        bankName = accountData['attributes']?['bank']?['name']?.toString();
+        accountNumber = resolvedAccountNumber;
+        accountName = resolvedAccountName;
+        bankName = resolvedBankName;
       });
       final result = await callCloudFunctionLogged(
-        'sudoFetchAccountBalance',
+        'safehavenFetchAccountBalance',
         source: 'giveaway_page.dart',
         payload: {'accountId': accountId},
       );
@@ -304,10 +315,10 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
       } else {
         code = await _generateUniqueCode();
       }
-      // Transfer to company account (book transfer — both on Anchor)
+      // Transfer to company account (book transfer â€” both on Sudo)
       final transferAmountKobo = transferAmount * 100;
       final transferResult = await callCloudFunctionLogged(
-          'sudoTransferIntra',
+          'safehavenTransferIntra',
           source: 'giveaway_page.dart',
           payload: {
             'fromAccountId': accountId,
@@ -363,7 +374,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
           description: "Giveaway created successfully.",
         ),
       );
-      _fetchAccountBalance();
+      _safehavenFetchAccountBalance();
     } catch (e) {
       debugPrint('Error creating giveaway: $e');
       showSimpleDialog('Failed to create giveaway', Colors.red);
@@ -438,25 +449,47 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
           .collection('users')
           .doc(user.uid)
           .get();
-      final recipientAccountId = userDoc
-          .data()?['getAnchorData']?['virtualAccount']?['data']?['id'];
-      final recipientBankId = userDoc
-          .data()?['getAnchorData']?['virtualAccount']?['data']?['attributes']?['bank']?['id'];
-      final recipientAccountName = userDoc
-          .data()?['getAnchorData']?['virtualAccount']?['data']?['attributes']?['accountName'];
-      final recipientBankName = userDoc
-          .data()?['getAnchorData']?['virtualAccount']?['data']?['attributes']?['bank']?['name'];
-      final recipientAccountNumber = userDoc
-          .data()?['getAnchorData']?['virtualAccount']?['data']?['attributes']?['accountNumber'];
+      final userSetupDoc = await FirebaseFirestore.instance
+          .collection('safehavenUserSetup')
+          .doc(user.uid)
+          .get();
+        final Map<String, dynamic> userSetupData = userSetupDoc.data() ?? {};
+
+        final Map<String, dynamic>? safehavenVa =
+          userDoc.data()?['safehavenData']?['virtualAccount']?['data'] as Map<String, dynamic>?;
+
+        final recipientAccountId = safehavenVa?['id'];
+
+        // Prefer values from safehavenVa when present and non-empty, otherwise
+        // fall back to values from the safehavenUserSetup document.
+        final String? rawBankId = safehavenVa?['attributes']?['bank']?['id'] as String?;
+        final recipientBankId = (rawBankId?.isNotEmpty ?? false)
+          ? rawBankId
+          : (userSetupData['safehavenBankCode']?.toString());
+
+        final String? rawAccountName = safehavenVa?['attributes']?['accountName'] as String?;
+        final recipientAccountName = (rawAccountName?.isNotEmpty ?? false)
+          ? rawAccountName
+          : (userSetupData['safehavenAccountName']?.toString());
+
+        final String? rawBankName = safehavenVa?['attributes']?['bank']?['name'] as String?;
+        final recipientBankName = (rawBankName?.isNotEmpty ?? false)
+          ? rawBankName
+          : (userSetupData['safehavenBankName']?.toString());
+
+        final String? rawAccountNumber = safehavenVa?['attributes']?['accountNumber'] as String?;
+        final recipientAccountNumber = (rawAccountNumber?.isNotEmpty ?? false)
+          ? rawAccountNumber
+          : (userSetupData['safehavenAccountNumber']?.toString());
       if (companyVa == null || recipientAccountId == null) {
         showSimpleDialog('Account configuration error', Colors.red);
         setState(() => isLoading = false);
         return;
       }
-      // Transfer from company to recipient (book transfer — both on Anchor)
+      // Transfer from company to recipient (book transfer â€” both on Sudo)
       final amountKobo = giveawayData['amountPerPerson'] * 100;
       final transferResult = await callCloudFunctionLogged(
-          'sudoTransferIntra',
+          'safehavenTransferIntra',
           source: 'giveaway_page.dart',
           payload: {
             'fromAccountId': companyVa!['id'],
@@ -505,10 +538,10 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
           actionText: "Done",
           title: "Giveaway Claimed",
           description: "You have successfully claimed the giveaway.",
-          recipientName: recipientAccountName,
+          recipientName: recipientAccountName!,
           bankName: recipientBankName ?? 'Unknown Bank',
           bankCode: recipientBankId ?? '',
-          accountNumber: recipientAccountNumber,
+          accountNumber: recipientAccountNumber!,
           reference: transferResult.data['data']['id'] ?? "",
         ),
         isScrollControlled: true,
@@ -1835,12 +1868,12 @@ class GiveawaysHistoryPage extends StatelessWidget {
                   final numPeople = data['numPeople'] ?? 0;
                   final status = data['status'] ?? '';
                   final createdAt = _parseDate(data);
-                  final formattedDate = DateFormat('MMM d, yyyy • HH:mm').format(createdAt);
+                  final formattedDate = DateFormat('MMM d, yyyy â€¢ HH:mm').format(createdAt);
 
                   return ListTile(
                     leading: CircleAvatar(backgroundColor: primaryColor, child: Icon(FontAwesomeIcons.gift, color: Colors.white)),
-                    title: Text('$code • ${type.toString().toUpperCase()}'),
-                    subtitle: Text('$formattedDate • ${role == 'created' ? 'Creator' : 'Claimed'} • Status: $status'),
+                    title: Text('$code â€¢ ${type.toString().toUpperCase()}'),
+                    subtitle: Text('$formattedDate â€¢ ${role == 'created' ? 'Creator' : 'Claimed'} â€¢ Status: $status'),
                     trailing: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.end,
@@ -1894,3 +1927,4 @@ class GiveawaysHistoryPage extends StatelessWidget {
     );
   }
 }
+

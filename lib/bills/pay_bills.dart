@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 
 import 'package:card_app/cashback/cashback_service.dart';
 import 'package:card_app/ui/success_bottom_sheet.dart';
@@ -78,7 +78,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
         .get();
     if (userDoc.exists) {
       setState(() {
-        userAccount = userDoc.data()?['getAnchorData']?['virtualAccount'];
+        userAccount = userDoc.data()?['safehavenData']?['virtualAccount'];
         cashbackBalance =
             (userDoc.data()?['cashback']?['balance'] as num?)?.toDouble() ?? 0;
       });
@@ -179,8 +179,9 @@ class _PayBillsPageState extends State<PayBillsPage> {
         _fetchCategoryBillers('data', (list) {
           dataBillers = list;
           selectedDataNetwork = dataBillers.isNotEmpty
-              ? (dataBillers[0]['attributes']?['slug'] as String?) ??
-                    (dataBillers[0]['id'] as String)
+              ? (dataBillers[0]['id']?.toString() ??
+                    (dataBillers[0]['attributes']?['slug'] as String?) ??
+                    '')
               : null;
           isFetchingDataBillers = false;
           if (selectedDataNetwork != null) {
@@ -190,8 +191,9 @@ class _PayBillsPageState extends State<PayBillsPage> {
         _fetchCategoryBillers('television', (list) {
           cableBillers = list;
           selectedCableOperator = cableBillers.isNotEmpty
-              ? (cableBillers[0]['attributes']?['slug'] as String?) ??
-                    (cableBillers[0]['id'] as String)
+              ? (cableBillers[0]['id']?.toString() ??
+                    (cableBillers[0]['attributes']?['slug'] as String?) ??
+                    '')
               : null;
           isFetchingCableBillers = false;
           if (selectedCableOperator != null) {
@@ -232,7 +234,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
       }
       if (billerList.isEmpty) {
         final result = await callCloudFunctionLogged(
-          'sudoGetServiceCategories',
+          'safehavenGetServiceCategories',
           source: 'pay_bills.dart',
           payload: {'category': category},
         );
@@ -278,7 +280,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
       if (productList.isEmpty) {
         try {
           final result = await callCloudFunctionLogged(
-            'sudoGetCategoryProducts',
+            'safehavenGetCategoryProducts',
             source: 'pay_bills.dart',
             payload: {'billerId': billerId},
           );
@@ -295,6 +297,17 @@ class _PayBillsPageState extends State<PayBillsPage> {
             'Error calling getBillerProducts for $category with billerId=$billerId: $e',
           );
           rethrow;
+        }
+      }
+      if (category == 'data') {
+        for (final bundle in productList) {
+          final attrs =
+              Map<String, dynamic>.from(bundle['attributes'] ?? <String, dynamic>{});
+          final raw =
+              Map<String, dynamic>.from(bundle['_safehaven'] ?? <String, dynamic>{});
+          print(
+            '[DataBundle] attrs=${json.encode(attrs)} raw=${json.encode(raw)}',
+          );
         }
       }
       if (category == 'data') {
@@ -681,7 +694,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
       }
 
       final result = await callCloudFunctionLogged(
-        'sudoPurchaseVas',
+        'safehavenPurchaseVas',
         source: 'pay_bills.dart',
         payload: {
         'type': 'Data',
@@ -689,6 +702,18 @@ class _PayBillsPageState extends State<PayBillsPage> {
         'accountType': userAccount!['data']['type'],
         'phoneNumber': formattedPhone,
         'amount': amount * 100,
+        'provider': dataBillers
+            .cast<Map<String, dynamic>?>()
+            .firstWhere(
+              (b) {
+                if (b == null) return false;
+                final slug = b['attributes']?['slug']?.toString();
+                return b['id']?.toString() == selectedDataNetwork ||
+                    slug == selectedDataNetwork;
+              },
+              orElse: () => null,
+            )?['id']?.toString() ??
+            selectedDataNetwork,
         'productSlug': selectedDataBundle,
         'reference': Uuid().v4(),
       });
@@ -844,7 +869,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
       }
 
       final result = await callCloudFunctionLogged(
-        'sudoPurchaseVas',
+        'safehavenPurchaseVas',
         source: 'pay_bills.dart',
         payload: {
         'type': 'Television',
@@ -852,6 +877,18 @@ class _PayBillsPageState extends State<PayBillsPage> {
         'accountType': userAccount!['data']['type'],
         'smartCardNumber': cardNumberController.text,
         'amount': amount * 100,
+        'provider': cableBillers
+            .cast<Map<String, dynamic>?>()
+            .firstWhere(
+              (b) {
+                if (b == null) return false;
+                final slug = b['attributes']?['slug']?.toString();
+                return b['id']?.toString() == selectedCableOperator ||
+                    slug == selectedCableOperator;
+              },
+              orElse: () => null,
+            )?['id']?.toString() ??
+            selectedCableOperator,
         'productSlug': selectedCablePackage,
         'reference': Uuid().v4(),
         'phoneNumber': phone,
@@ -1015,27 +1052,34 @@ class _PayBillsPageState extends State<PayBillsPage> {
         cashbackUsed = selectedCashbackUsage;
       }
 
-      final result = await callCloudFunctionLogged(
-        'sudoPurchaseVas',
+      // Verify meter number first to get vendType (required by SafeHaven utility API)
+      final verifyResult = await callCloudFunctionLogged(
+        'safehavenVerifyVas',
         source: 'pay_bills.dart',
         payload: {
-        'type': 'Electricity',
-        'accountId': userAccount!['data']['id'],
-        'accountType': userAccount!['data']['type'],
-        'meterAccountNumber': meterNumberController.text,
-        'amount': amount * 100,
-        'reference': Uuid().v4(),
-        'phoneNumber': phone,
-        'productSlug':
-            electricityBillers.firstWhere(
-                  (b) => b['id'] == selectedDisco,
-                  orElse: () => {
-                    'attributes': {'slug': 'N/A'},
-                  },
-                )['attributes']['slug']
-                as String? ??
-            'N/A',
-      });
+          'serviceCategoryId': selectedDisco,
+          'entityNumber': meterNumberController.text,
+        },
+      );
+      final verifyData = Map<String, dynamic>.from(
+        (verifyResult.data as Map<dynamic, dynamic>?)?['data'] as Map<dynamic, dynamic>? ?? {},
+      );
+      final vendType = verifyData['vendType']?.toString() ?? 'PREPAID';
+
+      final result = await callCloudFunctionLogged(
+        'safehavenPurchaseVas',
+        source: 'pay_bills.dart',
+        payload: {
+          'type': 'Electricity',
+          'accountId': userAccount!['data']['id'],
+          'accountType': userAccount!['data']['type'],
+          'provider': selectedDisco,
+          'meterAccountNumber': meterNumberController.text,
+          'vendType': vendType,
+          'amount': amount * 100,
+          'reference': Uuid().v4(),
+        },
+      );
 
       final rawData = result.data;
       final response =
@@ -1193,7 +1237,18 @@ class _PayBillsPageState extends State<PayBillsPage> {
                   child: Row(
                     children: [
                       if (selectedDataNetwork != null) ...[
-                        _iconForId(selectedDataNetwork!),
+                        _iconForBiller(
+                          dataBillers.cast<Map<String, dynamic>?>().firstWhere(
+                                (b) {
+                                  if (b == null) return false;
+                                  final slug =
+                                      b['attributes']?['slug'] as String?;
+                                  return slug == selectedDataNetwork ||
+                                      b['id'] == selectedDataNetwork;
+                                },
+                                orElse: () => null,
+                              ),
+                        ),
                         const SizedBox(width: 8),
                       ],
                       // let the name take up remaining space, then push arrow to end
@@ -1245,16 +1300,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
                     selectedId: selectedDataBundle,
                     idExtractor: (b) =>
                         (b['attributes']?['slug'] as String?) ?? '',
-                    nameExtractor: (b) {
-                      final name =
-                          (b['attributes']?['name'] as String?) ?? 'N/A';
-                      final price =
-                          ((b['attributes']?['price']?['minimumAmount']
-                                  as num?) ??
-                              0) /
-                          100;
-                      return '$name - ₦${price.toStringAsFixed(0)}';
-                    },
+                    nameExtractor: (b) => _formatDataBundleLabel(b),
                   );
                   if (id != null) setState(() => selectedDataBundle = id);
                 },
@@ -1275,20 +1321,19 @@ class _PayBillsPageState extends State<PayBillsPage> {
                         child: Text(
                           selectedDataBundle == null
                               ? 'Select bundle'
-                              : dataBundles.firstWhere(
-                                          (b) =>
-                                              (b['attributes']?['slug']
-                                                  as String?) ==
-                                              selectedDataBundle,
-                                          orElse: () => {
-                                            'attributes': {
-                                              'name': 'N/A',
-                                              'price': {'minimumAmount': 0},
-                                            },
-                                          },
-                                        )['attributes']['name']
-                                        as String? ??
-                                    'Select bundle',
+                              : _formatDataBundleLabel(
+                                  dataBundles.firstWhere(
+                                    (b) =>
+                                        (b['attributes']?['slug'] as String?) ==
+                                        selectedDataBundle,
+                                    orElse: () => {
+                                      'attributes': {
+                                        'name': 'N/A',
+                                        'price': {'minimumAmount': 0},
+                                      },
+                                    },
+                                  ),
+                                ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -1412,15 +1457,14 @@ class _PayBillsPageState extends State<PayBillsPage> {
                   ),
                   Flexible(
                     child: Text(
-                      dataBundles.firstWhere(
-                                (b) =>
-                                    b['attributes']['slug'] ==
-                                    selectedDataBundle,
-                                orElse: () => {
-                                  'attributes': {'name': 'N/A'},
-                                },
-                              )['attributes']['name']
-                              as String? ??
+                      _formatDataBundleLabel(
+                        dataBundles.firstWhere(
+                          (b) => b['attributes']['slug'] == selectedDataBundle,
+                          orElse: () => {
+                            'attributes': {'name': 'N/A'},
+                          },
+                        ),
+                      ) ??
                           'N/A',
                       style: GoogleFonts.inter(
                         color: Colors.black54,
@@ -2238,6 +2282,55 @@ class _PayBillsPageState extends State<PayBillsPage> {
     }
   }
 
+  String _formatDataBundleLabel(Map<String, dynamic> bundle) {
+    final attrs = Map<String, dynamic>.from(
+      bundle['attributes'] ?? <String, dynamic>{},
+    );
+    final raw = Map<String, dynamic>.from(bundle['_safehaven'] ?? <String, dynamic>{});
+
+    final name = attrs['name']?.toString() ?? '';
+    final validity = raw['validity']?.toString() ?? '';
+    final duration =
+        attrs['duration']?.toString() ?? raw['duration']?.toString() ?? '';
+    final dataSize =
+        raw['dataSize']?.toString() ?? raw['size']?.toString() ?? raw['bundle']?.toString() ?? '';
+    final amount = ((attrs['price']?['minimumAmount'] as num?) ?? 0) / 100;
+
+    // SafeHaven often returns the full human-readable plan in validity.
+    if (validity.isNotEmpty) {
+      return validity;
+    }
+
+    final extras = <String>[];
+    if (dataSize.isNotEmpty) extras.add(dataSize);
+    if (duration.isNotEmpty) extras.add(duration);
+    extras.add('₦${amount.toStringAsFixed(0)}');
+
+    if (name.isNotEmpty) {
+      return '$name - ${extras.join(' | ')}';
+    }
+    return extras.join(' | ');
+  }
+
+  Widget _iconForBiller(Map<String, dynamic>? biller) {
+    final logoUrl = biller?['attributes']?['logoUrl']?.toString();
+    final slug = (biller?['attributes']?['slug']?.toString() ?? '').trim();
+    final identifier = biller?['id']?.toString() ?? slug;
+
+    if (logoUrl != null && logoUrl.isNotEmpty) {
+      return Image.network(
+        logoUrl,
+        width: 24,
+        height: 24,
+        cacheWidth: 48,
+        cacheHeight: 48,
+        errorBuilder: (_, __, ___) => _iconForId(identifier),
+      );
+    }
+
+    return _iconForId(identifier);
+  }
+
   /// Utility to return a widget representing a network/cable/airtime icon
   /// based on a given identifier string.  This mirrors the logic used in
   /// [_showSelectionBottomSheet] so that we can show the same image in the
@@ -2323,3 +2416,4 @@ class _PayBillsPageState extends State<PayBillsPage> {
     super.dispose();
   }
 }
+

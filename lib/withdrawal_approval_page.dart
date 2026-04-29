@@ -1,4 +1,4 @@
-import 'package:card_app/home_pages/home_page.dart';
+﻿import 'package:card_app/home_pages/home_page.dart';
 import 'package:card_app/ui/payment_successful_page.dart';
 import 'package:card_app/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -71,7 +71,7 @@ class _WithdrawalApprovalPageState extends State<WithdrawalApprovalPage> {
     if (userSnap.exists && userSnap.data() != null) {
       final data = userSnap.data()!;
       final Map<String, dynamic>? virtualAccData =
-          data['getAnchorData']?['virtualAccount']?['data'] as Map<String, dynamic>?;
+          data['safehavenData']?['virtualAccount']?['data'] as Map<String, dynamic>?;
 
       if (virtualAccData != null && virtualAccData['id'] != null) {
         final bankMap = virtualAccData['attributes']?['bank'] as Map<String, dynamic>?;
@@ -136,7 +136,7 @@ class _WithdrawalApprovalPageState extends State<WithdrawalApprovalPage> {
       }
 
       final result = await FirebaseFunctions.instance
-          .httpsCallable('sudoCreateCounterparty')
+          .httpsCallable('safehavenCreateCounterparty')
           .call({
         'accountId': accountId,
         'bankId': recipientBankCode,
@@ -166,7 +166,7 @@ class _WithdrawalApprovalPageState extends State<WithdrawalApprovalPage> {
       showSimpleDialog('Error creating counterparty', Colors.red);
     }
   }
-  Future<void> _createNipTransfer() async {
+  Future<void> _safehavenTransferNip() async {
     if (counterpartyId == null || amount == null) {
       showSimpleDialog('Counterparty or amount missing', Colors.red);
       return;
@@ -189,7 +189,7 @@ class _WithdrawalApprovalPageState extends State<WithdrawalApprovalPage> {
       }
 
       final result = await FirebaseFunctions.instance
-          .httpsCallable('sudoTransferNip')
+          .httpsCallable('safehavenTransferNip')
           .call({
         'accountType': accountType,
         'accountId': accountId,
@@ -264,7 +264,7 @@ class _WithdrawalApprovalPageState extends State<WithdrawalApprovalPage> {
         });
       }
     } catch (e) {
-      debugPrint('createNipTransfer error: $e');
+      debugPrint('safehavenTransferNip error: $e');
       showSimpleDialog('Error processing transfer', Colors.red);
     }
   }
@@ -282,7 +282,7 @@ class _WithdrawalApprovalPageState extends State<WithdrawalApprovalPage> {
       if (counterpartyId == null) {
         return;
       }
-      await _createNipTransfer();
+      await _safehavenTransferNip();
     } catch (e) {
       showSimpleDialog('Approval failed', Colors.red);
     } finally {

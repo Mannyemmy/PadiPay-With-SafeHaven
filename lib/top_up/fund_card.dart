@@ -1,4 +1,4 @@
-
+﻿
 import 'package:card_app/ui/success_bottom_sheet.dart';
 import 'package:card_app/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -58,7 +58,7 @@ class _FundCardState extends State<FundCard> {
     if (userSnap.exists && userSnap.data() != null) {
       final data = userSnap.data()!;
       final Map<String, dynamic>? virtualAccData =
-          data['getAnchorData']?['virtualAccount']?['data']
+          data['safehavenData']?['virtualAccount']?['data']
               as Map<String, dynamic>?;
 
       if (virtualAccData != null && virtualAccData['id'] != null) {
@@ -113,7 +113,7 @@ class _FundCardState extends State<FundCard> {
       if (accountId == null) throw Exception('Account ID not found');
 
       final callable = FirebaseFunctions.instance.httpsCallable(
-        'sudoFetchAccountBalance',
+        'safehavenFetchAccountBalance',
       );
       final result = await callable.call({'accountId': accountId});
 
@@ -154,20 +154,26 @@ class _FundCardState extends State<FundCard> {
       return;
     }
     try {
-      final fxCallable = FirebaseFunctions.instance.httpsCallable(
-        'bridgecardGetFxRate',
-      );
-      final fxResponse = await fxCallable.call();
-      if (fxResponse.data['status'] == 'success') {
-        final rate = fxResponse.data['data']['NGN-USD'].toDouble() / 100;
-        if (mounted) {
-          setState(() {
-            _usdToNairaRate = rate;
-            _isRateLoading = false;
-          });
+      double rate = 0.0;
+      final companySnap = await FirebaseFirestore.instance
+          .collection('company')
+          .doc('sudoAccountDetails')
+          .get();
+      final companyData = companySnap.data();
+      final rawRate = companyData?['usdNgnRate'];
+      if (rawRate is num && rawRate > 0) {
+        rate = rawRate.toDouble();
+      } else if (rawRate is String) {
+        final parsed = double.tryParse(rawRate);
+        if (parsed != null && parsed > 0) {
+          rate = parsed;
         }
-      } else {
-        if (mounted) setState(() => _isRateLoading = false);
+      }
+      if (mounted) {
+        setState(() {
+          _usdToNairaRate = rate;
+          _isRateLoading = false;
+        });
       }
     } catch (e) {
       print('Error fetching FX rate: $e');
@@ -207,9 +213,9 @@ class _FundCardState extends State<FundCard> {
         return false;
       }
 
-      // Refund: company → user (book transfer — both on Anchor)
+      // Refund: company â†’ user (book transfer â€” both on Sudo)
       final refundResult = await FirebaseFunctions.instance
-          .httpsCallable('sudoTransferIntra')
+          .httpsCallable('safehavenTransferIntra')
           .call({
             'fromAccountId': companyVa['id'],
             'toAccountId': userAccountId,
@@ -248,6 +254,10 @@ class _FundCardState extends State<FundCard> {
       showSimpleDialog('Enter a valid amount', Colors.red);
       return;
     }
+    if (isUSD) {
+      showSimpleDialog('USD card funding is currently unavailable', Colors.red);
+      return;
+    }
     if (totalAmount > _availableBalance) {
       showSimpleDialog('Insufficient funds', Colors.red);
       return;
@@ -279,9 +289,9 @@ class _FundCardState extends State<FundCard> {
       companyVa = await getCompanyVirtualAccount();
       if (companyVa == null) throw Exception('Company account not found');
 
-      // Transfer total NGN to company VA (book transfer — both on Anchor)
+      // Transfer total NGN to company VA (book transfer â€” both on Sudo)
       final transferResult = await FirebaseFunctions.instance
-          .httpsCallable('sudoTransferIntra')
+          .httpsCallable('safehavenTransferIntra')
           .call({
             'fromAccountId': accountId,
             'toAccountId': companyVa['id'],
@@ -298,90 +308,46 @@ class _FundCardState extends State<FundCard> {
       transferSuccess = true;
 
       final String transactionRef = const Uuid().v4();
-      final String cardAmountStr = (inputAmount * 100).toInt().toString();
+      // Local funding for NGN: update balance and transaction after successful transfer
+      try {
+        final QuerySnapshot query = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .collection('cards')
+            .where('card_id', isEqualTo: widget.card['card_id'])
+            .get();
+        if (query.docs.isNotEmpty) {
+          final doc = query.docs.first;
+          await doc.reference.update({
+            'balance': FieldValue.increment(inputAmount),
+          });
+        }
 
-      if (isUSD) {
-        final Map<String, dynamic> payload = {
+        await FirebaseFirestore.instance.collection('transactions').add({
+          'userId': user.uid,
           'card_id': widget.card['card_id'],
-          'amount': cardAmountStr,
-          'transaction_reference': transactionRef,
-          'currency': 'USD',
-        };
-        print('USD card funding payload: $payload');
-        final fundCallable = FirebaseFunctions.instance.httpsCallable(
-          'bridgecardFundUsdCard',
-        );
-        await fundCallable.call(payload);
-
-        Navigator.pop(context); // Close loading
-        try {
-        
-
-          await FirebaseFirestore.instance.collection('transactions').add({
-            'userId': user.uid,
-            'card_id': widget.card['card_id'],
-            'type': 'fund',
-            'amount': inputAmount,
-            'currency': widget.currency,
-            'status': 'success',
-            'timestamp': FieldValue.serverTimestamp(),
-            'reference': transactionRef,
-          });
-        } catch (updateError) {
-          print('Error updating balance or transaction: $updateError');
-          // Proceed to success UI as transfer succeeded
-        }
-        navigateTo(
-          context,
-          SuccessBottomSheet(
-            actionText: 'Done',
-            title: 'Success',
-            description:
-                'Your card has been funded successfully with $currencySymbol${_formatCurrency(displayAmount)}',
-          ),
-        );
-      } else {
-        // Local funding for NGN: update balance and transaction after successful transfer
-        try {
-          final QuerySnapshot query = await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .collection('cards')
-              .where('card_id', isEqualTo: widget.card['card_id'])
-              .get();
-          if (query.docs.isNotEmpty) {
-            final doc = query.docs.first;
-            await doc.reference.update({
-              'balance': FieldValue.increment(inputAmount),
-            });
-          }
-
-          await FirebaseFirestore.instance.collection('transactions').add({
-            'userId': user.uid,
-            'card_id': widget.card['card_id'],
-            'type': 'fund',
-            'amount': inputAmount,
-            'currency': widget.currency,
-            'status': 'success',
-            'timestamp': FieldValue.serverTimestamp(),
-            'reference': transactionRef,
-          });
-        } catch (updateError) {
-          print('Error updating balance or transaction: $updateError');
-          // Proceed to success UI as transfer succeeded
-        }
-
-        Navigator.pop(context); // Close loading
-        navigateTo(
-          context,
-          SuccessBottomSheet(
-            actionText: 'Done',
-            title: 'Success',
-            description:
-                'Your card has been funded successfully with $currencySymbol${_formatCurrency(displayAmount)}',
-          ),
-        );
+          'type': 'fund',
+          'amount': inputAmount,
+          'currency': widget.currency,
+          'status': 'success',
+          'timestamp': FieldValue.serverTimestamp(),
+          'reference': transactionRef,
+        });
+      } catch (updateError) {
+        print('Error updating balance or transaction: $updateError');
+        // Proceed to success UI as transfer succeeded
       }
+
+      Navigator.pop(context); // Close loading
+      navigateTo(
+        context,
+        SuccessBottomSheet(
+          actionText: 'Done',
+          title: 'Success',
+          description:
+              'Your card has been funded successfully with $currencySymbol${_formatCurrency(displayAmount)}',
+        ),
+      );
     } catch (e) {
       bool refunded = false;
       if (transferSuccess && userDetails != null && companyVa != null) {
@@ -685,3 +651,4 @@ class _FundCardState extends State<FundCard> {
     );
   }
 }
+

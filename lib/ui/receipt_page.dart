@@ -1,4 +1,4 @@
-import 'dart:math' as math;
+﻿import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'dart:io';
@@ -93,9 +93,9 @@ class _ReceiptPageState extends State<ReceiptPage> {
                 fetchedSenderName = userData['userName'] ?? '';
               }
 
-              final anchorData = userData['getAnchorData'] as Map<String, dynamic>?;
-              if (anchorData != null) {
-                final virtualAccount = anchorData['virtualAccount'] as Map<String, dynamic>?;
+              final safehavenData = userData['safehavenData'] as Map<String, dynamic>?;
+              if (safehavenData != null) {
+                final virtualAccount = safehavenData['virtualAccount'] as Map<String, dynamic>?;
                 if (virtualAccount != null) {
                   fetchedSenderAccountNumber = virtualAccount['data']['attributes']['accountNumber']?.toString() ?? '';
                   fetchedSenderBankName = virtualAccount['data']['attributes']['bank']?['name']?.toString() ?? '';

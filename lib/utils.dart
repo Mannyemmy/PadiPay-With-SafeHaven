@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+﻿import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -334,16 +334,16 @@ Future<void> fetchCustomerAccount() async {
     }
 
     final data = userDoc.data()!;
-    final getAnchorData = data['getAnchorData'] as Map<String, dynamic>?;
-    if (getAnchorData == null) {
-      print('getAnchorData not found in user document');
+    final safehavenData = data['safehavenData'] as Map<String, dynamic>?;
+    if (safehavenData == null) {
+      print('safehavenData not found in user document');
       return;
     }
 
     final virtualAccount =
-        getAnchorData['virtualAccount'] as Map<String, dynamic>?;
+        safehavenData['virtualAccount'] as Map<String, dynamic>?;
     if (virtualAccount == null) {
-      print('virtualAccount not found in getAnchorData');
+      print('virtualAccount not found in safehavenData');
       return;
     }
 
@@ -530,157 +530,6 @@ Future<void> createSudoAccountIfNeeded() async {
     print('[SUDO] Sudo account saved to Firestore');
   } catch (e) {
     print('[SUDO] Error creating Sudo account: $e');
-  }
-}
-
-Future<void> createStroWalletUserIfNeeded(BuildContext context) async {
-  // Mapping of full Nigerian state names to two-letter ISO codes (lowercase)
-  const Map<String, String> stateToCode = {
-    'Abia': 'ab',
-    'Adamawa': 'ad',
-    'Akwa Ibom': 'ak',
-    'Anambra': 'an',
-    'Bauchi': 'ba',
-    'Bayelsa': 'by',
-    'Benue': 'be',
-    'Borno': 'bo',
-    'Cross River': 'cr',
-    'Delta': 'de',
-    'Ebonyi': 'eb',
-    'Edo': 'ed',
-    'Ekiti': 'ek',
-    'Enugu': 'en',
-    'Gombe': 'go',
-    'Imo': 'im',
-    'Jigawa': 'ji',
-    'Kaduna': 'kd',
-    'Kano': 'kn',
-    'Katsina': 'kt',
-    'Kebbi': 'ke',
-    'Kogi': 'ko',
-    'Kwara': 'kw',
-    'Lagos': 'la',
-    'Nasarawa': 'na',
-    'Niger': 'ni',
-    'Ogun': 'og',
-    'Ondo': 'on',
-    'Osun': 'os',
-    'Oyo': 'oy',
-    'Plateau': 'pl',
-    'Rivers': 'ri',
-    'Sokoto': 'so',
-    'Taraba': 'ta',
-    'Yobe': 'yo',
-    'Zamfara': 'za',
-    'Abuja Federal Capital Territory': 'fc',
-  };
-
-  // Helper to format DOB to YYYY/MM/DD for payload
-  String formatDateToSlash(String dateStr) {
-    if (dateStr.isEmpty) return '';
-    try {
-      // Handle YYYY-MM-DD
-      final parts = dateStr.split('-');
-      if (parts.length == 3) {
-        return '${parts[0]}/${parts[1]}/${parts[2]}';
-      }
-      // If already YYYY/MM/DD, return as is
-      if (dateStr.contains('/')) {
-        return dateStr;
-      }
-    } catch (e) {
-      print('Date format error: $e');
-    }
-    return dateStr; // Fallback
-  }
-
-  try {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    final userDocSnap = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .get();
-    if (!userDocSnap.exists) {
-      throw Exception('User document not found');
-    }
-    final userData = userDocSnap.data()!;
-    if (userData.containsKey('stroWalletUser')) {
-      print('StroWallet user already exists');
-      return;
-    }
-
-    // Extract fields
-    final firstname = userData['firstName'] ?? '';
-    final lastname = userData['lastName'] ?? '';
-    final email = userData['email'] ?? '';
-    String phone = (userData['phone'] ?? '').replaceAll(RegExp(r'[^0-9]'), '');
-    if (phone.isEmpty) {
-      throw Exception('Invalid phone number: empty after cleaning');
-    }
-    if (phone.length == 13 && phone.startsWith('234')) {
-      // Already in international format
-    } else if (phone.length == 11 && phone.startsWith('0')) {
-      phone = '234${phone.substring(1)}';
-    } else if (phone.length == 10 &&
-        (phone.startsWith('7') ||
-            phone.startsWith('8') ||
-            phone.startsWith('9'))) {
-      phone = '234$phone';
-    } else {
-      throw Exception(
-        'Invalid phone number format: $phone (must be 10-13 digits, starting appropriately for Nigeria)',
-      );
-    }
-    String nin = userData['nin'] ?? '';
-    String dob = userData['dateOfBirth'] ?? '';
-    final name = userData['userName'] ?? '$firstname $lastname';
-    String line1 = userData['address']?['street'] ?? '';
-    String city = userData['address']?['city'] ?? '';
-    String state = userData['address']?['state'] ?? '';
-
-    // Check for missing required fields and exit early if any are missing
-    if (nin.isEmpty || dob.isEmpty || line1.isEmpty || city.isEmpty || state.isEmpty) {
-      print('⚠️ Missing required fields for StroWallet user creation. Skipping.');
-      return;
-    }
-
-    // Format DOB for payload
-    dob = formatDateToSlash(dob);
-
-    // Get state code for payload
-    final String stateCode = stateToCode[state.trim()] ?? '';
-    if (stateCode.isEmpty) {
-      throw Exception(
-        'Invalid state: $state. Please enter a valid Nigerian state name.',
-      );
-    }
-
-    final functions = FirebaseFunctions.instance;
-    final cardFunc = functions.httpsCallable('createStrowalletNairaCardUser');
-    final cardPayload = {
-      'firstname': firstname,
-      'lastname': lastname,
-      'email': email,
-      'phone': phone,
-      'nin': nin,
-      'dob': dob,
-      'name': name,
-      'line1': line1,
-      'city': city,
-      'state': stateCode, // Use two-letter code (lowercase)
-    };
-    print('Sending createStrowalletNairaCardUser payload: $cardPayload');
-    final cardResult = await cardFunc.call(cardPayload);
-    print('Create Strowallet Naira Card User Response: ${cardResult.data}');
-
-    // Update user doc
-    final userDocRef = FirebaseFirestore.instance.collection('users').doc(uid);
-    await userDocRef.update({'stroWalletUser': cardResult.data});
-
-    print('StroWallet user created and saved successfully');
-  } catch (e) {
-    print('Error creating StroWallet user: $e');
-    rethrow;
   }
 }
 

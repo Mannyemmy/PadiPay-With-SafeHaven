@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 
 import 'package:card_app/cashback/cashback_service.dart';
 import 'package:card_app/ui/success_bottom_sheet.dart';
@@ -63,7 +63,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
         .get();
     if (userDoc.exists) {
       setState(() {
-        userAccount = userDoc.data()?['getAnchorData']?['virtualAccount'];
+        userAccount = userDoc.data()?['safehavenData']?['virtualAccount'];
         cashbackBalance =
             (userDoc.data()?['cashback']?['balance'] as num?)?.toDouble() ?? 0;
       });
@@ -95,7 +95,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
       }
       if (billerList.isEmpty) {
         final result = await callCloudFunctionLogged(
-          'sudoGetServiceCategories',
+          'safehavenGetServiceCategories',
           source: 'buy_airtime.dart',
           payload: {'category': 'airtime'},
         );
@@ -111,7 +111,8 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
       setState(() {
         airtimeBillers = billerList;
         selectedProvider = airtimeBillers.isNotEmpty
-            ? airtimeBillers[0]['attributes']['slug'] as String
+            ? (airtimeBillers[0]['id']?.toString() ??
+                  airtimeBillers[0]['attributes']['slug'] as String)
             : null;
         // Auto-select network from MyPadi if provided
         if (widget.initialNetwork != null && airtimeBillers.isNotEmpty) {
@@ -129,7 +130,8 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                 orElse: () => null,
               );
           if (matched != null) {
-            selectedProvider = matched['attributes']['slug'] as String;
+            selectedProvider = matched['id']?.toString() ??
+                matched['attributes']['slug'] as String;
           }
         }
         isFetchingBillers = false;
@@ -202,12 +204,14 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                           biller['attributes']?['name'] as String? ?? 'Unknown';
                       final slug =
                           biller['attributes']?['slug'] as String? ?? '';
-                      final isSelected = selectedProvider == slug;
+                        final providerId =
+                          biller['id']?.toString() ?? slug;
+                        final isSelected = selectedProvider == providerId;
 
                       return GestureDetector(
                         onTap: () {
                           setState(() {
-                            selectedProvider = slug;
+                            selectedProvider = providerId;
                           });
                           Navigator.pop(context);
                         },
@@ -359,7 +363,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
       }
 
       final result = await callCloudFunctionLogged(
-        'sudoPurchaseVas',
+        'safehavenPurchaseVas',
         source: 'buy_airtime.dart',
         payload: {
         'type': 'Airtime',
@@ -582,15 +586,19 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                                       ? (airtimeBillers
                                                 .where(
                                                   (b) =>
-                                                      b['attributes']['slug'] ==
-                                                      selectedProvider,
+                                              b['id']?.toString() ==
+                                              selectedProvider ||
+                                              b['attributes']['slug'] ==
+                                                selectedProvider,
                                                 )
                                                 .isNotEmpty
                                             ? airtimeBillers
                                                   .where(
                                                     (b) =>
-                                                        b['attributes']['slug'] ==
-                                                        selectedProvider,
+                                              b['id']?.toString() ==
+                                                selectedProvider ||
+                                              b['attributes']['slug'] ==
+                                                selectedProvider,
                                                   )
                                                   .first['attributes']['name']
                                             : selectedProvider)
@@ -986,3 +994,4 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
     super.dispose();
   }
 }
+

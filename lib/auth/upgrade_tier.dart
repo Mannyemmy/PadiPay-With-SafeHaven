@@ -1,3 +1,5 @@
+﻿// ignore_for_file: unused_element, unused_field, dead_code, unnecessary_cast, unused_import
+
 import 'dart:async';
 import 'dart:io';
 import 'dart:math';
@@ -8,6 +10,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+// ignore_for_file: unused_element, unused_field, dead_code, unnecessary_cast, unused_import
+
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:geolocator/geolocator.dart';
@@ -32,14 +36,12 @@ class _UpgradeTierState extends State<UpgradeTier> {
   final TextEditingController _expiryController = TextEditingController();
   final TextEditingController _dobController = TextEditingController();
   final TextEditingController _streetController = TextEditingController();
-  // BVN verification (tier 1)
   bool _bvnVerifying = false;
-  bool? _bvnVerified; // null = not attempted, true = match, false = no match
+  bool? _bvnVerified;
   String? _bvnVerifyStatus;
-  Map<String, bool>? _bvnFieldMatches; // per-field match result after verification
+  Map<String, bool>? _bvnFieldMatches;
   Timer? _bvnVerifyTimer;
 
-  // Name fields shown above BVN for tier 1
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
   List<String> states = [];
@@ -52,31 +54,40 @@ class _UpgradeTierState extends State<UpgradeTier> {
   bool _loadingDialogShowing = false;
   bool _isGettingLocation = false;
   final ValueNotifier<int> _loadingStepNotifier = ValueNotifier(0);
+  File? _selfieFile;
+  String? _selfieUrl;
+  bool _isUploadingSelfie = false;
+  StreamSubscription<DocumentSnapshot>? _userDocSub;
+  bool _bvnFromQore = false;
+  bool _bvnConflict = false;
+  Timer? _bvnCheckTimer;
+  Timer? _draftSaveTimer;
+  String? _lastQueriedBvn;
+  bool _externalBvnMatch = false;
+
+  bool get _isIdentityVerificationStep =>
+      widget.tier == 1 || widget.tier == 2;
+
+  String get _screenTitle =>
+      _isIdentityVerificationStep ? 'Verify Your Identity' : 'Complete Your Profile';
+
+  String get _screenSubtitle => _isIdentityVerificationStep
+      ? 'Confirm your BVN details, verify the OTP sent to your phone, and activate your wallet.'
+      : 'Add your NIN and a valid government ID to complete your profile details.';
+
+  String get _primaryButtonText => _isIdentityVerificationStep
+      ? 'Verify and Continue'
+      : 'Save Profile Details';
 
   void _setLoadingStep(int step) {
     _loadingStepNotifier.value = step;
   }
-  File? _selfieFile;
-  String? _selfieUrl;
-  bool _isUploadingSelfie = false;
-
-  StreamSubscription<DocumentSnapshot>? _userDocSub;
-  bool _bvnFromQore = false;
-
-  // BVN conflict detection
-  bool _bvnConflict = false;
-  Timer? _bvnCheckTimer;
-  Timer? _draftSaveTimer;
-  String? _lastQueriedBvn; // avoid repeated findUserByBvn calls for same BVN
-  bool _externalBvnMatch =
-      false; // true when an external Anchor customer exists for the BVN
 
   @override
   void initState() {
     super.initState();
     _fetchStates();
     _listenForIdNumber();
-    // Perform an initial BVN conflict check if BVN exists in the user document
     _checkInitialBvnConflict();
   }
 
@@ -111,19 +122,10 @@ class _UpgradeTierState extends State<UpgradeTier> {
       final bvn = _controller.text.trim();
       if (bvn.isNotEmpty) updateData['bvn'] = bvn;
 
-      if (widget.tier == 1) {
-        final fn = _firstNameController.text.trim();
-        final ln = _lastNameController.text.trim();
-        if (fn.isNotEmpty) updateData['firstName'] = fn;
-        if (ln.isNotEmpty) updateData['lastName'] = ln;
-      }
-
-      if (widget.tier == 2) {
-        final fn = _firstNameController.text.trim();
-        final ln = _lastNameController.text.trim();
-        if (fn.isNotEmpty) updateData['firstName'] = fn;
-        if (ln.isNotEmpty) updateData['lastName'] = ln;
-      }
+      final fn = _firstNameController.text.trim();
+      final ln = _lastNameController.text.trim();
+      if (fn.isNotEmpty) updateData['firstName'] = fn;
+      if (ln.isNotEmpty) updateData['lastName'] = ln;
 
       final dob = _dobController.text.trim();
       if (dob.isNotEmpty) updateData['dateOfBirth'] = _formatDateForApi(dob);
@@ -174,10 +176,10 @@ class _UpgradeTierState extends State<UpgradeTier> {
     }
   }
 
-  void _showLoadingDialog() {
+  void _showLoadingDialog({bool resetStep = false}) {
     if (_loadingDialogShowing || !mounted) return;
     _loadingDialogShowing = true;
-    _loadingStepNotifier.value = 0;
+    if (resetStep) _loadingStepNotifier.value = 0;
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -433,7 +435,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
       final fm = Map<String, dynamic>.from(resData['fieldMatches'] as Map? ?? {});
       final rawBd = resData['bvnData'];
       final bvnDobRaw = rawBd != null ? (rawBd as Map)['birthdate']?.toString() : null;
-      // BVN API returns YYYY-MM-DD; controller holds DD-MM-YYYY — convert for comparison
+      // BVN API returns YYYY-MM-DD; controller holds DD-MM-YYYY â€” convert for comparison
       final bvnDobDisplay = (bvnDobRaw != null && bvnDobRaw.isNotEmpty)
           ? _formatDateFromApi(bvnDobRaw)
           : null;
@@ -547,7 +549,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
           ? 'BVN not found'
           : raw.isNotEmpty
           ? raw
-          : 'Verification failed — please try again';
+          : 'Verification failed â€” please try again';
       setState(() {
         _bvnVerified = false;
         _bvnVerifyStatus = userMsg;
@@ -556,7 +558,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
     } catch (e) {
       setState(() {
         _bvnVerified = false;
-        _bvnVerifyStatus = 'Verification failed — please try again';
+        _bvnVerifyStatus = 'Verification failed â€” please try again';
       });
       print('BVN verification error: $e');
     } finally {
@@ -1041,7 +1043,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
 
     bool isFormValid;
     if (widget.tier == 2) {
-      // If BVN is verified, allow submission even if a conflict was detected —
+      // If BVN is verified, allow submission even if a conflict was detected â€”
       // the submit flow resolves conflicts via BVN/email matching.
       final bvnAllowed = _bvnVerified == true || !_bvnConflict || _externalBvnMatch;
       isFormValid =
@@ -1091,18 +1093,18 @@ class _UpgradeTierState extends State<UpgradeTier> {
               ),
               SizedBox(height: 30),
               Text(
-                'Verify Your Identity',
+                _screenTitle,
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
               SizedBox(height: 10),
               Text(
-                "To comply with CBN guidelines, we are required to verify every customer.",
+                _screenSubtitle,
                 style: TextStyle(color: Colors.grey.shade600),
               ),
               SizedBox(height: 20),
 
               if (widget.tier == 2 || widget.tier == 1) ...[
-                // ── Name fields for BVN verification ─────────────────────────
+                // â”€â”€ Name fields for BVN verification â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 if (widget.tier == 1 || widget.tier == 2) ...[
                   Text(
                     'First Name',
@@ -1224,7 +1226,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
                   SizedBox(height: 20),
                 ],
 
-                // ── Everything below is UNCHANGED ─────────────────────────────
+                // â”€â”€ Everything below is UNCHANGED â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 Text(
                   'Date of Birth',
                   style: TextStyle(
@@ -1441,7 +1443,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
                           Text(
                             _bvnVerifyStatus == 'EXACT_MATCH'
                                 ? 'BVN verified'
-                                : 'BVN verified — partial name match',
+                                : 'BVN verified â€” partial name match',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.green.shade700,
@@ -1632,7 +1634,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
                   ),
                 ),
               ] else ...[
-                // ── TIER 3: NIN + ID — completely unchanged ───────────────────
+                // â”€â”€ TIER 3: NIN + ID â€” completely unchanged â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 Text(
                   "NIN",
                   style: TextStyle(
@@ -1841,7 +1843,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
                     ),
                   ),
                   child: Text(
-                    'Upgrade to Tier ${widget.tier}',
+                    _primaryButtonText,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -1943,10 +1945,200 @@ class _UpgradeTierState extends State<UpgradeTier> {
     return phone;
   }
 
-  bool _isUsableAnchorCustomer(Map<String, dynamic> attrs) {
+  bool _isUsableSudoCustomer(Map<String, dynamic> attrs) {
     final status = attrs['status']?.toString().toUpperCase();
     if (status == null || status.isEmpty) return true;
     return status != 'DELETED' && status != 'INACTIVE';
+  }
+
+  /// Shows a bottom sheet asking the user to enter the OTP sent to their phone/email
+  /// during identity verification. Returns the OTP string or null if cancelled.
+  Future<String?> _showIdentityOtpBottomSheet() async {
+    final otpController = TextEditingController();
+    String? errorText;
+
+    final result = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: StatefulBuilder(
+            builder: (ctx, setModalState) {
+              return SingleChildScrollView(
+                padding: EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  top: 20,
+                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const Text(
+                      'Verify Your Identity',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'An OTP has been sent to your BVN registered phone number. Enter it below to verify your BVN.',
+                      style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                    ),
+                    const SizedBox(height: 20),
+                    TextFormField(
+                      controller: otpController,
+                      keyboardType: TextInputType.number,
+                      maxLength: 6,
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        labelText: 'Enter OTP',
+                        hintText: '6-digit OTP',
+                        counterText: '',
+                        errorText: errorText,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: primaryColor, width: 2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryColor,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        onPressed: () {
+                          final otp = otpController.text.trim();
+                          if (otp.length < 4) {
+                            setModalState(() {
+                              errorText = 'Please enter a valid OTP';
+                            });
+                            return;
+                          }
+                          Navigator.pop(ctx, otp);
+                        },
+                        child: const Text(
+                          'Verify',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+    // Delay dispose so the sheet's 650ms exit animation can finish building
+    // the TextFormField before the controller is torn down.  Disposing
+    // immediately causes a "TextEditingController used after being disposed"
+    // error because Flutter rebuilds the animated sheet during the close
+    // animation after the route's Future has already resolved.
+    Future<void>.delayed(const Duration(milliseconds: 800), otpController.dispose);
+    return result;
+  }
+
+  /// Initiates identity verification (POST /identity/v2) and validates with OTP.
+  /// Returns the identityId on success, or null if skipped (identityId already present).
+  /// Throws on unrecoverable error.
+  Future<String?> _runIdentityVerificationFlow({
+    required String bvn,
+    required FirebaseFunctions functions,
+  }) async {
+    final HttpsCallable initiateFunc = functions.httpsCallable(
+      'safehavenInitiateIdentityVerification',
+    );
+    final HttpsCallable validateFunc = functions.httpsCallable(
+      'safehavenValidateIdentityVerification',
+    );
+
+    // Step 1: initiate
+    late dynamic initiateResult;
+    try {
+      initiateResult = await initiateFunc.call({
+        'type': 'BVN',
+        'number': bvn,
+      });
+    } on FirebaseFunctionsException catch (e) {
+      print('safehavenInitiateIdentityVerification error: ${e.message}');
+      rethrow;
+    }
+
+    final String? identityId =
+        initiateResult.data?['data']?['identityId']?.toString();
+    print('safehavenInitiateIdentityVerification identityId: $identityId');
+
+    // Step 2: hide loading and ask user for OTP
+    _hideLoadingDialog();
+    final String? otp = await _showIdentityOtpBottomSheet();
+    if (otp == null || otp.isEmpty) {
+      throw Exception(
+        'Identity verification cancelled: OTP not provided',
+      );
+    }
+
+    // Re-show loading while we validate
+    if (mounted) {
+      _showLoadingDialog();
+      _setLoadingStep(3);
+    }
+
+    // Step 3: validate OTP
+    try {
+      final validateResult = await validateFunc.call({
+        'identityId': identityId ?? '',
+        'type': 'BVN',
+        'otp': otp,
+      });
+      print(
+        'safehavenValidateIdentityVerification result: ${validateResult.data}',
+      );
+    } on FirebaseFunctionsException catch (e) {
+      print('safehavenValidateIdentityVerification error: ${e.message}');
+      rethrow;
+    }
+
+    return identityId;
   }
 
   Future<String?> _showPhoneConflictBottomSheet(String currentPhone) async {
@@ -2070,6 +2262,11 @@ class _UpgradeTierState extends State<UpgradeTier> {
     DocumentReference docRef,
     String uid,
   ) async {
+    if (_externalBvnMatch && mounted) {
+      setState(() => _externalBvnMatch = false);
+    }
+    return null;
+
     if (bvn == null) return null;
     final bvnToMatch = bvn.replaceAll(RegExp(r'\D'), '').trim();
     if (bvnToMatch.isEmpty) return null;
@@ -2107,7 +2304,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
 
           if (itemBvn != null &&
               itemBvn.replaceAll(RegExp(r'\D'), '').trim() == bvnToMatch) {
-            if (!_isUsableAnchorCustomer(attrs)) {
+            if (!_isUsableSudoCustomer(attrs)) {
               print(
                 'Skipping BVN-matched customer ${it['id']} due to status: ${attrs['status']}',
               );
@@ -2118,7 +2315,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
 
             try {
               final Map<String, dynamic> updateMap = {
-                'getAnchorData.customerCreation': {'data': it},
+                'safehavenData.customerCreation': {'data': it},
               };
 
               // Don't save verification as upgradeKyc success here - let submission logic handle it
@@ -2143,6 +2340,10 @@ class _UpgradeTierState extends State<UpgradeTier> {
       print('Error searching fetchAllCustomers: $e');
     }
 
+    // Safehaven flow no longer matches legacy Anchor customers here.
+    if (_externalBvnMatch && mounted) {
+      setState(() => _externalBvnMatch = false);
+    }
     return null;
   }
 
@@ -2193,11 +2394,11 @@ class _UpgradeTierState extends State<UpgradeTier> {
       ninController.text = nin;
     }
 
-    // Date of birth - prefer root dateOfBirth, else try getAnchorData.customerCreation
+    // Date of birth - prefer root dateOfBirth, else try safehavenData.customerCreation
     String? dob = data['dateOfBirth']?.toString();
-    if ((dob == null || dob.isEmpty) && data['getAnchorData'] is Map) {
+    if ((dob == null || dob.isEmpty) && data['safehavenData'] is Map) {
       final gc =
-          (data['getAnchorData'] as Map)['customerCreation']
+          (data['safehavenData'] as Map)['customerCreation']
               as Map<String, dynamic>?;
       final cdata = gc?['data'] as Map<String, dynamic>?;
       dob = cdata?['dateOfBirth']?.toString() ?? cdata?['dob']?.toString();
@@ -2215,9 +2416,9 @@ class _UpgradeTierState extends State<UpgradeTier> {
 
     // Gender
     String? gender = data['gender']?.toString();
-    if ((gender == null || gender.isEmpty) && data['getAnchorData'] is Map) {
+    if ((gender == null || gender.isEmpty) && data['safehavenData'] is Map) {
       final gc =
-          (data['getAnchorData'] as Map)['customerCreation']
+          (data['safehavenData'] as Map)['customerCreation']
               as Map<String, dynamic>?;
       final cdata = gc?['data'] as Map<String, dynamic>?;
       if (cdata != null) {
@@ -2267,9 +2468,9 @@ class _UpgradeTierState extends State<UpgradeTier> {
     if ((rootStreet ?? '').isEmpty &&
         (rootCity ?? '').isEmpty &&
         (rootState ?? '').isEmpty &&
-        data['getAnchorData'] is Map) {
+        data['safehavenData'] is Map) {
       final gc =
-          (data['getAnchorData'] as Map)['customerCreation']
+          (data['safehavenData'] as Map)['customerCreation']
               as Map<String, dynamic>?;
       final cdata = gc?['data'] as Map<String, dynamic>?;
       if (cdata != null && cdata['attributes'] is Map) {
@@ -2295,12 +2496,6 @@ class _UpgradeTierState extends State<UpgradeTier> {
       }
     }
 
-    // Mark external match flag if getAnchorData exists
-    if (data['getAnchorData'] is Map) {
-      if (!_externalBvnMatch && mounted) {
-        setState(() => _externalBvnMatch = true);
-      }
-    }
   }
 
   Future<dynamic> _callCloudFunction(
@@ -2346,188 +2541,15 @@ class _UpgradeTierState extends State<UpgradeTier> {
     }
   }
 
-  // _postJson removed - fetchAllCustomers is used instead for fetching customers by BVN.
-  // _findUserByBvn removed - we use fetchAllCustomers cloud function exclusively now.
-  Future<void> _maybeFetchGetAnchorByBvn(String bvn) async {
-    // Use fetchAllCustomers exclusively to find a customer with this BVN.
+  Future<void> _maybeFetchGetSudoByBvn(String bvn) async {
     if (bvn.isEmpty || bvn.length != 11) {
       if (_externalBvnMatch) setState(() => _externalBvnMatch = false);
       return;
     }
     if (_lastQueriedBvn == bvn) return;
     _lastQueriedBvn = bvn;
-
-    try {
-      print('Searching fetchAllCustomers for BVN: $bvn');
-      final functions = FirebaseFunctions.instance;
-      final fetchRes = await functions
-          .httpsCallable('fetchAllCustomers')
-          .call();
-      print('fetchAllCustomers Response (auto-fetch BVN): ${fetchRes.data}');
-      final List<dynamic>? customers =
-          (fetchRes.data is Map && fetchRes.data['data'] is List)
-          ? List<dynamic>.from(fetchRes.data['data'] as List)
-          : (fetchRes.data is List
-                ? List<dynamic>.from(fetchRes.data as List)
-                : null);
-
-      if (customers == null || customers.isEmpty) {
-        print('fetchAllCustomers returned no customers');
-        if (_externalBvnMatch) setState(() => _externalBvnMatch = false);
-        return;
-      }
-
-      final String bvnToMatch = bvn.replaceAll(RegExp(r'\D'), '').trim();
-      Map<String, dynamic>? matchedCustomer;
-      Map<String, dynamic>? matchedVerification;
-      String? matchedCustomerId;
-
-      for (var item in customers) {
-        try {
-          final Map<String, dynamic> it = Map<String, dynamic>.from(
-            item as Map,
-          );
-          final attrs = (it['attributes'] is Map)
-              ? Map<String, dynamic>.from(it['attributes'] as Map)
-              : <String, dynamic>{};
-          String? itemBvn;
-          if (attrs['identificationLevel2'] is Map) {
-            itemBvn = (attrs['identificationLevel2'] as Map)['bvn']?.toString();
-          }
-          itemBvn ??= attrs['bvn']?.toString();
-          if (itemBvn != null &&
-              itemBvn.replaceAll(RegExp(r'\D'), '').trim() == bvnToMatch) {
-            matchedCustomer = it;
-            matchedVerification = (attrs['verification'] is Map)
-                ? Map<String, dynamic>.from(attrs['verification'] as Map)
-                : null;
-            matchedCustomerId = it['id']?.toString() ?? '';
-            break;
-          }
-        } catch (e) {
-          // ignore
-        }
-      }
-
-      if (matchedCustomer == null) {
-        print('No matching customer found in fetchAllCustomers for BVN $bvn');
-        if (_externalBvnMatch) setState(() => _externalBvnMatch = false);
-        return;
-      }
-
-      // Mark external match
-      if (!_externalBvnMatch && mounted) {
-        setState(() => _externalBvnMatch = true);
-      }
-
-      print('Found matching customer in fetchAllCustomers: $matchedCustomerId');
-
-      final uid = FirebaseAuth.instance.currentUser?.uid;
-      if (uid == null) return;
-
-      final docRef = FirebaseFirestore.instance.collection('users').doc(uid);
-
-      final snap = await docRef.get();
-      final snapData = snap.data();
-      final existing = snapData?['getAnchorData'] as Map<String, dynamic>?;
-
-      // Save customerCreation and upgradeKyc if available
-      final Map<String, dynamic> updateMap = {};
-      updateMap['getAnchorData.customerCreation'] = {'data': matchedCustomer};
-      if (matchedVerification != null) {
-        updateMap['getAnchorData.upgradeKyc'] = {
-          'status': 'success',
-          'data': matchedVerification,
-        };
-        final verLevel = (matchedVerification['level']?.toString() ?? '')
-            .toUpperCase();
-        final verStatus = (matchedVerification['status']?.toString() ?? '')
-            .toLowerCase();
-        if (verLevel == 'TIER_2' || verStatus == 'approved') {
-          updateMap['getAnchorData.tier'] = 2;
-        }
-      }
-
-      if (existing == null) {
-        await docRef.update(updateMap);
-        print(
-          'Saved customerCreation (and upgradeKyc if present) to user document for user $uid',
-        );
-      } else {
-        // Merge non-destructively: at least update upgradeKyc/tier if present
-        final Map<String, dynamic> mergeUpdate = {};
-        if (matchedVerification != null) {
-          mergeUpdate['getAnchorData.upgradeKyc'] =
-              updateMap['getAnchorData.upgradeKyc'];
-          if (updateMap.containsKey('getAnchorData.tier')) {
-            mergeUpdate['getAnchorData.tier'] = updateMap['getAnchorData.tier'];
-          }
-          await docRef.update(mergeUpdate);
-          print(
-            'Updated existing getAnchorData with upgradeKyc/tier for user $uid',
-          );
-        } else {
-          print('Local getAnchorData exists; not overwriting customerCreation');
-        }
-      }
-
-      // Refresh doc and populate form fields from saved data
-      try {
-        final refreshed = await docRef.get();
-        _populateFieldsFromDoc(refreshed.data());
-      } catch (e) {
-        print('Failed to refresh user doc for autofill: $e');
-      }
-
-      // Attempt to create an electronic (virtual) account if missing
-      try {
-        final verifySnap = await docRef.get();
-        final verifyData = verifySnap.data();
-        final verifyGet = verifyData?['getAnchorData'] as Map<String, dynamic>?;
-        final hasVirtual =
-            verifyGet != null && verifyGet['virtualAccount'] != null;
-        final customerId =
-            verifyGet?['customerCreation']?['data']?['id']?.toString() ??
-            matchedCustomerId;
-        if (!hasVirtual && customerId != null && customerId.isNotEmpty) {
-          print(
-            'Attempting to create electronic account for customer: $customerId',
-          );
-          final createVaRes = await functions
-              .httpsCallable('sudoCreateSubAccount')
-              .call({
-                'customerId': customerId,
-                'userId': uid,
-                'currency': 'NGN',
-                'type': 'IndividualCustomer',
-                'idempotencyKey': const Uuid().v4(),
-              });
-          print(
-            'createElectronicAccount Response (auto-fetch): ${createVaRes.data}',
-          );
-          if (createVaRes.data != null) {
-            await docRef.update({
-              'getAnchorData.virtualAccount': createVaRes.data,
-            });
-            print('Created and saved electronic account for user $uid');
-          } else {
-            print('createElectronicAccount returned no data for $customerId');
-          }
-        } else {
-          print(
-            'Virtual account already present or missing customerId; skipping creation',
-          );
-        }
-      } catch (e) {
-        print('Failed to create electronic account as part of auto-fetch: $e');
-        try {
-          await docRef.update({
-            'getAnchorData.virtualAccount_creation_error': e.toString(),
-          });
-        } catch (_) {}
-      }
-    } catch (e) {
-      print('Error searching fetchAllCustomers during auto-find: $e');
+    if (_externalBvnMatch && mounted) {
+      setState(() => _externalBvnMatch = false);
     }
   }
 
@@ -2540,7 +2562,6 @@ class _UpgradeTierState extends State<UpgradeTier> {
           .doc(user.uid)
           .get();
       final data = snap.data();
-      // Prefer the controller value, otherwise root bvn, otherwise qore idNumber
       String? candidate = _controller.text.trim();
       if (candidate.isEmpty) {
         candidate = data?['bvn']?.toString();
@@ -2572,23 +2593,21 @@ class _UpgradeTierState extends State<UpgradeTier> {
     }
     try {
       final user = FirebaseAuth.instance.currentUser;
-      // Query root 'bvn' field
       final q1 = await FirebaseFirestore.instance
           .collection('users')
           .where('bvn', isEqualTo: bvn)
           .get();
-      // Query qore id number nested field
       final q2 = await FirebaseFirestore.instance
           .collection('users')
           .where('qoreIdData.verification.metadata.idNumber', isEqualTo: bvn)
           .get();
 
       final allDocs = <String, QueryDocumentSnapshot>{};
-      for (var d in q1.docs) {
-        allDocs[d.id] = d;
+      for (var doc in q1.docs) {
+        allDocs[doc.id] = doc;
       }
-      for (var d in q2.docs) {
-        allDocs[d.id] = d;
+      for (var doc in q2.docs) {
+        allDocs[doc.id] = doc;
       }
 
       final conflict = allDocs.keys.any((id) => id != user?.uid);
@@ -2603,6 +2622,11 @@ class _UpgradeTierState extends State<UpgradeTier> {
     DocumentReference docRef,
     String uid,
   ) async {
+    if (_externalBvnMatch && mounted) {
+      setState(() => _externalBvnMatch = false);
+    }
+    return null;
+
     if (email.isEmpty) return null;
 
     try {
@@ -2634,7 +2658,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
 
           if (itemEmail != null &&
               itemEmail.toLowerCase() == email.toLowerCase()) {
-            if (!_isUsableAnchorCustomer(attrs)) {
+            if (!_isUsableSudoCustomer(attrs)) {
               print(
                 'Skipping email-matched customer ${it['id']} due to status: ${attrs['status']}',
               );
@@ -2647,7 +2671,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
 
             try {
               final Map<String, dynamic> updateMap = {
-                'getAnchorData.customerCreation': {'data': it},
+                'safehavenData.customerCreation': {'data': it},
               };
 
               // Don't save verification as upgradeKyc success here - let submission logic handle it
@@ -2672,6 +2696,10 @@ class _UpgradeTierState extends State<UpgradeTier> {
       print('Error searching fetchAllCustomers for email: $e');
     }
 
+    // Safehaven flow no longer matches legacy Anchor customers here.
+    if (_externalBvnMatch && mounted) {
+      setState(() => _externalBvnMatch = false);
+    }
     return null;
   }
 
@@ -2705,7 +2733,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
     setState(() {
       _isLoading = true;
     });
-    _showLoadingDialog();
+    _showLoadingDialog(resetStep: true);
 
     String? uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) {
@@ -2847,7 +2875,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
         }
 
         // If BVN conflicts with another app user, attempt to resolve by matching
-        // an existing Anchor customer by BVN/email before blocking submission.
+        // an existing Sudo customer by BVN/email before blocking submission.
         if (_bvnConflict && !_externalBvnMatch) {
           print(
             'BVN conflict detected; attempting existing customer match before blocking.',
@@ -2903,14 +2931,14 @@ class _UpgradeTierState extends State<UpgradeTier> {
         };
         await docRef.update(updateData);
 
-        // Create/Get existing GetAnchor Customer
+        // Create/Get existing GetSudo Customer
         _setLoadingStep(1);
         final functions = FirebaseFunctions.instance;
         String? customerId =
-            userData['getAnchorData']?['customerCreation']?['data']?['id']
+            userData['safehavenData']?['customerCreation']?['data']?['id']
                 ?.toString();
         final String? savedCustomerStatus =
-            userData['getAnchorData']?['customerCreation']?['data']?['attributes']?['status']
+            userData['safehavenData']?['customerCreation']?['data']?['attributes']?['status']
                 ?.toString()
                 .toUpperCase();
         if (customerId != null &&
@@ -2925,132 +2953,18 @@ class _UpgradeTierState extends State<UpgradeTier> {
         try {
           if (customerId != null && customerId.isNotEmpty) {
             print(
-              'Using existing customer from getAnchorData.customerCreation: $customerId',
+              'Using existing customer from safehavenData.customerCreation: $customerId',
             );
           }
 
           if (customerId == null || customerId.isEmpty) {
-            print('Attempting to match existing customer by BVN');
-            final matched = await _tryMatchExistingCustomerByBvn(
-              _controller.text,
-              docRef,
-              uid,
-            );
-            if (matched != null) {
-              customerId = matched;
-              print(
-                'Matched existing customer by BVN: $customerId; proceeding with KYC/VA steps',
-              );
-            }
-          }
-
-          if (customerId == null || customerId.isEmpty) {
-            print('No BVN match found; attempting email match');
-            final matchedByEmail = await _tryMatchExistingCustomerByEmail(
-              email,
-              docRef,
-              uid,
-            );
-            if (matchedByEmail != null) {
-              customerId = matchedByEmail;
-              print(
-                'Matched existing customer by email: $customerId; proceeding with KYC/VA steps',
-              );
-            }
-          }
-
-          // If no match found, create new customer
-          if (customerId == null || customerId.isEmpty) {
+            customerId = uid;
             print(
-              'No existing customer found by getAnchorData, BVN, or email; creating new customer',
+              'Skipping legacy customer creation; Safehaven subaccount will use saved profile data directly.',
             );
-            HttpsCallable createUserFunc = functions.httpsCallable(
-              'sudoCreateUser',
-            );
-            while (customerId == null) {
-              final payload = {
-                'firstName': firstName,
-                'lastName': lastName,
-                'email': email,
-                'country': 'NG',
-                'state': state,
-                'addressLine1': street,
-                'city': city,
-                'postalCode': postalCode,
-                'phoneNumber': phoneNumberForCreate,
-              };
-              print('Sending createGetanchorUser payload: $payload');
-              try {
-                final createUserResult = await createUserFunc.call(payload);
-                print(
-                  'Create GetAnchor User Response: ${createUserResult.data}',
-                );
-                customerId = createUserResult.data['data']['id'];
-
-                // Save customer creation response
-                await docRef.update({
-                  'getAnchorData.customerCreation': createUserResult.data,
-                  'phone': _normalizePhoneForUserDoc(phoneNumberForCreate),
-                });
-              } on FirebaseFunctionsException catch (e) {
-                if (_isPhoneAlreadyExistsError(e)) {
-                  final newPhone = await _showPhoneConflictBottomSheet(
-                    phoneNumberForCreate,
-                  );
-                  if (newPhone == null || newPhone.isEmpty) {
-                    throw Exception(
-                      'Customer creation cancelled: phone number already exists',
-                    );
-                  }
-                  phoneNumberForCreate = newPhone;
-                  continue;
-                }
-                // BVN or Email already exists in the organisation — find the existing customer
-                final errMsg = (e.message ?? '').toLowerCase();
-                if (errMsg.contains('bvn already exists') ||
-                    errMsg.contains('bvn already exist') ||
-                    errMsg.contains('email already exist') ||
-                    errMsg.contains('customer with email already exist')) {
-                  final conflictType = (errMsg.contains('email already exist') ||
-                          errMsg.contains('customer with email already exist'))
-                      ? 'Email'
-                      : 'BVN';
-                  print(
-                    '$conflictType already exists in org; falling back to email then BVN match',
-                  );
-                  // Try email match first
-                  final emailMatched = await _tryMatchExistingCustomerByEmail(
-                    email,
-                    docRef,
-                    uid,
-                  );
-                  if (emailMatched != null && emailMatched.isNotEmpty) {
-                    customerId = emailMatched;
-                    print(
-                      'Recovered existing customer via email match after $conflictType conflict: $customerId',
-                    );
-                    break;
-                  }
-                  // Fall back to BVN match
-                  final bvnMatched = await _tryMatchExistingCustomerByBvn(
-                    _controller.text,
-                    docRef,
-                    uid,
-                  );
-                  if (bvnMatched != null && bvnMatched.isNotEmpty) {
-                    customerId = bvnMatched;
-                    print(
-                      'Recovered existing customer via BVN match after $conflictType conflict: $customerId',
-                    );
-                    break; // exit the while loop with the found customerId
-                  }
-                  throw Exception(
-                    '$conflictType already exists in organisation but could not find the existing customer.',
-                  );
-                }
-                rethrow;
-              }
-            }
+            await docRef.update({
+              'phone': _normalizePhoneForUserDoc(phoneNumberForCreate),
+            });
           }
         } catch (e, st) {
           print('Error matching/creating customer: $e');
@@ -3065,104 +2979,14 @@ class _UpgradeTierState extends State<UpgradeTier> {
           return;
         }
 
-        // Attempt KYC upgrade (if we have a customerId) but skip if upgrade already succeeded
-        _setLoadingStep(2);
-        if (customerId.isNotEmpty) {
-          // re-fetch to check verification status and existing upgradeKyc
-          final refreshed = await docRef.get();
-          final Map<String, dynamic>? refreshedMap =
-              refreshed.data() as Map<String, dynamic>?;
-          final Map<String, dynamic>? storedUpgrade =
-              (refreshedMap != null && refreshedMap['getAnchorData'] is Map)
-              ? (refreshedMap['getAnchorData']
-                        as Map<String, dynamic>)['upgradeKyc']
-                    as Map<String, dynamic>?
-              : null;
-
-          // Check if customer is verified - get from customerCreation data
-          final Map<String, dynamic>? customerCreationData =
-              (refreshedMap != null && refreshedMap['getAnchorData'] is Map)
-              ? (refreshedMap['getAnchorData']
-                        as Map<String, dynamic>)['customerCreation']
-                    as Map<String, dynamic>?
-              : null;
-          final Map<String, dynamic>? creationAttrs =
-              customerCreationData?['data']?['attributes']
-                  as Map<String, dynamic>?;
-          final Map<String, dynamic>? custVerification =
-              creationAttrs?['verification'] as Map<String, dynamic>?;
-          final String custVerificationStatus =
-              custVerification?['status']?.toString().toLowerCase() ??
-              'unverified';
-
-          final bool needsKycUpgrade =
-              custVerificationStatus == 'unverified' ||
-              custVerificationStatus == 'pending';
-          final bool upgradeKycPreviouslySucceeded =
-              storedUpgrade != null &&
-              (storedUpgrade['success'] == true ||
-                  (storedUpgrade['status']?.toString().toLowerCase() ==
-                      'success') ||
-                  (storedUpgrade['data'] is Map &&
-                      (storedUpgrade['data']['success'] == true)));
-
-          if (needsKycUpgrade && !upgradeKycPreviouslySucceeded) {
-            print('Customer is unverified; calling upgradeCustomerKyc');
-            HttpsCallable upgradeKycFunc = functions.httpsCallable(
-              'sudoUpgradeCustomerKyc',
-            );
-            final String kycLevel = widget.tier == 1 ? 'TIER_1' : 'TIER_2';
-            final kycPayload = {
-              'customerId': customerId,
-              // Tier 1 must send TIER_1, Tier 2 must send TIER_2.
-              'level': kycLevel,
-              'bvn': _controller.text,
-              'dateOfBirth': formattedDateForApi,
-              'gender': gender,
-            };
-            print('Sending upgradeCustomerKyc payload: $kycPayload');
-            try {
-              final upgradeKycResult = await upgradeKycFunc.call(kycPayload);
-              print('Upgrade Customer KYC Response: ${upgradeKycResult.data}');
-              await docRef.update({
-                'getAnchorData.upgradeKyc': upgradeKycResult.data,
-              });
-            } on FirebaseFunctionsException catch (e) {
-              final errMsg = (e.message ?? '').toLowerCase();
-              if (errMsg.contains('bvn already exists') ||
-                  errMsg.contains('bvn already exist')) {
-                // BVN already KYC'd at this level — treat as success and proceed
-                print(
-                  'upgradeCustomerKyc: BVN already exists in org — customer already upgraded, skipping.',
-                );
-                await docRef.update({
-                  'getAnchorData.upgradeKyc': {
-                    'status': 'success',
-                    'skipped': true,
-                    'reason': 'BVN already exists in organisation',
-                  },
-                });
-              } else {
-                rethrow;
-              }
-            }
-          } else if (upgradeKycPreviouslySucceeded) {
-            print('Skipping KYC upgrade: previous upgrade already succeeded');
-          } else {
-            print('Customer is already verified; skipping KYC upgrade');
-          }
-        } else {
-          print('No customerId available for KYC upgrade');
-        }
-
         // Create Electronic Account (if not already created)
-        _setLoadingStep(3);
+        _setLoadingStep(2);
         final refreshedAfterKyc = await docRef.get();
         final Map<String, dynamic>? refreshedAfterMap =
             refreshedAfterKyc.data() as Map<String, dynamic>?;
         final existingVa = refreshedAfterMap != null
-            ? (refreshedAfterMap['getAnchorData'] is Map
-                  ? (refreshedAfterMap['getAnchorData']
+            ? (refreshedAfterMap['safehavenData'] is Map
+                  ? (refreshedAfterMap['safehavenData']
                         as Map<String, dynamic>)['virtualAccount']
                   : null)
             : null;
@@ -3170,27 +2994,55 @@ class _UpgradeTierState extends State<UpgradeTier> {
           print('Electronic account already exists, skipping creation');
           final currentTier =
               refreshedAfterMap != null &&
-                  refreshedAfterMap['getAnchorData'] is Map
-              ? (refreshedAfterMap['getAnchorData']
+                  refreshedAfterMap['safehavenData'] is Map
+              ? (refreshedAfterMap['safehavenData']
                     as Map<String, dynamic>)['tier']
               : null;
           if (currentTier != widget.tier) {
-            await docRef.update({'getAnchorData.tier': widget.tier});
+            await docRef.update({'safehavenData.tier': widget.tier});
           }
         } else {
+          // Identity verification is required before creating a subaccount.
+          // Only run if we have a BVN (Tier 2 flow) and a customerId.
+          String? resolvedIdentityId;
+          if (customerId.isNotEmpty && _controller.text.trim().length == 11) {
+            try {
+              resolvedIdentityId = await _runIdentityVerificationFlow(
+                bvn: _controller.text.trim(),
+                functions: functions,
+              );
+            } on FirebaseFunctionsException catch (e) {
+              _hideLoadingDialog();
+              showGenericError(
+                errorMessage: e.message ?? 'Identity verification failed',
+                errorType: 'UpgradeTier_IdentityVerification',
+              );
+              setState(() => _isLoading = false);
+              return;
+            } catch (e) {
+              _hideLoadingDialog();
+              showGenericError(
+                errorMessage: e.toString(),
+                errorType: 'UpgradeTier_IdentityVerification',
+              );
+              setState(() => _isLoading = false);
+              return;
+            }
+          }
+
           if (customerId.isEmpty) {
             print('No customerId available to create electronic account');
           } else {
             try {
               String customerTypeForAccount = 'IndividualCustomer';
               if (refreshedAfterMap != null &&
-                  refreshedAfterMap['getAnchorData'] is Map) {
-                final getAnchorData = Map<String, dynamic>.from(
-                  refreshedAfterMap['getAnchorData'] as Map,
+                  refreshedAfterMap['safehavenData'] is Map) {
+                final safehavenData = Map<String, dynamic>.from(
+                  refreshedAfterMap['safehavenData'] as Map,
                 );
-                if (getAnchorData['customerCreation'] is Map) {
+                if (safehavenData['customerCreation'] is Map) {
                   final customerCreation = Map<String, dynamic>.from(
-                    getAnchorData['customerCreation'] as Map,
+                    safehavenData['customerCreation'] as Map,
                   );
                   if (customerCreation['data'] is Map) {
                     final customerData = Map<String, dynamic>.from(
@@ -3204,7 +3056,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
                 }
               }
               HttpsCallable createAccountFunc = functions.httpsCallable(
-                'sudoCreateSubAccount',
+                'safehavenCreateSubAccount',
               );
               final idempotencyKey = Uuid().v4();
               final accountPayload = {
@@ -3212,79 +3064,36 @@ class _UpgradeTierState extends State<UpgradeTier> {
                 'currency': 'NGN',
                 'type': customerTypeForAccount,
                 'idempotencyKey': idempotencyKey,
+                'firstName': firstName,
+                'lastName': lastName,
+                'email': email,
+                'phoneNumber': phoneNumberForCreate,
+                'country': 'NG',
+                'state': state,
+                'addressLine1': street,
+                'city': city,
+                'postalCode': postalCode.toString(),
+                'bvn': _controller.text.trim(),
+                if (resolvedIdentityId != null && resolvedIdentityId.isNotEmpty)
+                  'identityId': resolvedIdentityId,
               };
-              print('Sending createElectronicAccount payload: $accountPayload');
+              print('Sending safehavenCreateSubAccount payload: $accountPayload');
               dynamic createAccountResult;
               try {
                 createAccountResult = await createAccountFunc.call(
                   accountPayload,
                 );
-              } on FirebaseFunctionsException catch (createErr) {
-                final lowerMsg = (createErr.message ?? '').toLowerCase();
-                if (lowerMsg.contains('customerid not valid')) {
-                  print(
-                    'createElectronicAccount failed due to invalid customerId; attempting customer recreation and retry.',
-                  );
-
-                  final recreatePayload = {
-                    'firstName': firstName,
-                    'lastName': lastName,
-                    'email': email,
-                    'country': 'NG',
-                    'state': state,
-                    'addressLine1': street,
-                    'city': city,
-                    'postalCode': postalCode,
-                    'phoneNumber': phoneNumberForCreate,
-                  };
-
-                  final recreateResult = await functions
-                      .httpsCallable('sudoCreateUser')
-                      .call(recreatePayload);
-
-                  final recreatedCustomerId =
-                      recreateResult.data['data']?['id']?.toString();
-                  final recreatedType =
-                      recreateResult.data['data']?['type']?.toString() ??
-                      customerTypeForAccount;
-
-                  if (recreatedCustomerId == null ||
-                      recreatedCustomerId.isEmpty) {
-                    throw Exception(
-                      'Failed to recover from invalid customerId: recreated customer has no id.',
-                    );
-                  }
-
-                  await docRef.update({
-                    'getAnchorData.customerCreation': recreateResult.data,
-                    'phone': _normalizePhoneForUserDoc(phoneNumberForCreate),
-                  });
-
-                  final retryPayload = {
-                    'customerId': recreatedCustomerId,
-                    'currency': 'NGN',
-                    'type': recreatedType,
-                    'idempotencyKey': Uuid().v4(),
-                  };
-                  print(
-                    'Retrying createElectronicAccount with recreated customer: $retryPayload',
-                  );
-
-                  createAccountResult = await createAccountFunc.call(
-                    retryPayload,
-                  );
-                } else {
-                  rethrow;
-                }
+              } on FirebaseFunctionsException {
+                rethrow;
               }
               print(
                 'Create Electronic Account Response: ${createAccountResult.data}',
               );
               await docRef.update({
-                'getAnchorData.virtualAccount': createAccountResult.data,
-                'getAnchorData.tier': widget.tier,
+                'safehavenData.virtualAccount': createAccountResult.data,
+                'safehavenData.tier': widget.tier,
               });
-              print('✅ Electronic account created and tier saved successfully');
+              print('âœ… Electronic account created and tier saved successfully');
               // Send virtual account details email
               try {
                 final dynamic vaRaw = createAccountResult.data;
@@ -3294,13 +3103,13 @@ class _UpgradeTierState extends State<UpgradeTier> {
                     : null;
 
                 // Fetch real (non-masked) account number and bank name via
-                // fetchAccountNumber, the same way the home page does it.
+                // safehavenFetchAccountNumber, the same way the home page does it.
                 String vaAccountNumber = 'N/A';
                 String vaBankName = 'N/A';
                 if (vaAccountId != null && vaAccountId.isNotEmpty) {
                   try {
                     final fetchRes = await FirebaseFunctions.instance
-                        .httpsCallable('sudoFetchAccountNumber')
+                        .httpsCallable('safehavenFetchAccountNumber')
                         .call({'accountId': vaAccountId});
                     final dynamic resp = fetchRes.data;
                     if (resp is Map) {
@@ -3317,10 +3126,10 @@ class _UpgradeTierState extends State<UpgradeTier> {
                       // Persist resolved values to Firestore
                       final Map<String, dynamic> resolved = {};
                       if (an != null && an.isNotEmpty) {
-                        resolved['getAnchorData.virtualAccount.data.attributes.accountNumber'] = an;
+                        resolved['safehavenData.virtualAccount.data.attributes.accountNumber'] = an;
                       }
                       if (bank != null) {
-                        resolved['getAnchorData.virtualAccount.data.attributes.bank'] =
+                        resolved['safehavenData.virtualAccount.data.attributes.bank'] =
                             bank is Map ? bank : {'name': bn};
                       }
                       if (resolved.isNotEmpty) {
@@ -3328,7 +3137,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
                       }
                     }
                   } catch (fetchErr) {
-                    print('fetchAccountNumber error (will use masked value): $fetchErr');
+                    print('safehavenFetchAccountNumber error (will use masked value): $fetchErr');
                     // Fall back to raw response values
                     final dynamic vaAttrs = vaData is Map ? vaData['attributes'] : null;
                     if (vaAttrs is Map) {
@@ -3340,7 +3149,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
                     }
                   }
                 } else {
-                  // No accountId — fall back to raw response attrs
+                  // No accountId â€” fall back to raw response attrs
                   final dynamic vaAttrs = vaData is Map ? vaData['attributes'] : null;
                   if (vaAttrs is Map) {
                     vaAccountNumber = vaAttrs['accountNumber']?.toString() ?? 'N/A';
@@ -3359,7 +3168,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
                       .httpsCallable('sendEmail')
                       .call({
                         'to': userEmailForVa,
-                        'subject': '🎉 Your PadiPay Virtual Account is Ready',
+                        'subject': 'Your PadiPay Virtual Account is Ready',
                         'html':
                             '<!DOCTYPE html><html><head><meta charset="UTF-8"/></head><body style="margin:0;padding:0;background:#f0f2f5;font-family:Helvetica,Arial,sans-serif;">'
                             '<table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f2f5;padding:40px 0;"><tr><td align="center">'
@@ -3393,7 +3202,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
               print('Error creating electronic account: $e');
               // Still save tier even if VA creation failed, so user can retry
               try {
-                await docRef.update({'getAnchorData.tier': widget.tier});
+                await docRef.update({'safehavenData.tier': widget.tier});
                 print('Saved tier to document despite VA creation failure');
               } catch (e2) {
                 print('Failed to save tier: $e2');
@@ -3409,7 +3218,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
                 final verify = await docRef.get();
                 final verifyData = verify.data() as Map<String, dynamic>?;
                 final verifyVa =
-                    verifyData?['getAnchorData']?['virtualAccount'];
+                    verifyData?['safehavenData']?['virtualAccount'];
                 if (verifyVa != null) {
                   print(
                     'Virtual account was saved despite API error; showing success',
@@ -3427,6 +3236,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
                 'Account updated but virtual account setup incomplete. You can still use basic features.',
                 Colors.orange,
               );
+              return;
             }
           }
         }
@@ -3434,10 +3244,10 @@ class _UpgradeTierState extends State<UpgradeTier> {
         // Tier 3: Only call upgradeCustomerKyc and update Firestore
         // Get customerId
         String? customerId =
-            userData['getAnchorData']?['customerCreation']?['data']?['id'];
+            userData['safehavenData']?['customerCreation']?['data']?['id'];
         if (customerId == null) {
           showGenericError(
-            errorMessage: 'customerId not found in user getAnchorData',
+            errorMessage: 'customerId not found in user safehavenData',
             errorType: 'UpgradeTier_Tier3MissingCustomerId',
           );
           setState(() {
@@ -3455,42 +3265,11 @@ class _UpgradeTierState extends State<UpgradeTier> {
         };
         await docRef.update(updateData);
 
-        // Call upgradeCustomerKyc for Tier 3
-        try {
-          final functions = FirebaseFunctions.instance;
-          HttpsCallable upgradeKycFunc = functions.httpsCallable(
-            'sudoUpgradeCustomerKyc',
-          );
-          final kycPayload = {
-            'customerId': customerId,
-            'level': 'TIER_3',
-            'idType': selectedIdType,
-            'idNumber': _idNumberController.text,
-            'expiryDate': _formatDateForApi(_expiryController.text),
-          };
-          print('Sending upgradeCustomerKyc payload: $kycPayload');
-          final upgradeKycResult = await upgradeKycFunc.call(kycPayload);
-          print('Upgrade Customer KYC Response: ${upgradeKycResult.data}');
-
-          // Update Firestore with KYC response and tier
-          await docRef.update({
-            'getAnchorData.upgradeKyc': upgradeKycResult.data,
-            'getAnchorData.tier': widget.tier,
-          });
-        } catch (e, st) {
-          showGenericError(
-            errorMessage: e.toString(),
-            errorType: 'UpgradeTier_Tier3UpgradeKyc',
-            stackTrace: st,
-          );
-          setState(() {
-            _isLoading = false;
-          });
-          return;
-        }
+        // Save tier
+        await docRef.update({'safehavenData.tier': widget.tier});
       }
 
-      print('✅ Account upgraded successfully');
+      print('âœ… Account upgraded successfully');
       _hideLoadingDialog();
       await _showSuccessModal();
     } catch (e, st) {
@@ -3534,3 +3313,4 @@ extension OutlineInputBorderToBoxDecoration on OutlineInputBorder {
     );
   }
 }
+

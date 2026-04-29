@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
@@ -461,11 +461,11 @@ class _DevicesListScreenState extends State<DevicesListScreen>
                           child: Stack(
                             alignment: Alignment.center,
                             children: [
-                              // 🌟 The radar sweep (shaded fan)
+                              // ðŸŒŸ The radar sweep (shaded fan)
                               ClipPath(
                                 clipper: RadarSweepClipper(
                                   startAngle: -pi / 2,
-                                ), // 👈 start at top
+                                ), // ðŸ‘ˆ start at top
                                 child: Container(
                                   width: 300,
                                   height: 300,
@@ -473,7 +473,7 @@ class _DevicesListScreenState extends State<DevicesListScreen>
                                     shape: BoxShape.circle,
                                     gradient: SweepGradient(
                                       startAngle: -pi / 2,
-                                      endAngle: -pi / 2 + pi / 6, // 30° fan
+                                      endAngle: -pi / 2 + pi / 6, // 30Â° fan
                                       colors: [
                                         Colors.blue.withOpacity(0.4),
                                         Colors.blue.withOpacity(0.0),
@@ -483,7 +483,7 @@ class _DevicesListScreenState extends State<DevicesListScreen>
                                 ),
                               ),
 
-                              // 🔹 The scanning line (beam edge)
+                              // ðŸ”¹ The scanning line (beam edge)
                               Align(
                                 alignment: Alignment.topCenter,
                                 child: Container(
@@ -826,7 +826,7 @@ class _DevicesListScreenState extends State<DevicesListScreen>
                               borderRadius: BorderRadius.circular(20),
                             ),
                           ),
-                          child: Text('${getButtonStateName(device.state)}  →'),
+                          child: Text('${getButtonStateName(device.state)}  â†’'),
                         ),
                       ],
                     ),
@@ -977,9 +977,9 @@ class _DevicesListScreenState extends State<DevicesListScreen>
           // Auto-accept: include receiver VA details in the reply so the sender can settle the payment.
           final currentUser = FirebaseAuth.instance.currentUser!;
           final userDoc = await FirebaseFirestore.instance.collection('users').doc(currentUser.uid).get();
-          final vaData = userDoc.data()?['getAnchorData']?['virtualAccount']?['data'];
+          final vaData = userDoc.data()?['safehavenData']?['virtualAccount']?['data'];
           if (vaData == null) {
-            // cannot accept — inform sender
+            // cannot accept â€” inform sender
             Nearby().sendBytesPayload(id, utf8.encode(jsonEncode({'type': 'payment_rejected', 'reason': 'receiver_account_missing'})));
             showSimpleDialog('Your account is not configured to receive payments', Colors.red);
             return;
@@ -991,7 +991,7 @@ class _DevicesListScreenState extends State<DevicesListScreen>
           final accountId = vaData['id']?.toString();
           final accountType = vaData['type']?.toString();
 
-          // create a pending transaction locally — final success will be marked by sender's settlement
+          // create a pending transaction locally â€” final success will be marked by sender's settlement
           await FirebaseFirestore.instance.collection('transactions').add({
             'senderId': senderId,
             'receiverId': currentUser.uid,
@@ -1036,7 +1036,7 @@ class _DevicesListScreenState extends State<DevicesListScreen>
             if (accept == true) {
               final currentUser = FirebaseAuth.instance.currentUser!;
               final userDoc = await FirebaseFirestore.instance.collection('users').doc(currentUser.uid).get();
-              final vaData = userDoc.data()?['getAnchorData']?['virtualAccount']?['data'];
+              final vaData = userDoc.data()?['safehavenData']?['virtualAccount']?['data'];
               if (vaData == null) {
                 Nearby().sendBytesPayload(id, utf8.encode(jsonEncode({'type': 'payment_rejected', 'reason': 'receiver_account_missing'})));
                 showSimpleDialog('Your account is not configured to receive payments', Colors.red);
@@ -1084,7 +1084,7 @@ class _DevicesListScreenState extends State<DevicesListScreen>
             _isWaiting = false;
           });
           if (type == 'payment_accepted') {
-            // The receiver sent their VA details — settle the payment from this (sender) device.
+            // The receiver sent their VA details â€” settle the payment from this (sender) device.
             final amountText = _amountController.text;
             final amount = double.tryParse(amountText) ?? 0.0;
             final payload = parsed; // should contain receiverId, accountNumber, bankId, bankName, accountName, accountId, accountType
@@ -1360,13 +1360,13 @@ Future<String> _getUserNameById(String userId) async {
       }
 
       final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-      final accountId = userDoc.data()?['getAnchorData']?['virtualAccount']?['data']?['id'];
+      final accountId = userDoc.data()?['safehavenData']?['virtualAccount']?['data']?['id'];
       if (accountId == null) {
         showSimpleDialog('Account details not found', Colors.red);
         return false;
       }
 
-      // Recipient's Anchor account ID is in the WiFi acceptance payload
+      // Recipient's Sudo account ID is in the WiFi acceptance payload
       final toAccountId = payload['accountId']?.toString();
       if (toAccountId == null || toAccountId.isEmpty) {
         showSimpleDialog('Recipient account ID not found', Colors.red);
@@ -1378,17 +1378,17 @@ Future<String> _getUserNameById(String userId) async {
       final recipientBankName = payload['bankName'];
       final recipientAccountName = payload['accountName'];
 
-      final ownAccountNumber = userDoc.data()?['getAnchorData']?['virtualAccount']?['data']?['attributes']?['accountNumber']?.toString();
+      final ownAccountNumber = userDoc.data()?['safehavenData']?['virtualAccount']?['data']?['attributes']?['accountNumber']?.toString();
       if (ownAccountNumber != null && ownAccountNumber == recipientAccountNumber) {
         showSimpleDialog('You cannot send money to your own account', Colors.red);
         return false;
       }
 
-      // Book transfer (both parties on Anchor — no counterparty needed)
+      // Book transfer (both parties on Sudo â€” no counterparty needed)
       final amountKobo = (amount * 100).toInt();
-      debugPrint('createBookTransfer: from=$accountId to=$toAccountId amount=$amountKobo');
+      debugPrint('safehavenTransferIntra: from=$accountId to=$toAccountId amount=$amountKobo');
       final transferResult = await FirebaseFunctions.instance
-          .httpsCallable('sudoTransferIntra')
+          .httpsCallable('safehavenTransferIntra')
           .call({
         'fromAccountId': accountId,
         'toAccountId': toAccountId,

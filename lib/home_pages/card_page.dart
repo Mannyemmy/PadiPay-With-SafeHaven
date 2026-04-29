@@ -1,3 +1,5 @@
+﻿// ignore_for_file: unused_element, unused_field, dead_code, unnecessary_cast, unused_import, unused_local_variable
+
 import 'dart:math' as math;
 
 import 'package:card_app/cards/card_design.dart';
@@ -16,6 +18,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+// ignore_for_file: unused_element, unused_field, dead_code, unnecessary_cast, unused_import
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
@@ -185,7 +189,7 @@ class _CardsPageState extends State<CardsPage> {
     if (userSnap.exists && userSnap.data() != null) {
       final data = userSnap.data()!;
       final Map<String, dynamic>? virtualAccData =
-          data['getAnchorData']?['virtualAccount']?['data']
+          data['safehavenData']?['virtualAccount']?['data']
               as Map<String, dynamic>?;
 
       if (virtualAccData != null && virtualAccData['id'] != null) {
@@ -238,15 +242,24 @@ class _CardsPageState extends State<CardsPage> {
   Future<void> _fetchBalanceAndFx() async {
     try {
       double balance = await _fetchBalance();
-      HttpsCallable fxCallable = FirebaseFunctions.instance.httpsCallable(
-        'bridgecardGetFxRate',
-      );
-      var fxResponse = await fxCallable.call();
-      if (fxResponse.data['status'] != 'success') {
-        print('Failed to get FX rate: ${fxResponse.data['message']}');
-        return;
+      double? rate;
+      final companySnap = await FirebaseFirestore.instance
+          .collection('company')
+          .doc('sudoAccountDetails')
+          .get();
+      final companyData = companySnap.data();
+      final rawRate = companyData?['usdNgnRate'];
+      if (rawRate is num && rawRate > 0) {
+        rate = rawRate.toDouble();
+      } else if (rawRate is String) {
+        final parsed = double.tryParse(rawRate);
+        if (parsed != null && parsed > 0) {
+          rate = parsed;
+        }
       }
-      double rate = fxResponse.data['data']['NGN-USD'].toDouble() / 100;
+      if (rate == null) {
+        rate = 0;
+      }
       double required = 3 * rate;
       setState(() {
         _balance = balance;
@@ -265,7 +278,7 @@ class _CardsPageState extends State<CardsPage> {
       if (accountId == null) throw Exception('Account ID not found');
 
       final callable = FirebaseFunctions.instance.httpsCallable(
-        'sudoFetchAccountBalance',
+        'safehavenFetchAccountBalance',
       );
       final result = await callable.call({'accountId': accountId});
 
@@ -286,20 +299,8 @@ class _CardsPageState extends State<CardsPage> {
     print('[_fetchCardDetails] cardId=$cardId currency=$currency isSudo=$isSudo sudoAccountId=$sudoAccountId');
     print('[_fetchCardDetails] cardId=$cardId currency=$currency isSudo=$isSudo sudoAccountId=$sudoAccountId');
 
-    if (!isSudo && currency == 'USD') {
-      // Legacy Bridgecard USD path
-      final callable = FirebaseFunctions.instance.httpsCallable(
-        'bridgecardGetCardDetails',
-      );
-      final response = await callable.call({'card_id': cardId});
-
-      if (response.data['status'] != 'success') {
-        throw 'Failed to fetch card details: ${response.data['message']}';
-      }
-
-      return Map<String, dynamic>.from(response.data['data']);
-    } else {
-      // Sudo path — both NGN and new USD Sudo cards
+    if (isSudo || currency == 'USD') {
+      // Sudo path â€” both NGN and new USD Sudo cards
       final callable = FirebaseFunctions.instance.httpsCallable('sudoGetCard');
       final response = await callable.call({'cardId': cardId});
       print('Sudo card details response for $cardId: ${response.data}');
@@ -307,7 +308,7 @@ class _CardsPageState extends State<CardsPage> {
       final rawData = _asStringKeyedMap(response.data);
       final data = _asStringKeyedMap(rawData?['data']) ?? <String, dynamic>{};
 
-      // maskedPan format: "506321*********0824" — extract last 4
+      // maskedPan format: "506321*********0824" â€” extract last 4
       final String maskedPan = data['maskedPan']?.toString() ?? '';
       final String last4 = maskedPan.length >= 4
           ? maskedPan.substring(maskedPan.length - 4)
@@ -373,6 +374,8 @@ class _CardsPageState extends State<CardsPage> {
         'status': data['status']?.toString() ?? '',
       };
     }
+
+    throw Exception('Unsupported card provider');
   }
 
  Future<void> _fetchCards() async {
@@ -457,8 +460,8 @@ class _CardsPageState extends State<CardsPage> {
   try {
     final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
     final sudoRaw = userDoc.data()?['sudoCustomer'];
-    final sudoData = (sudoRaw is Map) ? sudoRaw['data'] : null;
-    final debugCustomerId = (sudoData is Map) ? sudoData['_id']?.toString() : null;
+    final safehavenData = (sudoRaw is Map) ? sudoRaw['data'] : null;
+    final debugCustomerId = (safehavenData is Map) ? safehavenData['_id']?.toString() : null;
     if (debugCustomerId != null) {
       final debugResult = await FirebaseFunctions.instance
           .httpsCallable('sudoGetCustomer')
@@ -1013,18 +1016,18 @@ class _CardsPageState extends State<CardsPage> {
               final String last4 = details?['last_4']?.toString() ??
                   (maskedPan.length >= 4
                       ? maskedPan.substring(maskedPan.length - 4)
-                      : '••••');
+                      : 'â€¢â€¢â€¢â€¢');
               String cardTypeStr = '$financialType | **** $last4';
 
-              // Build display number: •••• •••• •••• XXXX from masked pan
+              // Build display number: â€¢â€¢â€¢â€¢ â€¢â€¢â€¢â€¢ â€¢â€¢â€¢â€¢ XXXX from masked pan
               String displayedNumber;
               if (isLoadingDetails) {
-                displayedNumber = '•••• •••• •••• ••••';
+                displayedNumber = 'â€¢â€¢â€¢â€¢ â€¢â€¢â€¢â€¢ â€¢â€¢â€¢â€¢ â€¢â€¢â€¢â€¢';
               } else if (!(card['showNumber'] ?? true)) {
-                displayedNumber = '•••• •••• •••• ••••';
+                displayedNumber = 'â€¢â€¢â€¢â€¢ â€¢â€¢â€¢â€¢ â€¢â€¢â€¢â€¢ â€¢â€¢â€¢â€¢';
               } else if (maskedPan.isNotEmpty && currencyCode == 'NGN') {
                 // Sudo maskedPan is like "506321*********0824"
-                displayedNumber = '•••• •••• •••• $last4';
+                displayedNumber = 'â€¢â€¢â€¢â€¢ â€¢â€¢â€¢â€¢ â€¢â€¢â€¢â€¢ $last4';
               } else {
                 final String rawNumber =
                     (details['card_number'] ?? '0000000000000000').toString();
@@ -1452,9 +1455,9 @@ class _CardsPageState extends State<CardsPage> {
         return false;
       }
 
-      // Refund: company → user (book transfer — both on Anchor)
+      // Refund: company â†’ user (book transfer â€” both on Sudo)
       final refundResult = await FirebaseFunctions.instance
-          .httpsCallable('sudoTransferIntra')
+          .httpsCallable('safehavenTransferIntra')
           .call({
             'fromAccountId': companyVa['id'],
             'toAccountId': userAccountId,
@@ -1522,7 +1525,7 @@ class _CardsPageState extends State<CardsPage> {
           if (accountType == null) 'accountType',
           if (bankId == null) 'bankId',
         ].join(', ');
-        print('Card creation blocked — missing fields: $missing | userDetails: $userDetails');
+        print('Card creation blocked â€” missing fields: $missing | userDetails: $userDetails');
         Navigator.pop(context);
         showSimpleDialog("Please create a bank account first", Colors.red);
         return;
@@ -1537,8 +1540,6 @@ class _CardsPageState extends State<CardsPage> {
       userData = userSnap.data();
       _logCardCreate('user document loaded', {
         'exists': userSnap.exists,
-        'hasBridgeCard': userData?['bridgeCard'] != null,
-        'hasStroWalletUser': userData?['stroWalletUser'] != null,
         'keys': userData?.keys.toList(),
       });
 
@@ -1861,3 +1862,4 @@ class _EnterPinBottomSheetState extends State<EnterPinBottomSheet> {
     );
   }
 }
+

@@ -1,4 +1,4 @@
-import 'package:card_app/ui/payment_successful_page.dart';
+﻿import 'package:card_app/ui/payment_successful_page.dart';
 import 'package:card_app/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
@@ -213,13 +213,13 @@ class _TagTransferPageState extends State<TagTransferPage> {
           .doc(user.uid)
           .get();
       final accountId = userDoc
-          .data()?['getAnchorData']?['virtualAccount']?['data']?['id'];
+          .data()?['safehavenData']?['virtualAccount']?['data']?['id'];
       final accountType = userDoc
-          .data()?['getAnchorData']?['virtualAccount']?['data']?['type'];
+          .data()?['safehavenData']?['virtualAccount']?['data']?['type'];
       final bankIdRaw = userDoc
-          .data()?['getAnchorData']?['virtualAccount']?['data']?['attributes']?['bank']?['id'];
+          .data()?['safehavenData']?['virtualAccount']?['data']?['attributes']?['bank']?['id'];
       final bankNameCandidate = userDoc
-          .data()?['getAnchorData']?['virtualAccount']?['data']?['attributes']?['bank']?['name'] as String?;
+          .data()?['safehavenData']?['virtualAccount']?['data']?['attributes']?['bank']?['name'] as String?;
       final bankId = await resolveBankId(bankId: bankIdRaw?.toString(), bankName: bankNameCandidate);
 
       if (accountId == null) {
@@ -239,13 +239,13 @@ class _TagTransferPageState extends State<TagTransferPage> {
       }
 
       final recipientAccountNumber =
-          recipientData!['getAnchorData']?['virtualAccount']?['data']?['attributes']?['accountNumber'];
+          recipientData!['safehavenData']?['virtualAccount']?['data']?['attributes']?['accountNumber'];
       final recipientBankIdRaw =
-          recipientData!['getAnchorData']?['virtualAccount']?['data']?['attributes']?['bank']?['id'];
+          recipientData!['safehavenData']?['virtualAccount']?['data']?['attributes']?['bank']?['id'];
       final recipientBankName =
-          recipientData!['getAnchorData']?['virtualAccount']?['data']?['attributes']?['bank']?['name'];
+          recipientData!['safehavenData']?['virtualAccount']?['data']?['attributes']?['bank']?['name'];
       final recipientAccountName =
-          recipientData!['getAnchorData']?['virtualAccount']?['data']?['attributes']?['accountName'];
+          recipientData!['safehavenData']?['virtualAccount']?['data']?['attributes']?['accountName'];
       final recipientBankId = await resolveBankId(bankId: recipientBankIdRaw?.toString(), bankName: recipientBankName);
 
       if (recipientAccountNumber == null || recipientBankId == null) {
@@ -258,7 +258,7 @@ class _TagTransferPageState extends State<TagTransferPage> {
       }
 
       // Prevent creating counterparty for own account
-      final ownAccountNumber = userDoc.data()?['getAnchorData']?['virtualAccount']?['data']?['attributes']?['accountNumber']?.toString();
+      final ownAccountNumber = userDoc.data()?['safehavenData']?['virtualAccount']?['data']?['attributes']?['accountNumber']?.toString();
       if (ownAccountNumber != null && ownAccountNumber == recipientAccountNumber) {
         showSimpleDialog('You cannot create a counterparty for your own account', Colors.red);
         setState(() => isLoading = false);
@@ -282,7 +282,7 @@ class _TagTransferPageState extends State<TagTransferPage> {
       }
 
       final result = await FirebaseFunctions.instance
-          .httpsCallable('sudoCreateCounterparty')
+          .httpsCallable('safehavenCreateCounterparty')
           .call({
             'accountId': accountId,
             'bankId': recipientBankId,
@@ -314,7 +314,7 @@ class _TagTransferPageState extends State<TagTransferPage> {
     setState(() => isLoading = false);
   }
 
-  Future<void> _createNipTransfer() async {
+  Future<void> _safehavenTransferNip() async {
     if (recipientData == null || amountController.text.isEmpty) {
       return;
     }
@@ -339,7 +339,7 @@ class _TagTransferPageState extends State<TagTransferPage> {
           .doc(user.uid)
           .get();
       final accountId = userDoc
-          .data()?['getAnchorData']?['virtualAccount']?['data']?['id'];
+          .data()?['safehavenData']?['virtualAccount']?['data']?['id'];
 
       if (accountId == null) {
         showSimpleDialog('Account details not found', Colors.red);
@@ -347,8 +347,8 @@ class _TagTransferPageState extends State<TagTransferPage> {
         return;
       }
 
-      // Recipient's Anchor account ID (internal book transfer)
-      final toAccountId = recipientData!['getAnchorData']?['virtualAccount']?['data']?['id']?.toString();
+      // Recipient's Sudo account ID (internal book transfer)
+      final toAccountId = recipientData!['safehavenData']?['virtualAccount']?['data']?['id']?.toString();
       if (toAccountId == null || toAccountId.isEmpty) {
         showSimpleDialog('Recipient account not found', Colors.red);
         setState(() => isLoading = false);
@@ -356,8 +356,8 @@ class _TagTransferPageState extends State<TagTransferPage> {
       }
 
       // Prevent sending to own tag or own account
-      final recipientAccountNumber = recipientData!['getAnchorData']?['virtualAccount']?['data']?['attributes']?['accountNumber'];
-      final ownAccountNumber = userDoc.data()?['getAnchorData']?['virtualAccount']?['data']?['attributes']?['accountNumber']?.toString();
+      final recipientAccountNumber = recipientData!['safehavenData']?['virtualAccount']?['data']?['attributes']?['accountNumber'];
+      final ownAccountNumber = userDoc.data()?['safehavenData']?['virtualAccount']?['data']?['attributes']?['accountNumber']?.toString();
       if (receiverUid != null && receiverUid == user.uid) {
         showSimpleDialog('You cannot send money to your own tag', Colors.red);
         setState(() => isLoading = false);
@@ -370,7 +370,7 @@ class _TagTransferPageState extends State<TagTransferPage> {
       }
 
       final result = await FirebaseFunctions.instance
-          .httpsCallable('sudoTransferIntra')
+          .httpsCallable('safehavenTransferIntra')
           .call({
             'fromAccountId': accountId,
             'toAccountId': toAccountId,
@@ -389,14 +389,14 @@ class _TagTransferPageState extends State<TagTransferPage> {
       }
 
       // final recipientAccountNumber =
-      //     recipientData!['getAnchorData']?['virtualAccount']?['data']?['attributes']?['accountNumber'];
+      //     recipientData!['safehavenData']?['virtualAccount']?['data']?['attributes']?['accountNumber'];
       final recipientBankName =
-          recipientData!['getAnchorData']?['virtualAccount']?['data']?['attributes']?['bank']?['name'];
+          recipientData!['safehavenData']?['virtualAccount']?['data']?['attributes']?['bank']?['name'];
       final recipientBankIdRaw =
-          recipientData!['getAnchorData']?['virtualAccount']?['data']?['attributes']?['bank']?['id'];
+          recipientData!['safehavenData']?['virtualAccount']?['data']?['attributes']?['bank']?['id'];
       final recipientBankId = await resolveBankId(bankId: recipientBankIdRaw?.toString(), bankName: recipientBankName);
       final recipientAccountName =
-          recipientData!['getAnchorData']?['virtualAccount']?['data']?['attributes']?['accountName'];
+          recipientData!['safehavenData']?['virtualAccount']?['data']?['attributes']?['accountName'];
 
       debugPrint('receiverUid before save: $receiverUid'); // Debug log
 
@@ -433,7 +433,7 @@ class _TagTransferPageState extends State<TagTransferPage> {
         isScrollControlled: true,
       );
     } catch (e) {
-      debugPrint('createNipTransfer error: $e');
+      debugPrint('safehavenTransferNip error: $e');
       if(e.toString().contains("There was an error processing the request")){
         showSimpleDialog("Network Downtime", Colors.red);
         return;
@@ -469,7 +469,7 @@ class _TagTransferPageState extends State<TagTransferPage> {
           .doc(user.uid)
           .get();
       final userVaData = userDoc
-          .data()?['getAnchorData']?['virtualAccount']?['data'];
+          .data()?['safehavenData']?['virtualAccount']?['data'];
       if (userVaData == null) {
         showSimpleDialog('User account not found', Colors.red);
         setState(() => isLoading = false);
@@ -500,13 +500,13 @@ class _TagTransferPageState extends State<TagTransferPage> {
       }
 
       final recipientAccountNumber =
-          recipientData!['getAnchorData']?['virtualAccount']?['data']?['attributes']?['accountNumber'];
+          recipientData!['safehavenData']?['virtualAccount']?['data']?['attributes']?['accountNumber'];
       final recipientBankIdRaw =
-          recipientData!['getAnchorData']?['virtualAccount']?['data']?['attributes']?['bank']?['id'];
+          recipientData!['safehavenData']?['virtualAccount']?['data']?['attributes']?['bank']?['id'];
       final recipientBankName =
-          recipientData!['getAnchorData']?['virtualAccount']?['data']?['attributes']?['bank']?['name'];
+          recipientData!['safehavenData']?['virtualAccount']?['data']?['attributes']?['bank']?['name'];
       final recipientAccountName =
-          recipientData!['getAnchorData']?['virtualAccount']?['data']?['attributes']?['accountName'];
+          recipientData!['safehavenData']?['virtualAccount']?['data']?['attributes']?['accountName'];
       final recipientBankId = await resolveBankId(bankId: recipientBankIdRaw?.toString(), bankName: recipientBankName);
 
       if (recipientAccountNumber == null || recipientBankId == null) {
@@ -518,14 +518,14 @@ class _TagTransferPageState extends State<TagTransferPage> {
         return;
       }
 
-      // First transfer: user to company (book transfer — both on Anchor)
+      // First transfer: user to company (book transfer â€” both on Sudo)
       final amountNaira = double.parse(amountController.text);
       final fee = 0;
       final amountToCompanyKobo = (amountNaira + fee) * 100;
       final narration1 =
           'Ghost Mode to Company: ${remarkController.text.isNotEmpty ? remarkController.text : 'Transfer'}';
       final firstResult = await FirebaseFunctions.instance
-          .httpsCallable('sudoTransferIntra')
+          .httpsCallable('safehavenTransferIntra')
           .call({
             'fromAccountId': userAccountId,
             'toAccountId': companyVa['id'],
@@ -559,7 +559,7 @@ class _TagTransferPageState extends State<TagTransferPage> {
         recipientCounterpartyId = queryRecipientCp.docs.first.id;
       } else {
         final createRecipientCpResult = await FirebaseFunctions.instance
-            .httpsCallable('sudoCreateCounterparty')
+            .httpsCallable('safehavenCreateCounterparty')
             .call({
               'accountId': companyVa['id'],
               'bankId': recipientBankId,
@@ -588,7 +588,7 @@ class _TagTransferPageState extends State<TagTransferPage> {
           ? remarkController.text
           : 'Ghost Mode Transfer';
       final secondResult = await FirebaseFunctions.instance
-          .httpsCallable('sudoTransferNip')
+          .httpsCallable('safehavenTransferNip')
           .call({
             'accountType': companyVa['type'],
             'accountId': companyVa['id'],
@@ -963,7 +963,7 @@ class _TagTransferPageState extends State<TagTransferPage> {
                                 }
                                 if (!sendAnonymously) {
                                   await _createCounterparty();
-                                  await _createNipTransfer();
+                                  await _safehavenTransferNip();
                                 } else {
                                   await _ghostTransfer();
                                 }

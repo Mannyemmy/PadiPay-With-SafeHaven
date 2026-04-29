@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+﻿import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:uuid/uuid.dart';
 
@@ -57,7 +57,7 @@ class CashbackService {
       throw Exception('Company cashback reserve account not configured');
     }
 
-    final result = await _functions.httpsCallable('sudoTransferIntra').call({
+    final result = await _functions.httpsCallable('safehavenTransferIntra').call({
       'fromAccountId': companyAccountId,
       'toAccountId': toAccountId,
       'amount': _toKobo(amountNaira),
@@ -88,7 +88,7 @@ class CashbackService {
       throw Exception('Company cashback reserve account not configured');
     }
 
-    final result = await _functions.httpsCallable('sudoTransferIntra').call({
+    final result = await _functions.httpsCallable('safehavenTransferIntra').call({
       'fromAccountId': fromAccountId,
       'toAccountId': companyAccountId,
       'amount': _toKobo(amountNaira),
@@ -191,3 +191,4 @@ class CashbackService {
     return cashbackAmount;
   }
 }
+

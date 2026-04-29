@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show Platform;
 import 'dart:typed_data';
@@ -448,7 +448,7 @@ class _TransferPageState extends State<TransferPage> {
     }
     String purpose = _purposeController.text;
 
-    // Perform real settlement: create (or reuse) counterparty and call createNipTransfer
+    // Perform real settlement: create (or reuse) counterparty and call safehavenTransferNip
     try {
       final settled = await _settleNfcPayment(amount, purpose);
       if (!settled) {
@@ -489,7 +489,7 @@ class _TransferPageState extends State<TransferPage> {
 
       // Sender's account details
       final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-      final accountId = userDoc.data()?['getAnchorData']?['virtualAccount']?['data']?['id'];
+      final accountId = userDoc.data()?['safehavenData']?['virtualAccount']?['data']?['id'];
       if (accountId == null) {
         showSimpleDialog('Account details not found', Colors.red);
         return false;
@@ -497,7 +497,7 @@ class _TransferPageState extends State<TransferPage> {
 
       // Recipient's VA details
       final recipientDoc = await FirebaseFirestore.instance.collection('users').doc(widget.endpointId).get();
-      final recipientVa = recipientDoc.data()?['getAnchorData']?['virtualAccount']?['data'];
+      final recipientVa = recipientDoc.data()?['safehavenData']?['virtualAccount']?['data'];
       if (recipientVa == null) {
         showSimpleDialog('Recipient does not have a virtual account', Colors.red);
         return false;
@@ -514,17 +514,17 @@ class _TransferPageState extends State<TransferPage> {
       final recipientBankId = recipientVa['attributes']?['bank']?['id']?.toString();
 
       // Prevent sending to own account
-      final ownAccountNumber = userDoc.data()?['getAnchorData']?['virtualAccount']?['data']?['attributes']?['accountNumber']?.toString();
+      final ownAccountNumber = userDoc.data()?['safehavenData']?['virtualAccount']?['data']?['attributes']?['accountNumber']?.toString();
       if (ownAccountNumber != null && ownAccountNumber == recipientAccountNumber) {
         showSimpleDialog('You cannot send money to your own account', Colors.red);
         return false;
       }
 
-      // Book transfer (both parties on Anchor — no counterparty needed)
+      // Book transfer (both parties on Sudo â€” no counterparty needed)
       final amountKobo = (amount * 100).toInt();
-      debugPrint('createBookTransfer: from=$accountId to=$toAccountId amount=$amountKobo');
+      debugPrint('safehavenTransferIntra: from=$accountId to=$toAccountId amount=$amountKobo');
       final transferResult = await FirebaseFunctions.instance
-          .httpsCallable('sudoTransferIntra')
+          .httpsCallable('safehavenTransferIntra')
           .call({
         'fromAccountId': accountId,
         'toAccountId': toAccountId,

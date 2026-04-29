@@ -1,7 +1,8 @@
+﻿// ignore_for_file: unused_field, unused_local_variable, dead_code, unused_element
+
 import 'package:card_app/airtimes/buy_airtime.dart';
 import 'package:card_app/profile/choose_upgrade_tier.dart';
 import 'package:card_app/bills/pay_bills.dart';
-import 'package:card_app/cards/card_utils.dart';
 import 'package:card_app/ghost_mode/ghost_mode.dart';
 import 'package:card_app/giveaway/giveaway_page.dart';
 import 'package:card_app/home_pages/card_page.dart';
@@ -27,6 +28,7 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'dart:convert';
+import 'package:uuid/uuid.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -69,6 +71,7 @@ class _HomePageState extends State<HomePage> {
   StreamSubscription<QuerySnapshot>? _txReceivedSub;
   StreamSubscription<QuerySnapshot>? _cardTxSub;
   bool _isLoadingTransactions = true;
+  bool _autoCreateAttempted = false;
 
   @override
   void initState() {
@@ -87,13 +90,199 @@ class _HomePageState extends State<HomePage> {
 
     saveToken();
     fetchAccount();
-    createCardHolder();
-    fundBridgeCardWallet();
     _setupNotifStream();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      createStroWalletUser();
       createSudoCustomer();
     });
+  }
+
+  Future<void> _maybeAutoCreateVirtualAccount(Map<String, dynamic> data) async {
+    if (_autoCreateAttempted) return;
+    _autoCreateAttempted = true;
+    try {
+      final safehavenData = data['safehavenData'] as Map<String, dynamic>?;
+      if (safehavenData == null) return;
+      // If a virtual account already exists, nothing to do.
+      if (safehavenData['virtualAccount'] != null) return;
+
+      // If a tier value is present, attempt auto-create (one-shot). Keep
+      // the existing customerId guard to avoid creating accounts for users
+      // without a linked sudo customer.
+      final tierRaw = safehavenData['tier'];
+      if (tierRaw == null) return;
+      final tierStr = tierRaw.toString();
+      final tier = int.tryParse(tierStr) ?? 0;
+
+      final customerId = safehavenData['customerCreation']?['data']?['id']?.toString();
+      if (customerId == null || customerId.isEmpty) return;
+
+      final firstName = data['firstName']?.toString() ?? '';
+      final lastName = data['lastName']?.toString() ?? '';
+      final email = data['email']?.toString() ?? '';
+      final phone = data['phone']?.toString() ?? '';
+
+      final address = (data['address'] as Map<String, dynamic>?) ?? {};
+      final street = address['street']?.toString() ?? '';
+      final city = address['city']?.toString() ?? '';
+      final state = address['state']?.toString() ?? data['state']?.toString() ?? '';
+      final postalCode = address['postalCode']?.toString() ?? '';
+
+      String customerTypeForAccount = 'IndividualCustomer';
+      try {
+        final custType = safehavenData['customerCreation']?['data']?['type']?.toString();
+        if (custType != null && custType.isNotEmpty) customerTypeForAccount = custType;
+      } catch (_) {}
+
+      final idempotencyKey = Uuid().v4();
+      final payload = {
+        'customerId': customerId,
+        'currency': 'NGN',
+        'type': customerTypeForAccount,
+        'idempotencyKey': idempotencyKey,
+        'firstName': firstName,
+        'lastName': lastName,
+        'email': email,
+        'phoneNumber': phone,
+        'country': 'NG',
+        'state': state,
+        'addressLine1': street,
+        'city': city,
+        'postalCode': postalCode,
+        'bvn': safehavenData['bvn']?.toString() ?? '',
+      };
+
+      print('Auto-create safehavenCreateSubAccount payload: $payload');
+
+      try {
+        final callable = FirebaseFunctions.instance.httpsCallable('safehavenCreateSubAccount');
+        final res = await callable.call(payload);
+        print('Auto-create safehavenCreateSubAccount response: ${res.data}');
+
+        // Persist virtualAccount to Firestore and attempt to resolve real
+        // accountNumber + bank name via safehavenFetchAccountNumber. Send email
+        // notification to the user (best-effort).
+        try {
+          final uid = FirebaseAuth.instance.currentUser?.uid;
+          if (uid != null) {
+            final userDocRef = FirebaseFirestore.instance.collection('users').doc(uid);
+            await userDocRef.update({
+              'safehavenData.virtualAccount': res.data,
+              'safehavenData.tier': safehavenData['tier'] ?? tierStr,
+            });
+
+            // Try to fetch resolved account number and bank
+            String vaAccountNumber = 'N/A';
+            dynamic bankObj;
+            try {
+              final vaRaw = res.data;
+              final vaData = vaRaw is Map ? vaRaw['data'] : null;
+              final String? vaAccountId = vaData is Map ? vaData['id']?.toString() : null;
+              if (vaAccountId != null && vaAccountId.isNotEmpty) {
+                try {
+                  final fetchRes = await FirebaseFunctions.instance
+                      .httpsCallable('safehavenFetchAccountNumber')
+                      .call({'accountId': vaAccountId});
+                  final dynamic resp = fetchRes.data;
+                  if (resp is Map) {
+                    final String? an = resp['accountNumber']?.toString() ?? resp['data']?['attributes']?['accountNumber']?.toString();
+                    final dynamic bank = resp['bank'] ?? resp['data']?['attributes']?['bank'];
+                    if (an != null && an.isNotEmpty) vaAccountNumber = an;
+                    if (bank != null) bankObj = bank;
+
+                    // Persist resolved values to Firestore
+                    final Map<String, dynamic> resolved = {};
+                    if (an != null && an.isNotEmpty) {
+                      resolved['safehavenData.virtualAccount.data.attributes.accountNumber'] = an;
+                    }
+                    if (bank != null) {
+                      resolved['safehavenData.virtualAccount.data.attributes.bank'] = bank is Map ? bank : {'name': bank?.toString()};
+                    }
+                    if (resolved.isNotEmpty) {
+                      await userDocRef.update(resolved);
+                    }
+                  }
+                } catch (fetchErr) {
+                  print('safehavenFetchAccountNumber error (will use masked value): $fetchErr');
+                }
+              } else {
+                final vaAttrs = vaData is Map ? vaData['attributes'] : null;
+                if (vaAttrs is Map) {
+                  vaAccountNumber = vaAttrs['accountNumber']?.toString() ?? vaAccountNumber;
+                  bankObj = vaAttrs['bank'] ?? bankObj;
+                }
+              }
+            } catch (e) {
+              print('Error resolving virtual account details: $e');
+            }
+
+            // Update UI values
+            if (mounted) {
+              setState(() {
+                String? accName;
+                String? accNumber;
+                try {
+                  final dataMap = res.data;
+                  if (dataMap is Map) {
+                    final inner = dataMap['data'];
+                    if (inner is Map) {
+                      final attrs = inner['attributes'];
+                      if (attrs is Map) {
+                        accName = attrs['accountName']?.toString();
+                        accNumber = attrs['accountNumber']?.toString();
+                      }
+                    }
+                  }
+                } catch (e) {
+                  print('Parsing auto-create result failed: $e');
+                }
+                // Prefer resolved account number if available
+                if (vaAccountNumber.isNotEmpty && vaAccountNumber != 'N/A') {
+                  _accountNumber = vaAccountNumber;
+                } else if (accNumber != null && accNumber.isNotEmpty) {
+                  _accountNumber = accNumber;
+                }
+                if (accName != null && accName.isNotEmpty) _accountName = accName;
+              });
+            }
+
+            // Send virtual account ready email (best-effort)
+            try {
+              final String userEmail = data['email']?.toString() ?? '';
+              final String userFirstName = data['firstName']?.toString() ?? 'User';
+              final String vaNumberForEmail = (vaAccountNumber.isNotEmpty && vaAccountNumber != 'N/A') ? vaAccountNumber : (_accountNumber ?? 'N/A');
+              if (userEmail.isNotEmpty) {
+                await FirebaseFunctions.instance.httpsCallable('sendEmail').call({
+                  'to': userEmail,
+                  'subject': 'Your PadiPay Virtual Account is Ready',
+                  'html':
+                      '<p>Hi $userFirstName,</p>'
+                      '<p>Your PadiPay virtual bank account has been created. Account number: <strong>$vaNumberForEmail</strong>.</p>'
+                      '<p>Use this to receive payments.</p>',
+                });
+                print('Auto-create: sent virtual account email to $userEmail');
+              }
+            } catch (emailErr) {
+              print('Error sending virtual account email: $emailErr');
+            }
+
+            // Optionally notify user via UI
+            try {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Virtual account created')), 
+                );
+              }
+            } catch (_) {}
+          }
+        } catch (e) {
+          print('Failed to persist auto-created virtual account: $e');
+        }
+      } catch (e) {
+        print('Auto-create virtual account failed (non-fatal): $e');
+      }
+    } catch (e) {
+      print('Auto-create virtual account unexpected error: $e');
+    }
   }
 
   @override
@@ -287,18 +476,6 @@ class _HomePageState extends State<HomePage> {
     return Colors.grey;
   }
 
-  Future<void> createStroWalletUser() async {
-    if (FirebaseAuth.instance.currentUser == null) {
-      print('Skipping StroWallet user creation: no authenticated user');
-      return;
-    }
-    try {
-      await createStroWalletUserIfNeeded(context);
-    } catch (e) {
-      print('Error creating StroWallet user: $e');
-    }
-  }
-
   Future<void> createSudoCustomer() async {
     await createSudoCustomerIfNeeded();
   }
@@ -307,20 +484,8 @@ class _HomePageState extends State<HomePage> {
     final prefs = await SharedPreferences.getInstance();
     final cachedBalance = prefs.getDouble('cached_balance') ?? 0.0;
     setState(() {
-      _balance = '₦ ${NumberFormat('#,##0.00').format(cachedBalance)}';
+      _balance = ' ${NumberFormat('#,##0.00').format(cachedBalance)}';
     });
-  }
-
-  Future<void> fundBridgeCardWallet() async {
-    await fundIssuingWallet();
-  }
-
-  Future<void> createCardHolder() async {
-    try {
-      await createBridgecardCardHolder();
-    } catch (e) {
-      print("Bridge cardholder creation error $e");
-    }
   }
 
   Future<void> fetchAccount() async {
@@ -354,16 +519,22 @@ class _HomePageState extends State<HomePage> {
 
       if (userSnap.exists) {
         var data = userSnap.data() as Map<String, dynamic>;
-        fetchedFirstName = data['firstName'];
-        fetchedLastName = data['lastName'];
-        tag = data['userName'];
+        final rawFirstName = data['firstName']?.toString().trim() ?? '';
+        final rawLastName = data['lastName']?.toString().trim() ?? '';
+        fetchedFirstName = rawFirstName;
+        fetchedLastName = rawLastName;
+        tag = data['userName']?.toString() ?? tag;
         final cashbackBalance =
             (data['cashback']?['balance'] as num?)?.toDouble() ?? 0.0;
-        fetchedTier = (data['getAnchorData']?['tier'] ?? "0").toString();
+        final tierRaw = data['safehavenData']?['tier'];
+        final tierText = tierRaw?.toString().trim();
+        fetchedTier = (tierText == null || tierText.isEmpty || tierText == 'null')
+            ? '0'
+            : tierText;
         fetchedAccountName =
-            data['getAnchorData']?['virtualAccount']?['data']?['attributes']?['accountName'];
+            data['safehavenData']?['virtualAccount']?['data']?['attributes']?['accountName']?.toString();
         fetchedAccountNumber =
-            data['getAnchorData']?['virtualAccount']?['data']?['attributes']?['accountNumber'];
+            data['safehavenData']?['virtualAccount']?['data']?['attributes']?['accountNumber']?.toString();
 
         // Check for required documents
         final requiredDocs =
@@ -442,10 +613,13 @@ class _HomePageState extends State<HomePage> {
             break;
         }
 
-        fetchAccountBalance();
+        safehavenFetchAccountBalance();
         setState(() {
-          _userName =
-              fetchedAccountName ?? '$fetchedFirstName $fetchedLastName';
+          final fallbackName = [fetchedFirstName, fetchedLastName]
+              .where((part) => part?.isNotEmpty == true)
+              .join(' ')
+              .trim();
+          _userName = data['firstName']!.toString() + " " + data['lastName']!.toString();
           _cashbackBalance = cashbackBalance;
           _accountName = fetchedAccountName;
           _accountNumber = fetchedAccountNumber;
@@ -463,23 +637,29 @@ class _HomePageState extends State<HomePage> {
           _kycBannerBody = bannerBody;
         });
 
-        // If a virtual account exists but bankId is missing, fetch it from fetchDepositAccount
+        // Attempt to auto-create virtual account if user is upgraded but VA missing.
+        _maybeAutoCreateVirtualAccount(data);
+
+        // If a virtual account exists but bankId is missing, fetch it from safehavenFetchDepositAccount
         final accountId =
-            data['getAnchorData']?['virtualAccount']?['data']?['id']
+            data['safehavenData']?['virtualAccount']?['data']?['id']
                 ?.toString();
         final existingBankId =
-            data['getAnchorData']?['virtualAccount']?['data']?['attributes']?['bank']?['id']
+            data['safehavenData']?['virtualAccount']?['data']?['attributes']?['bank']?['id']
                 ?.toString();
         final existingAccountNumber =
-            data['getAnchorData']?['virtualAccount']?['data']?['attributes']?['accountNumber']
+            data['safehavenData']?['virtualAccount']?['data']?['attributes']?['accountNumber']
                 ?.toString();
         final hasMaskedAccountNumber =
             existingAccountNumber != null &&
             existingAccountNumber.contains('*');
+        final hasEmptyAccountNumber =
+            existingAccountNumber == null || existingAccountNumber.isEmpty;
         if (accountId != null &&
             accountId.isNotEmpty &&
             ((existingBankId == null || existingBankId.isEmpty) ||
-                hasMaskedAccountNumber)) {
+                hasMaskedAccountNumber ||
+                hasEmptyAccountNumber)) {
           print(
             'Virtual account refresh required for accountId $accountId '
             '(bankIdMissing: ${existingBankId == null || existingBankId.isEmpty}, '
@@ -496,7 +676,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<double> fetchAccountBalance() async {
+  Future<double> safehavenFetchAccountBalance() async {
     setState(() {
       _isLoadingBalance = true;
     });
@@ -518,18 +698,18 @@ class _HomePageState extends State<HomePage> {
         throw Exception('User document not found');
       }
 
-      // Extract accountId from getAnchorData.virtualAccount.data.id
+      // Extract accountId from safehavenData.virtualAccount.data.id
       final data = userDoc.data()!;
-      final anchorData = data['getAnchorData'] as Map<String, dynamic>?;
-      if (anchorData == null) {
-        throw Exception('Anchor data not found');
+      final safehavenData = data['safehavenData'] as Map<String, dynamic>?;
+      if (safehavenData == null) {
+        throw Exception('Sudo data not found');
       }
 
       final virtualAccount =
-          anchorData['virtualAccount'] as Map<String, dynamic>?;
+          safehavenData['virtualAccount'] as Map<String, dynamic>?;
       if (virtualAccount == null) {
         // Try to fetch customer info if we have a customer id
-        final customerId = anchorData['customerCreation']?['data']?['id']
+        final customerId = safehavenData['customerCreation']?['data']?['id']
             ?.toString();
         if (customerId != null && customerId.isNotEmpty) {
           try {
@@ -550,7 +730,7 @@ class _HomePageState extends State<HomePage> {
           }
         } else {
           print(
-            'Virtual account missing and no customerId available in getAnchorData',
+            'Virtual account missing and no customerId available in safehavenData',
           );
         }
 
@@ -569,7 +749,7 @@ class _HomePageState extends State<HomePage> {
 
       // Call the Cloud Function with the accountId
       final callable = FirebaseFunctions.instance.httpsCallable(
-        'sudoFetchAccountBalance',
+        'safehavenFetchAccountBalance',
       );
       final result = await callable.call({'accountId': accountId});
 
@@ -578,7 +758,7 @@ class _HomePageState extends State<HomePage> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setDouble('cached_balance', balance);
       setState(() {
-        _balance = '₦ ${NumberFormat('#,##0.00').format(balance)}';
+        _balance = ' ₦${NumberFormat('#,##0.00').format(balance)}';
         _isLoadingBalance = false;
       });
 
@@ -590,25 +770,25 @@ class _HomePageState extends State<HomePage> {
       await prefs.setDouble('cached_balance', 0.0);
       setState(() {
         _isLoadingBalance = false;
-        _balance = "0.00";
+        _balance = " ₦0.00";
       });
       return 0.0;
     }
   }
 
-  // Fetch authoritative bank.id via fetchDepositAccount (only field we need from it),
-  // and real unmasked accountNumber + bankName via fetchAccountNumber { accountNumber, bank: string }.
+  // Fetch authoritative bank.id via safehavenFetchDepositAccount (only field we need from it),
+  // and real unmasked accountNumber + bankName via safehavenFetchAccountNumber { accountNumber, bank: string }.
   Future<void> _fetchAndUpdateVirtualAccount(
     String accountId,
     DocumentReference userDocRef,
   ) async {
     try {
-      // ── Step 1: fetchDepositAccount → bank.id only ──────────────────────────
-      print('Calling fetchDepositAccount for accountId: $accountId');
+      // â”€â”€ Step 1: safehavenFetchDepositAccount â†’ bank.id only â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      print('Calling safehavenFetchDepositAccount for accountId: $accountId');
       final depositResult = await FirebaseFunctions.instance
-          .httpsCallable('sudoFetchDepositAccount')
+          .httpsCallable('safehavenFetchDepositAccount')
           .call({'accountId': accountId});
-      print('fetchDepositAccount response: ${depositResult.data}');
+      print('safehavenFetchDepositAccount response: ${depositResult.data}');
 
       final depositResp = depositResult.data;
       final depositData = (depositResp is Map)
@@ -616,50 +796,56 @@ class _HomePageState extends State<HomePage> {
           : null;
       final depositAttrs = depositData?['attributes'] as Map?;
       final depositBank = depositAttrs?['bank'] as Map?;
-      final String? bankId = depositBank?['id']?.toString();
+      String? bankId = depositBank?['id']?.toString();
 
-      print('fetchDepositAccount parsed — bankId: $bankId');
+      print('safehavenFetchDepositAccount parsed â€” bankId: $bankId');
 
       if (bankId == null) {
         print(
-          'fetchDepositAccount: bank.id is null — continuing to try fetchAccountNumber',
+          'safehavenFetchDepositAccount: bank.id is null â€” continuing to try safehavenFetchAccountNumber',
         );
       }
 
-      // ── Step 2: fetchAccountNumber → real accountNumber + bankName ────────
+      // â”€â”€ Step 2: safehavenFetchAccountNumber â†’ real accountNumber + bankName â”€â”€â”€â”€â”€â”€â”€â”€
       String? accountNumber;
       String? bankName;
       try {
-        print('Calling fetchAccountNumber for accountId: $accountId');
+        print('Calling safehavenFetchAccountNumber for accountId: $accountId');
         final numResult = await FirebaseFunctions.instance
-            .httpsCallable('sudoFetchAccountNumber')
+            .httpsCallable('safehavenFetchAccountNumber')
             .call({'accountId': accountId});
-        print('fetchAccountNumber response: ${numResult.data}');
+        print('safehavenFetchAccountNumber response: ${numResult.data}');
 
         final numResp = numResult.data;
         if (numResp is Map) {
           accountNumber = numResp['accountNumber']?.toString();
-          // bank is returned as a plain string (bankName)
+          // bank is returned as { name, id } Map
           final rawBank = numResp['bank'];
-          bankName = rawBank is String ? rawBank : rawBank?.toString();
+          if (rawBank is Map) {
+            bankName = rawBank['name']?.toString();
+            // Use bank.id from safehavenFetchAccountNumber as fallback if step 1 missed it
+            if (bankId == null) bankId = rawBank['id']?.toString();
+          } else {
+            bankName = rawBank?.toString();
+          }
         }
         print(
-          'fetchAccountNumber parsed — accountNumber: $accountNumber, bankName: $bankName',
+          'safehavenFetchAccountNumber parsed â€” accountNumber: $accountNumber, bankName: $bankName',
         );
       } catch (e) {
-        print('fetchAccountNumber failed (non-fatal): $e');
+        print('safehavenFetchAccountNumber failed (non-fatal): $e');
       }
 
-      // ── Step 3: Persist to Firestore ────────────────────────────────────────
+      // â”€â”€ Step 3: Persist to Firestore â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       final updates = <String, dynamic>{};
       if (bankId != null) {
-        updates['getAnchorData.virtualAccount.data.attributes.bank'] = {
+        updates['safehavenData.virtualAccount.data.attributes.bank'] = {
           'id': bankId,
           if (bankName != null) 'name': bankName,
         };
       }
       if (accountNumber != null) {
-        updates['getAnchorData.virtualAccount.data.attributes.accountNumber'] =
+        updates['safehavenData.virtualAccount.data.attributes.accountNumber'] =
             accountNumber;
       }
 
@@ -814,7 +1000,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             const SizedBox(height: 90),
             Text(
-              "Welcome, ${_accountName ?? ''}! 😃",
+              "Welcome, ${ _userName ?? 'PadiPay User'}",
               style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
             ),
             Padding(
@@ -1020,7 +1206,7 @@ class _HomePageState extends State<HomePage> {
                           Expanded(
                             child: Text(
                               _showBalance
-                                  ? 'Cashback Balance: ₦ ${NumberFormat('#,##0.00').format(_cashbackBalance)}'
+                                  ? 'Cashback Balance: ₦${NumberFormat('#,##0.00').format(_cashbackBalance)}'
                                   : 'Cashback Balance: ****',
                               style: const TextStyle(
                                 color: Colors.white,
@@ -1250,7 +1436,7 @@ class _HomePageState extends State<HomePage> {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    "Increase your transaction limits and unlock premium features.",
+                                    "Activate your wallet and complete your identity verification.",
                                     style: TextStyle(
                                       color: Colors.grey.shade600,
                                       fontSize: 12,
@@ -1278,7 +1464,7 @@ class _HomePageState extends State<HomePage> {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
-                                "Upgrade Now",
+                                "Continue Verification",
                                 style: GoogleFonts.inter(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
@@ -1798,3 +1984,4 @@ class ActionGrid extends StatelessWidget {
     );
   }
 }
+

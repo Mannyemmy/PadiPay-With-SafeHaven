@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:card_app/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// A saved contact alias (nickname → account or PadiTag).
+/// A saved contact alias (nickname â†’ account or PadiTag).
 class PadiAlias {
   final String id;
   final String alias;        // Display form: "Mum", "Big Sis"
@@ -62,7 +62,7 @@ class PadiAlias {
     if (displayName != null && displayName!.isNotEmpty) parts.add(displayName!);
     if (accountNumber != null && accountNumber!.isNotEmpty) parts.add(accountNumber!);
     if (bankName != null && bankName!.isNotEmpty) parts.add(bankName!);
-    return parts.join(' · ');
+    return parts.join(' Â· ');
   }
 }
 
@@ -312,7 +312,7 @@ class _PadiAliasesPageState extends State<PadiAliasesPage> {
   }
 }
 
-// ── Avatar widget ──────────────────────────────────────────────────────────
+// â”€â”€ Avatar widget â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _AliasAvatar extends StatelessWidget {
   final PadiAlias alias;
@@ -342,7 +342,7 @@ class _AliasAvatar extends StatelessWidget {
   }
 }
 
-// ── Add / Edit bottom sheet ────────────────────────────────────────────────
+// â”€â”€ Add / Edit bottom sheet â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _AliasFormSheet extends StatefulWidget {
   final PadiAlias? editing;
@@ -510,7 +510,7 @@ class _AliasFormSheetState extends State<_AliasFormSheet> {
         }
       }
     } catch (_) {}
-    // Counterparty not found — fall back to direct verify if bank already set
+    // Counterparty not found â€” fall back to direct verify if bank already set
     if (!mounted) return;
     if (_selectedBankId != null) {
       await _verifyAccount();
@@ -555,7 +555,7 @@ class _AliasFormSheetState extends State<_AliasFormSheet> {
         return;
       }
       final result = await FirebaseFunctions.instance
-          .httpsCallable('sudoNameEnquiry')
+          .httpsCallable('safehavenNameEnquiry')
           .call({
         'accountNumber': _accountNumberCtrl.text,
         'bankIdOrBankCode': _selectedBankId,
@@ -778,7 +778,7 @@ class _AliasFormSheetState extends State<_AliasFormSheet> {
               ),
               const SizedBox(height: 16),
 
-              // ── Account fields ──
+              // â”€â”€ Account fields â”€â”€
               if (_type == 'account') ...[
                 _label('Account Number *'),
                 const SizedBox(height: 6),
@@ -924,7 +924,7 @@ class _AliasFormSheetState extends State<_AliasFormSheet> {
                     ),
                   ),
 
-              // ── PadiTag fields ──
+              // â”€â”€ PadiTag fields â”€â”€
               ] else ...[
                 _label('PadiTag / Username *'),
                 const SizedBox(height: 6),
@@ -961,7 +961,7 @@ class _AliasFormSheetState extends State<_AliasFormSheet> {
                     if (v == null || v.trim().isEmpty) return 'Enter a PadiTag';
                     final cleaned = v.trim().replaceAll('@', '');
                     if (!RegExp(r'^[a-zA-Z0-9_]{3,20}$').hasMatch(cleaned)) {
-                      return '3–20 characters: letters, numbers, underscores only';
+                      return '3â€“20 characters: letters, numbers, underscores only';
                     }
                     return null;
                   },
@@ -1089,3 +1089,4 @@ class _AliasFormSheetState extends State<_AliasFormSheet> {
     );
   }
 }
+

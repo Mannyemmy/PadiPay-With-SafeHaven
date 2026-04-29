@@ -1,4 +1,4 @@
-import 'package:card_app/ui/account_image_scanner.dart';
+﻿import 'package:card_app/ui/account_image_scanner.dart';
 import 'package:card_app/ui/success_bottom_sheet.dart';
 import 'package:card_app/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -68,7 +68,7 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
 
     if (accountNumberController.text.length == 10) {
       _autoLookupCounterparty(accountNumberController.text);
-      if (selectedBank != null) _verifyAccountNumber();
+      if (selectedBank != null) _safehavenNameEnquiry();
     }
   }
 
@@ -84,7 +84,7 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
         });
       }
       if (bankList.isEmpty) {
-        final result = await FirebaseFunctions.instance.httpsCallable('sudoBankList').call();
+        final result = await FirebaseFunctions.instance.httpsCallable('safehavenBankList').call();
         final data = result.data as Map<String, dynamic>;
         final apiBankList = data['data'] as List<dynamic>;
         final batch = FirebaseFirestore.instance.batch();
@@ -110,13 +110,13 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
         isFetchingBanks = false;
       });
     } catch (e) {
-      debugPrint('getAllBanks error: $e');
+      debugPrint('safehavenBankList error: $e');
       showSimpleDialog('Error fetching banks', Colors.red);
       setState(() => isFetchingBanks = false);
     }
   }
 
-  Future<void> _verifyAccountNumber() async {
+  Future<void> _safehavenNameEnquiry() async {
     if (accountNumberController.text.length != 10 || selectedBank == null) {
       showSimpleDialog(
         'Please enter valid account number and select a bank',
@@ -138,7 +138,7 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
     setState(() => isLoading = true);
     try {
       final result = await FirebaseFunctions.instance
-          .httpsCallable('sudoNameEnquiry')
+          .httpsCallable('safehavenNameEnquiry')
           .call({
             'accountNumber': accountNumberController.text,
             'bankIdOrBankCode': selectedBank,
@@ -152,16 +152,16 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
         'verifiedAt': FieldValue.serverTimestamp(),
       });
     } catch (e) {
-      debugPrint('verifyAccountNumber error: $e');
+      debugPrint('safehavenNameEnquiry error: $e');
       showSimpleDialog('Error verifying account', Colors.red);
     }
     setState(() => isLoading = false);
   }
 
   Future<void> _autoLookupCounterparty(String accountNumber) async {
-    debugPrint('🔍 _autoLookupCounterparty called with: $accountNumber');
+    debugPrint('ðŸ” _autoLookupCounterparty called with: $accountNumber');
     if (accountNumber.length != 10) {
-      debugPrint('❌ Account number length is ${accountNumber.length}, not 10');
+      debugPrint(' Account number length is ${accountNumber.length}, not 10');
       return;
     }
     setState(() => isFetchingAccountName = true);
@@ -174,7 +174,7 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
       if (querySnapshot.docs.isNotEmpty) {
         final doc = querySnapshot.docs.first;
         final data = doc.data();
-        debugPrint('📋 Document data: $data');
+        debugPrint('ðŸ“‹ Document data: $data');
 
         String? bankId = data['recipientBankCode'] as String?;
         final accountName = data['data']?['attributes']?['accountName'] as String?
@@ -182,12 +182,12 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
             ?? data['accountName'] as String?;
         final bankName = data['bankName'] as String? ?? data['data']?['attributes']?['bank']?['name'] as String?;
 
-        debugPrint('🏦 Initial bankId: $bankId');
-        debugPrint('🏷️ bankName: $bankName');
-        debugPrint('👤 Found accountName: $accountName');
+        debugPrint('ðŸ¦ Initial bankId: $bankId');
+        debugPrint('ðŸ·ï¸ bankName: $bankName');
+        debugPrint('ðŸ‘¤ Found accountName: $accountName');
 
         if (bankId == null && bankName != null) {
-          debugPrint('🔁 bankId missing, trying banks collection lookup by bankName: $bankName');
+          debugPrint('ðŸ” bankId missing, trying banks collection lookup by bankName: $bankName');
           try {
             final bankQuery = await FirebaseFirestore.instance
                 .collection('banks')
@@ -196,7 +196,7 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
                 .get();
             if (bankQuery.docs.isNotEmpty) {
               bankId = bankQuery.docs.first.id;
-              debugPrint('🔍 Found bankId by name (equal): $bankId');
+              debugPrint('ðŸ” Found bankId by name (equal): $bankId');
             } else if (banks.isNotEmpty) {
               // Use already-loaded banks list instead of reading entire collection again
               final matched = banks.cast<Map<String, dynamic>?>().firstWhere(
@@ -205,7 +205,7 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
               );
               if (matched != null) {
                 bankId = matched['id'] as String;
-                debugPrint('🔍 Found bankId by cached banks match: $bankId');
+                debugPrint('ðŸ” Found bankId by cached banks match: $bankId');
               }
             }
           } catch (e) {
@@ -220,16 +220,16 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
             isFetchingAccountName = false;
           });
           // Also verify via remote if bank is available
-          _verifyAccountNumber();
+          _safehavenNameEnquiry();
           return;
         } else {
-          debugPrint('⚠️ bankId or accountName is null. bankId=$bankId, accountName=$accountName');
+          debugPrint('âš ï¸ bankId or accountName is null. bankId=$bankId, accountName=$accountName');
         }
       } else {
-        debugPrint('❌ No documents found for recipientAccountNumber: $accountNumber');
+        debugPrint(' No documents found for recipientAccountNumber: $accountNumber');
       }
     } catch (e) {
-      debugPrint('💥 _autoLookupCounterparty error: $e');
+      debugPrint('ðŸ’¥ _autoLookupCounterparty error: $e');
     }
     setState(() => isFetchingAccountName = false);
   }
@@ -254,7 +254,7 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
     }
   }
 
-  Future<void> _createNipTransfer() async {
+  Future<void> _safehavenTransferNip() async {
     final accountName = accountNameController.text;
     final selectedBankValue = selectedBank;
     final amountText = amountController.text;
@@ -289,7 +289,7 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
           .doc(user.uid)
           .get();
       final userVaData = userDoc
-          .data()?['getAnchorData']?['virtualAccount']?['data'];
+          .data()?['safehavenData']?['virtualAccount']?['data'];
       if (userVaData == null) {
         showSimpleDialog('User account not found', Colors.red);
         return;
@@ -328,13 +328,13 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
       );
       final recipientBankName = recipientBank['attributes']['name'];
 
-      // First transfer: user to company (book transfer — both on Anchor)
+      // First transfer: user to company (book transfer â€” both on Sudo)
       final fee = 50.0;
       final amountToCompanyKobo = (amountNaira + fee) * 100;
       final narration1 =
           'Ghost Mode to Company: ${remarkController.text.isNotEmpty ? remarkController.text : 'Transfer'}';
       final firstResult = await FirebaseFunctions.instance
-          .httpsCallable('sudoTransferIntra')
+          .httpsCallable('safehavenTransferIntra')
           .call({
             'fromAccountId': userAccountId,
             'toAccountId': companyVa['id'],
@@ -367,7 +367,7 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
         recipientCounterpartyId = queryRecipientCp.docs.first.id;
       } else {
         final createRecipientCpResult = await FirebaseFunctions.instance
-            .httpsCallable('sudoCreateCounterparty')
+            .httpsCallable('safehavenCreateCounterparty')
             .call({
               'accountId': companyVa['id'],
               'bankId': recipientBankId,
@@ -396,7 +396,7 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
           ? remarkController.text
           : 'Ghost Mode Transfer';
       final secondResult = await FirebaseFunctions.instance
-          .httpsCallable('sudoTransferNip')
+          .httpsCallable('safehavenTransferNip')
           .call({
             'accountType': companyVa['type'],
             'accountId': companyVa['id'],
@@ -444,7 +444,7 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
         isScrollControlled: true,
       );
     } catch (e) {
-      print('createNipTransfer error: $e');
+      print('safehavenTransferNip error: $e');
       showSimpleDialog('Error processing transfer', Colors.red);
     }
     setState(() => isLoading = false);
@@ -566,7 +566,7 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
                           if (value.length == 10) {
                             _autoLookupCounterparty(value);
                             if (selectedBank != null) {
-                              _verifyAccountNumber();
+                              _safehavenNameEnquiry();
                             }
                           }
                         },
@@ -687,7 +687,7 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
                                           )['id']
                                           as String?;
                                   if (accountNumberController.text.length == 10) {
-                                    _verifyAccountNumber();
+                                    _safehavenNameEnquiry();
                                   }
                                 });
                               },
@@ -809,7 +809,7 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
                                     ),
                                   ),
                                   Text(
-                                    '${accountNumberController.text} · ${banks.firstWhere((b) => b['id'] == selectedBank, orElse: () => {'attributes': {'name': 'Unknown'}})['attributes']['name']}',
+                                    '${accountNumberController.text} Â· ${banks.firstWhere((b) => b['id'] == selectedBank, orElse: () => {'attributes': {'name': 'Unknown'}})['attributes']['name']}',
                                     style: TextStyle(
                                       color: Colors.white54,
                                       fontSize: 12,
@@ -913,7 +913,7 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
                         onPressed: isLoading || (double.tryParse(amountController.text) ?? 0.0) <= 0
                             ? null
                             : () async {
-                                await _createNipTransfer();
+                                await _safehavenTransferNip();
                               },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,

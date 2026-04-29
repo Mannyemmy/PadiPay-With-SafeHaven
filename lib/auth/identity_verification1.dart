@@ -1,3 +1,5 @@
+// ignore_for_file: unused_element, unused_field, dead_code, unnecessary_cast, unused_import
+
 import 'dart:async';
 import 'dart:math';
 
@@ -7,6 +9,8 @@ import 'package:card_app/ui/permission_explanation_sheet.dart';
 import 'package:card_app/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+// ignore_for_file: unused_element, unused_field, dead_code, unnecessary_cast, unused_import
+
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:qoreidsdk/qoreidsdk.dart';

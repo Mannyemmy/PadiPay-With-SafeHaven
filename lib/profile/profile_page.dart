@@ -1,4 +1,4 @@
-import 'package:card_app/auth/sign-in.dart';
+﻿import 'package:card_app/auth/sign-in.dart';
 import 'package:card_app/home_pages/card_page.dart';
 import 'package:card_app/home_pages/home_page.dart';
 import 'package:card_app/home_pages/transactions_page.dart';
@@ -206,7 +206,7 @@ class _ProfilePageState extends State<ProfilePage> {
         state = data['address']?['state'];
         country = data['address']?['country'];
         profilePhotoUrl = data['profilePhotoUrl'];
-        tier = (data['getAnchorData']?['tier'] ?? "0").toString();
+        tier = (data['safehavenData']?['tier'] ?? "0").toString();
       });
     }
   }
@@ -371,7 +371,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                   ),
                                   SizedBox(width: 20),
                                   Text(
-                                    'Upgrade Account',
+                                    'Verification & Limits',
                                     style: TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w700,

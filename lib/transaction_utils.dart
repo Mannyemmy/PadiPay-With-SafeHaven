@@ -1,8 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+﻿import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-Future<void> fetchDepositAccount() async {
+Future<void> safehavenFetchDepositAccount() async {
   try {
     // Get the current user
     final user = FirebaseAuth.instance.currentUser;
@@ -20,14 +20,14 @@ Future<void> fetchDepositAccount() async {
       throw Exception('User document not found');
     }
 
-    // Extract accountId from getAnchorData.virtualAccount.data.id
+    // Extract accountId from safehavenData.virtualAccount.data.id
     final data = userDoc.data()!;
-    final anchorData = data['getAnchorData'] as Map<String, dynamic>?;
-    if (anchorData == null) {
-      throw Exception('Anchor data not found');
+    final safehavenData = data['safehavenData'] as Map<String, dynamic>?;
+    if (safehavenData == null) {
+      throw Exception('Sudo data not found');
     }
 
-    final virtualAccount = anchorData['virtualAccount'] as Map<String, dynamic>?;
+    final virtualAccount = safehavenData['virtualAccount'] as Map<String, dynamic>?;
     if (virtualAccount == null) {
       throw Exception('Virtual account data not found');
     }
@@ -43,7 +43,7 @@ Future<void> fetchDepositAccount() async {
     }
 
     // Call the Cloud Function with the accountId
-    final callable = FirebaseFunctions.instance.httpsCallable('sudoFetchDepositAccount');
+    final callable = FirebaseFunctions.instance.httpsCallable('safehavenFetchDepositAccount');
     final result = await callable.call({'accountId': accountId});
 
     // Print the response

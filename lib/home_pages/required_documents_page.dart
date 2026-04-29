@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 
 import 'package:card_app/ui/permission_explanation_sheet.dart';
 import 'package:card_app/utils.dart';
@@ -56,7 +56,7 @@ class _RequiredDocumentsPageState extends State<RequiredDocumentsPage> {
           [];
       setState(() {
         _documents = docs;
-        _customerId = data['getAnchorData']?['customerCreation']?['data']?['id']
+        _customerId = data['safehavenData']?['customerCreation']?['data']?['id']
             ?.toString();
       });
     } catch (e) {
@@ -95,7 +95,7 @@ class _RequiredDocumentsPageState extends State<RequiredDocumentsPage> {
       showSimpleDialog('No authenticated user', Colors.red);
       return;
     }
-    final docId = (doc['anchorId'] ?? doc['type'] ?? '').toString();
+    final docId = (doc['sudoId'] ?? doc['type'] ?? '').toString();
     if (docId.isEmpty) {
       showSimpleDialog('Missing document id', Colors.red);
       return;
@@ -126,7 +126,7 @@ class _RequiredDocumentsPageState extends State<RequiredDocumentsPage> {
       });
 
       final updatedDocs = _documents.map((d) {
-        final currentId = (d['anchorId'] ?? d['type'] ?? '').toString();
+        final currentId = (d['sudoId'] ?? d['type'] ?? '').toString();
         if (currentId == docId) {
           return {
             ...d,
@@ -216,7 +216,7 @@ class _RequiredDocumentsPageState extends State<RequiredDocumentsPage> {
                 final normalized = status.toLowerCase();
                 final isPending = normalized == 'pending';
                 final isSubmitted = normalized == 'submitted';
-                final docId = (doc['anchorId'] ?? doc['type'] ?? '').toString();
+                final docId = (doc['sudoId'] ?? doc['type'] ?? '').toString();
                 final uploading = _uploading[docId] == true;
 
                 return Container(

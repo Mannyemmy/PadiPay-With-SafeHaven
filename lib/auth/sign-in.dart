@@ -1,3 +1,5 @@
+// ignore_for_file: unused_element, unused_field, dead_code, unnecessary_cast, unused_import
+
 import 'package:card_app/auth/email_otp_verification_page.dart';
 import 'package:card_app/auth/forgot_password_page.dart';
 import 'package:card_app/auth/sign-up.dart';
@@ -6,6 +8,8 @@ import 'package:card_app/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart' as firestore;
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+// ignore_for_file: unused_element, unused_field, dead_code, unnecessary_cast, unused_import
+
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
@@ -1160,7 +1164,7 @@ class _SignInState extends State<SignIn> {
 
           // Log failed biometric login
           await _saveLoginLog(
-            email: email ?? 'Unknown',
+            email: email,
             success: false,
             errorMessage: 'Biometric: $errorMessage',
             ipAddress: ipAddress,

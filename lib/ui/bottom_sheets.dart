@@ -95,13 +95,13 @@ class _CardDetailsBottomSheetState extends State<CardDetailsBottomSheet> {
     try {
       if (currency == 'USD') {
         final callable = FirebaseFunctions.instance.httpsCallable(
-          'bridgecardGetCardTransactions',
+          'sudoGetCardTransactions',
         );
-        final response = await callable.call({'card_id': cardId});
+        final response = await callable.call({'cardId': cardId, 'limit': 20});
         if (response.data['status'] == 'success') {
           setState(() {
             _transactionsMap[cardId] = List.from(
-              response.data['data']['transactions'] ?? [],
+              response.data['data'] ?? [],
             );
           });
         } else {
@@ -528,7 +528,6 @@ class _CardDetailsBottomSheetState extends State<CardDetailsBottomSheet> {
                                   itemBuilder: (context, idx) {
                                     final trans =
                                         transactions[idx] as Map? ?? {};
-                                    // Support both Bridgecard (USD) and Firestore Sudo (NGN) shapes
                                     final String type =
                                         trans['card_transaction_type']?.toString() ??
                                         trans['type']?.toString() ??
@@ -538,14 +537,12 @@ class _CardDetailsBottomSheetState extends State<CardDetailsBottomSheet> {
                                     final bool isRefundTx = typeStr == 'card_refund';
                                     final bool isCredit = typeStr == 'credit' || typeStr == 'deposit' || isRefundTx;
                                     final String sign = (isCredit && !isDeclinedTx) ? '+' : '-';
-                                    // Amount: Bridgecard sends kobo string, Firestore Sudo docs store naira number
                                     double amt = 0;
                                     final rawAmt = trans['amount'];
                                     if (rawAmt is num) {
                                       amt = rawAmt.toDouble();
-                                      // Bridgecard USD transactions have 'card_transaction_type'; Firestore docs don't
                                       if (trans['card_transaction_type'] != null) {
-                                        amt /= 100; // Bridgecard is in kobo
+                                        amt /= 100;
                                       }
                                     } else if (rawAmt != null) {
                                       amt = double.tryParse(rawAmt.toString()) ?? 0.0;
@@ -570,14 +567,12 @@ class _CardDetailsBottomSheetState extends State<CardDetailsBottomSheet> {
                                             ? 'Refunded'
                                             : 'Successful';
                                     final Color statusColor = color;
-                                    // Title: Firestore docs use 'merchant', Bridgecard uses 'description'/'narration'
                                     final String title =
                                         trans['merchant']?.toString() ??
                                         trans['description']?.toString() ??
                                         trans['narration']?.toString() ??
                                         trans['type']?.toString() ??
                                         'Transaction';
-                                    // Date: Firestore docs use Timestamp, Bridgecard uses string fields
                                     String formattedDate = '';
                                     final rawTs = trans['timestamp'];
                                     if (rawTs is Timestamp) {
@@ -1630,19 +1625,6 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
       } else if (rawRate is String) {
         final parsed = double.tryParse(rawRate);
         if (parsed != null && parsed > 0) rate = parsed;
-      }
-
-      if (rate == null) {
-        final fxCallable = FirebaseFunctions.instance.httpsCallable(
-          'bridgecardGetFxRate',
-        );
-        final fxResponse = await fxCallable.call();
-        if (fxResponse.data is Map && fxResponse.data['status'] == 'success') {
-          final dynamic ngnUsd = fxResponse.data['data']?['NGN-USD'];
-          if (ngnUsd is num) {
-            rate = ngnUsd.toDouble() / 100;
-          }
-        }
       }
 
       if (mounted) {

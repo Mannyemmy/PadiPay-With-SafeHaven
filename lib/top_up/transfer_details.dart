@@ -1,4 +1,4 @@
-import 'package:card_app/utils.dart';
+﻿import 'package:card_app/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -14,21 +14,26 @@ class AddViaBankTransfer extends StatefulWidget {
 
 class _AddViaBankTransferState extends State<AddViaBankTransfer> {
   String accountNumber = "";
-  Future<DocumentSnapshot> _fetchUserData() async {
+
+  Future<Map<String, dynamic>> _fetchAllData() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) throw Exception('No user logged in');
-    return FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    final results = await Future.wait([
+      FirebaseFirestore.instance.collection('users').doc(user.uid).get(),
+      FirebaseFirestore.instance.collection('safehavenUserSetup').doc(user.uid).get(),
+    ]);
+    return {'user': results[0], 'setup': results[1]};
   }
 
 
   @override
   void initState() {
     super.initState();
-    fetchDepositAccount();
+    safehavenFetchDepositAccount();
   }
 
 
-  Future<void> fetchDepositAccount() async {
+  Future<void> safehavenFetchDepositAccount() async {
     try {
       // Get the current user
       final user = FirebaseAuth.instance.currentUser;
@@ -46,15 +51,15 @@ class _AddViaBankTransferState extends State<AddViaBankTransfer> {
         throw Exception('User document not found');
       }
 
-      // Extract accountId from getAnchorData.virtualAccount.data.id
+      // Extract accountId from safehavenData.virtualAccount.data.id
       final data = userDoc.data()!;
-      final anchorData = data['getAnchorData'] as Map<String, dynamic>?;
-      if (anchorData == null) {
-        throw Exception('Anchor data not found');
+      final safehavenData = data['safehavenData'] as Map<String, dynamic>?;
+      if (safehavenData == null) {
+        throw Exception('Sudo data not found');
       }
 
       final virtualAccount =
-          anchorData['virtualAccount'] as Map<String, dynamic>?;
+          safehavenData['virtualAccount'] as Map<String, dynamic>?;
       if (virtualAccount == null) {
         throw Exception('Virtual account data not found');
       }
@@ -71,7 +76,7 @@ class _AddViaBankTransferState extends State<AddViaBankTransfer> {
 
       // Call the Cloud Function with the accountId
       final callable = FirebaseFunctions.instance.httpsCallable(
-        'sudoFetchDepositAccount',
+        'safehavenFetchDepositAccount',
       );
       final result = await callable.call({'accountId': accountId});
 
@@ -95,8 +100,8 @@ class _AddViaBankTransferState extends State<AddViaBankTransfer> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: FutureBuilder<DocumentSnapshot>(
-        future: _fetchUserData(),
+      body: FutureBuilder<Map<String, dynamic>>(
+        future: _fetchAllData(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -106,19 +111,33 @@ class _AddViaBankTransferState extends State<AddViaBankTransfer> {
           if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           }
-          if (!snapshot.hasData || !snapshot.data!.exists) {
+          if (!snapshot.hasData) {
             return const Center(child: Text('No data found'));
           }
 
-          final data = snapshot.data!.data() as Map<String, dynamic>?;
-          final getAnchorData =
-              data?['getAnchorData']?['virtualAccount']?['data']?['attributes']
+          final userSnap = snapshot.data!['user'] as DocumentSnapshot;
+          final setupSnap = snapshot.data!['setup'] as DocumentSnapshot;
+
+          if (!userSnap.exists) {
+            return const Center(child: Text('No data found'));
+          }
+
+          final data = userSnap.data() as Map<String, dynamic>?;
+          final attrs =
+              data?['safehavenData']?['virtualAccount']?['data']?['attributes']
                   as Map<String, dynamic>? ??
               {};
-          final bankName = getAnchorData['bank']?['name'] as String? ?? 'N/A';
-          final accountNumber =
-              getAnchorData['accountNumber'] as String? ?? 'N/A';
-          final accountName = getAnchorData['accountName'] as String? ?? 'N/A';
+          final setupData = setupSnap.data() as Map<String, dynamic>? ?? {};
+
+          final bankName = (attrs['bank']?['name'] as String?)?.isNotEmpty == true
+              ? attrs['bank']!['name'] as String
+              : (setupData['safehavenBankName'] as String? ?? 'N/A');
+          final accountNumber = (attrs['accountNumber'] as String?)?.isNotEmpty == true
+              ? attrs['accountNumber'] as String
+              : (setupData['safehavenAccountNumber'] as String? ?? 'N/A');
+          final accountName = (attrs['accountName'] as String?)?.isNotEmpty == true
+              ? attrs['accountName'] as String
+              : (setupData['safehavenAccountName'] as String? ?? 'N/A');
 
           return Padding(
             padding: const EdgeInsets.all(16.0),
@@ -286,3 +305,4 @@ class _AddViaBankTransferState extends State<AddViaBankTransfer> {
     );
   }
 }
+

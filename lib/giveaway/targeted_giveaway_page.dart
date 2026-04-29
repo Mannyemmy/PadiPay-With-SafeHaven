@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
@@ -9,6 +9,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:excel/excel.dart' as xl;
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+// ignore_for_file: unused_element, unused_field, dead_code, unnecessary_cast, unused_import
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -103,7 +105,7 @@ class _TargetedGiveawayPageState extends State<TargetedGiveawayPage> {
   void initState() {
     super.initState();
     _fetchCurrentUserUsername();
-    _fetchAccountBalance();
+    _safehavenFetchAccountBalance();
     _fetchCompanyVirtualAccount();
     _amountCtrl.addListener(() => setState(() {}));
     // Pre-fill from MyPadi
@@ -177,7 +179,7 @@ class _TargetedGiveawayPageState extends State<TargetedGiveawayPage> {
     } catch (_) {}
   }
 
-  Future<void> _fetchAccountBalance() async {
+  Future<void> _safehavenFetchAccountBalance() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
@@ -187,9 +189,9 @@ class _TargetedGiveawayPageState extends State<TargetedGiveawayPage> {
           .get();
       if (!userDoc.exists) return;
       final data = userDoc.data()!;
-      final anchorData = data['getAnchorData'] as Map<String, dynamic>?;
+      final safehavenData = data['safehavenData'] as Map<String, dynamic>?;
       final virtualAccount =
-          anchorData?['virtualAccount'] as Map<String, dynamic>?;
+          safehavenData?['virtualAccount'] as Map<String, dynamic>?;
       final accountData =
           virtualAccount?['data'] as Map<String, dynamic>?;
       if (accountData == null) return;
@@ -198,7 +200,7 @@ class _TargetedGiveawayPageState extends State<TargetedGiveawayPage> {
         _accountType = accountData['type']?.toString();
       });
       final result = await callCloudFunctionLogged(
-        'sudoFetchAccountBalance',
+        'safehavenFetchAccountBalance',
         source: 'targeted_giveaway_page.dart',
         payload: {'accountId': _accountId},
       );
@@ -267,7 +269,7 @@ class _TargetedGiveawayPageState extends State<TargetedGiveawayPage> {
 You are extracting Padi-tag usernames from the provided content.
 Padi-tags are short usernames that identify users on the Padi app.
 They may appear with or without a "@" prefix.
-They follow the pattern: lower-case letters, numbers, underscores, 3�20 characters.
+They follow the pattern: lower-case letters, numbers, underscores, 3ï¿½20 characters.
 
 Extract ALL usernames/tags/handles you can find. They might be:
 - Listed one per line
@@ -354,7 +356,7 @@ If none found, return an empty array: []
     if (dupes > 0) msgs.add('$dupes duplicate(s) skipped');
     if (invalid > 0) msgs.add('$invalid invalid format(s) skipped');
     if (msgs.isNotEmpty && (dupes > 0 || invalid > 0)) {
-      showSimpleDialog(msgs.join(' � '), Colors.orange);
+      showSimpleDialog(msgs.join(' ï¿½ '), Colors.orange);
     }
   }
 
@@ -452,7 +454,7 @@ If none found, return an empty array: []
           mimeType: 'application/pdf',
         );
       } else if (ext == 'docx' || ext == 'doc') {
-        // Gemini supports OOXML � try it; fallback to raw UTF-8 read
+        // Gemini supports OOXML ï¿½ try it; fallback to raw UTF-8 read
         try {
           extracted = await _extractUsernamesViaGemini(
             bytes: bytes,
@@ -704,10 +706,10 @@ If none found, return an empty array: []
         code = await _generateUniqueCode();
       }
 
-      // Transfer to company (book transfer � both on Anchor)
+      // Transfer to company (book transfer ï¿½ both on Sudo)
       final transferAmountKobo = _transferAmount * 100;
       final transferResult = await callCloudFunctionLogged(
-          'sudoTransferIntra',
+          'safehavenTransferIntra',
           source: 'targeted_giveaway_page.dart',
           payload: {
             'fromAccountId': _accountId,
@@ -774,7 +776,7 @@ If none found, return an empty array: []
         );
       }
 
-      _fetchAccountBalance();
+      _safehavenFetchAccountBalance();
     } catch (e) {
       debugPrint('Error creating targeted giveaway: $e');
       showSimpleDialog('Failed to create giveaway', Colors.red);
@@ -848,7 +850,7 @@ If none found, return an empty array: []
                     color: primaryColor, size: 20),
                 const SizedBox(width: 8),
                 Text(
-                  'Balance: ${_balance ?? '�'}',
+                  'Balance: ${_balance ?? 'ï¿½'}',
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     color: primaryColor,
@@ -877,7 +879,7 @@ If none found, return an empty array: []
           ),
           const SizedBox(height: 16),
 
-          // manual entry � textarea with comma/newline separation
+          // manual entry ï¿½ textarea with comma/newline separation
           TextField(
             controller: _tagInputCtrl,
             textCapitalization: TextCapitalization.none,
@@ -1031,7 +1033,7 @@ If none found, return an empty array: []
           _buildImportButton(
             icon: FontAwesomeIcons.fileCsv,
             label: 'Import from File',
-            subtitle: 'CSV � TXT � Excel � PDF � DOCX',
+            subtitle: 'CSV ï¿½ TXT ï¿½ Excel ï¿½ PDF ï¿½ DOCX',
             onTap: _isExtracting ? null : _pickFromFile,
             color: const Color(0xFF34C759),
           ),
@@ -1041,7 +1043,7 @@ If none found, return an empty array: []
           _buildImportButton(
             icon: FontAwesomeIcons.image,
             label: 'Import from Image / Screenshot',
-            subtitle: 'Camera � Gallery � Padi AI extracts usernames',
+            subtitle: 'Camera ï¿½ Gallery ï¿½ Padi AI extracts usernames',
             onTap: _isExtracting ? null : _pickFromImage,
             color: const Color(0xFFFF9500),
           ),
@@ -1055,7 +1057,7 @@ If none found, return an empty array: []
                   CircularProgressIndicator(color: primaryColor),
                   SizedBox(height: 10),
                   Text(
-                    'Extracting usernames with Padi AI�',
+                    'Extracting usernames with Padi AIï¿½',
                     style: TextStyle(color: Colors.grey),
                   ),
                 ],
@@ -1073,7 +1075,7 @@ If none found, return an empty array: []
                 _hasInvalidTags;
             final String label;
             if (_isTagsChecking) {
-              label = 'Validating tags�';
+              label = 'Validating tagsï¿½';
             } else if (_hasInvalidTags) {
               label = 'Remove or clear invalid tags to continue';
             } else {
@@ -1317,7 +1319,7 @@ If none found, return an empty array: []
                   size: 16, color: Colors.grey),
               const SizedBox(width: 6),
               Text(
-                'Balance: ${_balance ?? '�'}',
+                'Balance: ${_balance ?? 'ï¿½'}',
                 style: TextStyle(
                     color: Colors.grey.shade600, fontSize: 13),
               ),
@@ -1497,3 +1499,4 @@ If none found, return an empty array: []
     );
   }
 }
+

@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:card_app/my_padi/padi_aliases_page.dart';
 import 'package:card_app/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -9,7 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 const String _kGeminiApiKey = 'AIzaSyAsQ8zSoIKzK89Qh8PwijvYOjp6486VRP8';
 
-/// Actions that MyPadi can trigger — the UI layer handles navigation.
+/// Actions that MyPadi can trigger â€” the UI layer handles navigation.
 enum PadiAction {
   transfer,
   buyAirtime,
@@ -95,7 +95,7 @@ class PadiChatSession {
   });
 }
 
-// ── Language definitions ───────────────────────────────────────────────────
+// â”€â”€ Language definitions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class PadiLanguage {
   final String code;
@@ -103,9 +103,9 @@ class PadiLanguage {
   final String instruction;
 
   // UI strings
-  final String greeting;       // "Hey! I'm MyPadi 👋"
-  final String subtitle;       // "Your personal financial assistant…"
-  final String inputHint;      // "Ask MyPadi anything…"
+  final String greeting;       // "Hey! I'm MyPadi ðŸ‘‹"
+  final String subtitle;       // "Your personal financial assistantâ€¦"
+  final String inputHint;      // "Ask MyPadi anythingâ€¦"
   final String sendMoney;
   final String buyAirtime;
   final String payBills;
@@ -135,7 +135,7 @@ const List<PadiLanguage> padiLanguages = [
     label: 'English',
     instruction:
         'Respond in clear, concise English. You may sprinkle in light Nigerian expressions naturally.',
-    greeting: "Hey! I'm MyPadi 👋",
+    greeting: "Hey! I'm MyPadi ðŸ‘‹",
     subtitle: "Your personal financial assistant.\nHow can I help you today?",
     inputHint: "Ask MyPadi anything...",
     sendMoney: "Send Money",
@@ -150,7 +150,7 @@ const List<PadiLanguage> padiLanguages = [
     label: 'Pidgin',
     instruction:
         'Respond entirely in Nigerian Pidgin English. Use natural Pidgin grammar and expressions. E.g. "Wetin you wan do?", "E don work!", "No wahala, I go help you."',
-    greeting: "How you dey! Na me be MyPadi 👋",
+    greeting: "How you dey! Na me be MyPadi ðŸ‘‹",
     subtitle: "Your personal money assistant.\nWetin you wan do today?",
     inputHint: "Ask MyPadi anything...",
     sendMoney: "Send Money",
@@ -162,17 +162,17 @@ const List<PadiLanguage> padiLanguages = [
   ),
   PadiLanguage(
     code: 'yo',
-    label: 'Yorùbá',
+    label: 'YorÃ¹bÃ¡',
     instruction:
-        'Respond in Yorùbá language. Use proper Yorùbá grammar with tone marks where possible. You may mix in English words for financial/technical terms that have no direct Yorùbá equivalent.',
-    greeting: "Ẹ káàbọ̀! Èmi ni MyPadi 👋",
-    subtitle: "Olùrànlọ́wọ́ ọrọ̀ajé rẹ.\nKí ni mo lè ṣe fún ọ lónìí?",
-    inputHint: "Béèrè lọ́wọ́ MyPadi ohunkóhun...",
-    sendMoney: "Fi Owó Ránṣẹ́",
-    buyAirtime: "Rà Airtime",
-    payBills: "San Ìwé Àjọ",
-    myBalance: "Iye Owó Mi",
-    transactions: "Àwọn Iṣòwò",
+        'Respond in YorÃ¹bÃ¡ language. Use proper YorÃ¹bÃ¡ grammar with tone marks where possible. You may mix in English words for financial/technical terms that have no direct YorÃ¹bÃ¡ equivalent.',
+    greeting: "áº¸ kÃ¡Ã bá»Ì€! Ãˆmi ni MyPadi ðŸ‘‹",
+    subtitle: "OlÃ¹rÃ nlá»Ìwá»Ì á»rá»Ì€ajÃ© ráº¹.\nKÃ­ ni mo lÃ¨ á¹£e fÃºn á» lÃ³nÃ¬Ã­?",
+    inputHint: "BÃ©Ã¨rÃ¨ lá»Ìwá»Ì MyPadi ohunkÃ³hun...",
+    sendMoney: "Fi OwÃ³ RÃ¡ná¹£áº¹Ì",
+    buyAirtime: "RÃ  Airtime",
+    payBills: "San ÃŒwÃ© Ã€já»",
+    myBalance: "Iye OwÃ³ Mi",
+    transactions: "Ã€wá»n Iá¹£Ã²wÃ²",
     ghostMode: "Ghost Mode",
   ),
   PadiLanguage(
@@ -180,7 +180,7 @@ const List<PadiLanguage> padiLanguages = [
     label: 'Hausa',
     instruction:
         'Respond in Hausa language. Use proper Hausa grammar. You may use English words for financial/technical terms that have no direct Hausa equivalent.',
-    greeting: "Sannu! Ni ne MyPadi 👋",
+    greeting: "Sannu! Ni ne MyPadi ðŸ‘‹",
     subtitle: "Mai taimaka maka wajen kudi.\nMe kake so a yau?",
     inputHint: "Tambaya MyPadi komai...",
     sendMoney: "Aika Kudi",
@@ -195,14 +195,14 @@ const List<PadiLanguage> padiLanguages = [
     label: 'Igbo',
     instruction:
         'Respond in Igbo language. Use proper Igbo grammar. You may use English words for financial/technical terms that have no direct Igbo equivalent.',
-    greeting: "Nnọọ! Abụ m MyPadi 👋",
-    subtitle: "Onye enyemaka ego gị.\nGịnị ka m nwere ike ime ụbọchị a?",
-    inputHint: "Jụọ MyPadi ihe ọ bụla...",
+    greeting: "Nná»á»! Abá»¥ m MyPadi ðŸ‘‹",
+    subtitle: "Onye enyemaka ego gá»‹.\nGá»‹ná»‹ ka m nwere ike ime á»¥bá»chá»‹ a?",
+    inputHint: "Já»¥á» MyPadi ihe á» bá»¥la...",
     sendMoney: "Ziga Ego",
-    buyAirtime: "Zụọ Airtime",
-    payBills: "Kwụọ Ụgwọ",
+    buyAirtime: "Zá»¥á» Airtime",
+    payBills: "Kwá»¥á» á»¤gwá»",
     myBalance: "Ego M",
-    transactions: "Azụmahịa",
+    transactions: "Azá»¥mahá»‹a",
     ghostMode: "Ghost Mode",
   ),
   PadiLanguage(
@@ -210,9 +210,9 @@ const List<PadiLanguage> padiLanguages = [
     label: 'Efik',
     instruction:
         'Respond in Efik language. Use proper Efik grammar. You may use English words for financial/technical terms.',
-    greeting: "Mbok! Ami enye MyPadi 👋",
-    subtitle: "Mmọ ẹnye ukeme ke mkpọ.\nÀnyà ami ima ke nnyin?",
-    inputHint: "Jụọ MyPadi ihe ọ bụla...",
+    greeting: "Mbok! Ami enye MyPadi ðŸ‘‹",
+    subtitle: "Mmá» áº¹nye ukeme ke mkpá».\nÃ€nyÃ  ami ima ke nnyin?",
+    inputHint: "Já»¥á» MyPadi ihe á» bá»¥la...",
     sendMoney: "Send Money",
     buyAirtime: "Buy Airtime",
     payBills: "Pay Bills",
@@ -225,7 +225,7 @@ const List<PadiLanguage> padiLanguages = [
     label: 'Tiv',
     instruction:
         'Respond in Tiv language. Use proper Tiv grammar. You may use English words for financial/technical terms.',
-    greeting: "Azahan! Nyi MyPadi 👋",
+    greeting: "Azahan! Nyi MyPadi ðŸ‘‹",
     subtitle: "Mba sha sha kwase u ngohol.\nNea u vivi?",
     inputHint: "Bisa MyPadi sha sha...",
     sendMoney: "Send Money",
@@ -240,8 +240,8 @@ const List<PadiLanguage> padiLanguages = [
     label: 'Fulfulde',
     instruction:
         'Respond in Fulfulde language. Use proper Fulfulde grammar. You may use English words for financial/technical terms.',
-    greeting: "Jaraama! Min woni MyPadi 👋",
-    subtitle: "Ballotooɗo maa e ngoluɗe.\nHol ko mbaawtotooɗo haɓɓude?",
+    greeting: "Jaraama! Min woni MyPadi ðŸ‘‹",
+    subtitle: "BallotooÉ—o maa e ngoluÉ—e.\nHol ko mbaawtotooÉ—o haÉ“É“ude?",
     inputHint: "Laar MyPadi fewdo...",
     sendMoney: "Send Money",
     buyAirtime: "Buy Airtime",
@@ -255,7 +255,7 @@ const List<PadiLanguage> padiLanguages = [
     label: 'Ijaw',
     instruction:
         'Respond in Ijaw (Izon) language. Use proper Ijaw grammar. You may use English words for financial/technical terms.',
-    greeting: "Boro! Ayiba MyPadi 👋",
+    greeting: "Boro! Ayiba MyPadi ðŸ‘‹",
     subtitle: "Boro piri owo yenagoa.\nBenikiri mi kiri?",
     inputHint: "Kiri MyPadi boro...",
     sendMoney: "Send Money",
@@ -270,9 +270,9 @@ const List<PadiLanguage> padiLanguages = [
     label: 'Kanuri',
     instruction:
         'Respond in Kanuri language. Use proper Kanuri grammar. You may use English words for financial/technical terms.',
-    greeting: "Wúsalam! Nyi MyPadi 👋",
-    subtitle: "Kalangu dibe wúro.\nKa wú fəlgin?",
-    inputHint: "Sa MyPadi fəlgin...",
+    greeting: "WÃºsalam! Nyi MyPadi ðŸ‘‹",
+    subtitle: "Kalangu dibe wÃºro.\nKa wÃº fÉ™lgin?",
+    inputHint: "Sa MyPadi fÉ™lgin...",
     sendMoney: "Send Money",
     buyAirtime: "Buy Airtime",
     payBills: "Pay Bills",
@@ -285,7 +285,7 @@ const List<PadiLanguage> padiLanguages = [
     label: 'Nupe',
     instruction:
         'Respond in Nupe language. Use proper Nupe grammar. You may use English words for financial/technical terms.',
-    greeting: "Kpecin! Nyi MyPadi 👋",
+    greeting: "Kpecin! Nyi MyPadi ðŸ‘‹",
     subtitle: "Wuya egi ezun.\nEgi nkoci?",
     inputHint: "Biza MyPadi egi...",
     sendMoney: "Send Money",
@@ -297,7 +297,7 @@ const List<PadiLanguage> padiLanguages = [
   ),
 ];
 
-// ── Service ───────────────────────────────────────────────────────────────
+// â”€â”€ Service â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class MyPadiService {
   GenerativeModel? _model;
@@ -320,7 +320,7 @@ class MyPadiService {
 
   String get currentLangCode => _currentLangCode;
 
-  // ── Function declarations for Gemini ──────────────────────────────────────
+  // â”€â”€ Function declarations for Gemini â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   static final _functionDeclarations = [
     FunctionDeclaration(
@@ -391,7 +391,7 @@ class MyPadiService {
     ),
     FunctionDeclaration(
       'do_giveaway',
-      'Create a giveaway — send money to multiple PadiTag recipients. Use this whenever the user mentions giveaway, sharing money to multiple people by their tags/usernames, or distributing money to a list of people.',
+      'Create a giveaway â€” send money to multiple PadiTag recipients. Use this whenever the user mentions giveaway, sharing money to multiple people by their tags/usernames, or distributing money to a list of people.',
       Schema.object(properties: {
         'tags': Schema.array(
             items: Schema.string(),
@@ -402,7 +402,7 @@ class MyPadiService {
     ),
     FunctionDeclaration(
       'open_feature',
-      'Navigate to a specific app feature/page. Do NOT use this for giveaway when you have recipient tags — use do_giveaway instead.',
+      'Navigate to a specific app feature/page. Do NOT use this for giveaway when you have recipient tags â€” use do_giveaway instead.',
       Schema.object(properties: {
         'feature': Schema.string(
             description:
@@ -432,7 +432,7 @@ class MyPadiService {
     ),
   ];
 
-  // ── Initialization ────────────────────────────────────────────────────────
+  // â”€â”€ Initialization â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Future<void> initialize({String langCode = 'en'}) async {
     _currentLangCode = langCode;
@@ -480,8 +480,8 @@ class MyPadiService {
             '${data['firstName'] ?? ''} ${data['lastName'] ?? ''}'.trim();
         _userFirstName = (data['firstName'] ?? '').toString().trim();
         _userTag = data['userName'] ?? '';
-        _tier = (data['getAnchorData']?['tier'] ?? '0').toString();
-        _accountNumber = data['getAnchorData']?['virtualAccount']?['data']
+        _tier = (data['safehavenData']?['tier'] ?? '0').toString();
+        _accountNumber = data['safehavenData']?['virtualAccount']?['data']
                     ?['attributes']?['accountNumber'] ??
                 '';
       }
@@ -569,7 +569,7 @@ class MyPadiService {
     }).join('\n');
 
     return '''
-You are MyPadi, a friendly and helpful AI financial assistant inside the PadiPay app — a Nigerian fintech app.
+You are MyPadi, a friendly and helpful AI financial assistant inside the PadiPay app â€” a Nigerian fintech app.
 Your personality: warm, concise, and smart.
 
 LANGUAGE INSTRUCTION:
@@ -589,40 +589,40 @@ SAVED CONTACTS (user's personal aliases / nicknames):
 ${_buildAliasesPrompt()}
 When the user mentions any alias name, resolve it to the corresponding account or PadiTag.
 
-CAPABILITIES — you can help users with:
-1. **Transfer money** — call transfer_money with recipient details
-2. **Buy airtime** — call buy_airtime with phone number and amount
-3. **Pay bills** — call pay_bill for electricity, cable, data
-4. **Check balance** — call check_balance to fetch real-time balance
-5. **Search transactions** — call search_transactions to look up history
-6. **Generate statement** — call generate_statement for date ranges
-7. **Navigate the app** — call open_feature to go to specific pages
-8. **Spending insights** — call get_spending_summary for analytics
-9. **Giveaway** — call do_giveaway when user wants to send money to multiple people by their tags/usernames. Extract all mentioned tags/usernames. NEVER use transfer_money for giveaway requests.
-10. **Customer support** — answer common questions directly. If the issue needs human intervention (failed transaction not reversed, account frozen, KYC disputes, fraud, etc.), call submit_support_ticket to log it.
+CAPABILITIES â€” you can help users with:
+1. **Transfer money** â€” call transfer_money with recipient details
+2. **Buy airtime** â€” call buy_airtime with phone number and amount
+3. **Pay bills** â€” call pay_bill for electricity, cable, data
+4. **Check balance** â€” call check_balance to fetch real-time balance
+5. **Search transactions** â€” call search_transactions to look up history
+6. **Generate statement** â€” call generate_statement for date ranges
+7. **Navigate the app** â€” call open_feature to go to specific pages
+8. **Spending insights** â€” call get_spending_summary for analytics
+9. **Giveaway** â€” call do_giveaway when user wants to send money to multiple people by their tags/usernames. Extract all mentioned tags/usernames. NEVER use transfer_money for giveaway requests.
+10. **Customer support** â€” answer common questions directly. If the issue needs human intervention (failed transaction not reversed, account frozen, KYC disputes, fraud, etc.), call submit_support_ticket to log it.
 
 CUSTOMER SUPPORT KNOWLEDGE:
-- **Failed transaction / debit without credit**: Ask for the transaction date, amount, and recipient. Reassure the user that most reversals happen within 24–72 hours. If it's been longer, submit a support ticket.
+- **Failed transaction / debit without credit**: Ask for the transaction date, amount, and recipient. Reassure the user that most reversals happen within 24â€“72 hours. If it's been longer, submit a support ticket.
 - **Account frozen / restricted**: This is usually due to BVN mismatch, tier limit exceeded, or a compliance flag. Advise the user to check their profile and complete any pending verification. Escalate by submitting a ticket.
 - **KYC / Tier upgrade**: Tier 1 requires BVN; Tier 2 requires a valid government ID and a selfie. Direct the user to their Profile page to upload documents.
 - **Wrong transfer**: PadiPay can initiate a recall request, but reversal is not guaranteed. Collect details and submit a support ticket immediately.
 - **Card issues** (virtual card declined, card frozen): Direct user to the Cards page. If still broken, submit a ticket.
-- **PIN reset**: Advise user to go to Profile → Change PIN. If locked out, submit a ticket.
+- **PIN reset**: Advise user to go to Profile â†’ Change PIN. If locked out, submit a ticket.
 - **Referral / promo not credited**: Collect referral code and submit a ticket.
 - **App crashes or slow**: Ask the user to clear the app cache or reinstall. If it persists, submit a ticket.
 - Support tickets are logged to Firestore and the support team will respond via in-app notification or email within 24 hours (business days).
 
 RULES:
 - For money actions (transfer, airtime, bills), gather the needed info conversationally. Don't call the function until you have enough details.
-- For giveaway: extract ALL tags mentioned and call do_giveaway immediately — do NOT ask for bank account or bank name.
+- For giveaway: extract ALL tags mentioned and call do_giveaway immediately â€” do NOT ask for bank account or bank name.
 - Always confirm amounts before executing. Say something like "I'll set up a ₦X,000 transfer to [name]. Let me take you there."
 - Never expose internal API details, account IDs, or error stack traces.
 - If you're unsure, ask a clarifying question rather than guessing.
-- Keep responses SHORT — 1-3 sentences max unless the user asks for detail.
+- Keep responses SHORT â€” 1-3 sentences max unless the user asks for detail.
 - When providing transaction summaries, format amounts with ₦ and commas.
 - Currency is always Nigerian Naira (₦ / NGN).
 - IMPORTANT: "spent" and "debits" only refers to OUTGOING transactions (direction=sent) with status=successful or status=completed. NEVER count incoming credits (direction=received) or failed/pending transactions as spending.
-- IMPORTANT: "atm_payment" transactions are INCOMING credits (a customer paid you via their ATM card). NEVER treat them as spending or expenses — always treat them as money received.
+- IMPORTANT: "atm_payment" transactions are INCOMING credits (a customer paid you via their ATM card). NEVER treat them as spending or expenses â€” always treat them as money received.
 - Today's date is ${DateFormat('MMMM d, yyyy').format(DateTime.now())}.
 ''';
   }
@@ -631,13 +631,13 @@ RULES:
     if (_aliases.isEmpty) return 'No contacts saved yet.';
     return _aliases.map((a) {
       if (a.type == 'tag') {
-        return '- "${a.alias}" → PadiTag @${a.padiTag} (use this tag when searching transactions or sending)';
+        return '- "${a.alias}" â†’ PadiTag @${a.padiTag} (use this tag when searching transactions or sending)';
       } else {
         final parts = <String>[];
         if (a.displayName != null && a.displayName!.isNotEmpty) parts.add('name: ${a.displayName}');
         if (a.accountNumber != null) parts.add('account: ${a.accountNumber}');
         if (a.bankName != null) parts.add('bank: ${a.bankName}');
-        return '- "${a.alias}" → ${parts.join(', ')}';
+        return '- "${a.alias}" â†’ ${parts.join(', ')}';
       }
     }).join('\n');
   }
@@ -654,7 +654,7 @@ RULES:
     _aliases = snap.docs.map(PadiAlias.fromDoc).toList();
   }
 
-  // ── Send message (streaming) ──────────────────────────────────────────────
+  // â”€â”€ Send message (streaming) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Stream<String> sendMessageStream(String userMessage) async* {
     if (!_initialized) await initialize(langCode: _currentLangCode);
@@ -694,7 +694,7 @@ RULES:
     }
   }
 
-  // ── Last action extracted from function calls ─────────────────────────────
+  // â”€â”€ Last action extracted from function calls â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   PadiActionResult? lastAction;
 
@@ -793,10 +793,10 @@ RULES:
       final userDoc = await FirebaseFirestore.instance
           .collection('users').doc(user.uid).get();
 
-      final accountId = userDoc.data()!['getAnchorData']['virtualAccount']['data']['id']?.toString();
+      final accountId = userDoc.data()!['safehavenData']['virtualAccount']['data']['id']?.toString();
 
       final result = await callCloudFunctionLogged(
-        'sudoFetchAccountBalance',
+        'safehavenFetchAccountBalance',
         source: 'my_padi_service.dart',
         payload: {'accountId': accountId},
       );
@@ -810,7 +810,7 @@ RULES:
       return {'balance': _cachedBalance, 'raw_balance': balance};
     } catch (e) {
       if (_cachedBalance.isNotEmpty) {
-        return {'balance': _cachedBalance, 'note': 'Cached balance — could not fetch live data.'};
+        return {'balance': _cachedBalance, 'note': 'Cached balance â€” could not fetch live data.'};
       }
       return {'error': 'Unable to fetch balance right now.'};
     }
@@ -875,7 +875,7 @@ RULES:
     }
 
     // Only count outgoing (sent) successful/completed transactions as "spending"
-    // atm_payment is stored as 'sent' but is actually money RECEIVED (credit) — exclude it
+    // atm_payment is stored as 'sent' but is actually money RECEIVED (credit) â€” exclude it
     final txInPeriod = _recentTransactions.where((tx) {
       final ts = _parseTimestamp(tx);
       final dir = (tx['_direction'] ?? '').toString();
@@ -907,7 +907,7 @@ RULES:
     };
   }
 
-  // ── Support ticket ────────────────────────────────────────────────────────
+  // â”€â”€ Support ticket â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Future<Map<String, dynamic>> _submitSupportTicket({
     required String subject,
@@ -946,7 +946,7 @@ RULES:
     }
   }
 
-  // ── Chat history persistence ──────────────────────────────────────────────
+  // â”€â”€ Chat history persistence â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   static Future<void> saveChat(
       String sessionId, String title, List<ChatMessage> messages) async {
@@ -1007,3 +1007,4 @@ RULES:
         .delete();
   }
 }
+

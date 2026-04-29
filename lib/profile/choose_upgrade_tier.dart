@@ -140,16 +140,29 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
     }
   }
 
+  bool get _identityStepCompleted =>
+      widget.tier == "2" || widget.tier == "3";
+
+  bool get _profileStepCompleted => widget.tier == "3";
+
+  String get _verificationStatusLabel {
+    if (_profileStepCompleted) return 'Verification complete';
+    if (_identityStepCompleted) return 'Wallet active';
+    return 'Verification pending';
+  }
+
+  String get _verificationStatusDescription {
+    if (_profileStepCompleted) {
+      return 'Your identity and profile details are complete.';
+    }
+    if (_identityStepCompleted) {
+      return 'Your wallet is active. You can add more identity details next.';
+    }
+    return 'Start identity verification to activate your wallet.';
+  }
+
   @override
   Widget build(BuildContext context) {
-    // All customers auto-start on Tier 1. Show "1" when tier is "0".
-    String displayTier;
-    if (widget.tier == "0") {
-      displayTier = "1";
-    } else {
-      displayTier = widget.tier;
-    }
-
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -178,7 +191,7 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
                   children: [
                     const SizedBox(height: 50),
                     Text(
-                      "Upgrade Your Account",
+                      "Complete Verification",
                       style: GoogleFonts.inter(
                         color: Colors.black,
                         fontWeight: FontWeight.w600,
@@ -187,7 +200,7 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
                     ),
                     SizedBox(height: 10),
                     Text(
-                      "Select your upgrade tier and see your new\ntransaction limits",
+                      "Follow the next required step to activate your wallet\nand complete your identity details",
                       style: GoogleFonts.inter(
                         color: Colors.black.withValues(alpha: 0.4),
                         fontWeight: FontWeight.w500,
@@ -224,10 +237,18 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  "Current Tier: $displayTier",
+                                  _verificationStatusLabel,
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  _verificationStatusDescription,
+                                  style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontSize: 12,
                                   ),
                                 ),
                               ],
@@ -257,7 +278,7 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
                                   Row(
                                     children: [
                                       Text(
-                                        "Tier 2",
+                                        "Step 1",
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 15,
@@ -318,7 +339,6 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
                           ),
                           SizedBox(height: 30),
                           Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Icon(
                                 Icons.check_circle_outline,
@@ -436,26 +456,28 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
                                   color: primaryColor,
                                 ),
                                 SizedBox(width: 10),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      "Required for verification",
-                                      style: TextStyle(
-                                        color: Colors.black87,
-                                        fontWeight: FontWeight.bold,
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "Required for verification",
+                                        style: TextStyle(
+                                          color: Colors.black87,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      "Address, Date of Birth and Gender",
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey.shade600,
-                                        fontWeight: FontWeight.w700,
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        "Name, date of birth, gender, BVN, address and OTP",
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey.shade600,
+                                          fontWeight: FontWeight.w700,
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
@@ -463,7 +485,7 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
                           SizedBox(height: 25),
                           InkWell(
                             onTap: () {
-                              if (widget.tier == "2" || widget.tier == "3") {
+                              if (_identityStepCompleted) {
                                 return;
                               }
                               navigateTo(context, UpgradeTier(tier: 2));
@@ -476,15 +498,15 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
                                 horizontal: 16,
                               ),
                               decoration: BoxDecoration(
-                                color: (widget.tier == "2" || widget.tier == "3")
+                                color: _identityStepCompleted
                                     ? Colors.grey
                                     : primaryColor,
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
-                                (widget.tier == "2" || widget.tier == "3")
-                                    ? "Upgraded"
-                                    : "Upgrade To Tier 2",
+                                _identityStepCompleted
+                                    ? "Completed"
+                                    : "Start Verification",
                                 style: GoogleFonts.inter(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 13,
@@ -520,7 +542,7 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
                                   Row(
                                     children: [
                                       Text(
-                                        "Tier 3",
+                                        "Step 2",
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 14,
@@ -546,7 +568,7 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
                                           ),
                                         ),
                                         child: Text(
-                                          "Premium",
+                                          "Optional",
                                           style: TextStyle(
                                             color: Colors.white,
                                             fontSize: 10,
@@ -558,7 +580,7 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
                                   ),
                                   SizedBox(height: 8),
                                   Text(
-                                    "For unlimited transactions",
+                                    "Add more identity details",
                                     style: TextStyle(
                                       color: Colors.grey.shade600,
                                       fontSize: 12,
@@ -599,7 +621,7 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    "Limit per transaction",
+                                    "Purpose",
                                     style: TextStyle(
                                       color: Colors.black.withValues(
                                         alpha: 0.75,
@@ -608,7 +630,7 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
                                     ),
                                   ),
                                   Text(
-                                    "Unlimited",
+                                    "Store additional KYC details",
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: Color(0xFF9810FA),
@@ -633,7 +655,7 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    "Daily Limit",
+                                    "What you will add",
                                     style: TextStyle(
                                       color: Colors.black.withValues(
                                         alpha: 0.75,
@@ -642,7 +664,7 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
                                     ),
                                   ),
                                   Text(
-                                    "Unlimited",
+                                    "NIN and a valid government ID",
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: Color(0xFF9810FA),
@@ -669,7 +691,7 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      "More verification required",
+                                      "Additional profile details",
                                       style: GoogleFonts.inter(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 14,
@@ -678,7 +700,7 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
                                     ),
                                     SizedBox(height: 5),
                                     Text(
-                                      "Submit any of the following:",
+                                      "You can save any of the following:",
                                       style: TextStyle(
                                         color: Colors.grey.shade600,
                                         fontWeight: FontWeight.w600,
@@ -759,15 +781,15 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
                           SizedBox(height: 25),
                           InkWell(
                             onTap: () {
-                              if (widget.tier != "2") {
+                              if (!_identityStepCompleted) {
                                 showSnackBar(
                                   context,
-                                  "Complete Tier 2 first",
+                                  "Complete Step 1 first",
                                   primaryColor,
                                 );
                                 return;
                               }
-                              if (widget.tier == "3") {
+                              if (_profileStepCompleted) {
                                 return;
                               }
                               navigateTo(context, UpgradeTier(tier: 3));
@@ -780,17 +802,17 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
                                 horizontal: 16,
                               ),
                               decoration: BoxDecoration(
-                                color: widget.tier == "2"
+                                color: _identityStepCompleted && !_profileStepCompleted
                                     ? Color(0xFF9810FA)
                                     : Colors.grey,
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
-                                widget.tier == "2"
-                                    ? "Upgrade To Tier 3"
-                                    : widget.tier == "3"
-                                    ? "Upgraded"
-                                    : "Complete Tier 2 First",
+                                _identityStepCompleted && !_profileStepCompleted
+                                    ? "Add Profile Details"
+                                    : _profileStepCompleted
+                                    ? "Completed"
+                                    : "Complete Step 1 First",
                                 style: GoogleFonts.inter(
                                   fontSize: 13,
                                   fontWeight: FontWeight.bold,

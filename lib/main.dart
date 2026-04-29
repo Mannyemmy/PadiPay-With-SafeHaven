@@ -1,4 +1,4 @@
-import 'package:card_app/ui/permission_explanation_sheet.dart';
+﻿import 'package:card_app/ui/permission_explanation_sheet.dart';
 import 'dart:convert';
 import 'dart:math';
 
@@ -21,7 +21,6 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:cloudcard_flutter/cloudcard_flutter.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:card_app/utils/jailbreak_detector.dart';
 import 'package:in_app_update/in_app_update.dart';
@@ -163,7 +162,7 @@ Future<void> _showNotification(RemoteMessage message) async {
       category: AndroidNotificationCategory.message,
       color: const Color(0xFF16C79A),
       colorized: true,
-      subText: 'Padi Pay • Incoming',
+      subText: 'Padi Pay â€¢ Incoming',
       styleInformation: BigTextStyleInformation(
         incomingBigText,
         htmlFormatBigText: true,
@@ -1236,7 +1235,7 @@ Future<void> preloadBanks() async {
     final snapshot = await FirebaseFirestore.instance.collection('banks').get();
     if (snapshot.docs.isEmpty) {
       final result = await FirebaseFunctions.instance
-          .httpsCallable('sudoBankList')
+          .httpsCallable('safehavenBankList')
           .call();
 
       final data = result.data['data'] as List;
@@ -1262,14 +1261,14 @@ Future<void> preloadBalance() async {
         .doc(user.uid)
         .get();
 
-    final anchor = userDoc.data()?['getAnchorData'];
-    if (anchor == null) return;
+    final sudo = userDoc.data()?['safehavenData'];
+    if (sudo == null) return;
 
-    final accountId = anchor['virtualAccount']?['data']?['id']?.toString();
+    final accountId = sudo['virtualAccount']?['data']?['id']?.toString();
     if (accountId == null) return;
 
     final callable = FirebaseFunctions.instance.httpsCallable(
-      'sudoFetchAccountBalance',
+      'safehavenFetchAccountBalance',
     );
     final result = await callable.call({'accountId': accountId});
 
@@ -1411,3 +1410,4 @@ class _AppLauncherState extends State<AppLauncher> with WidgetsBindingObserver {
     );
   }
 }
+

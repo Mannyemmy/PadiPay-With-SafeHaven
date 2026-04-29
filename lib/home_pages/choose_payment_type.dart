@@ -1,3 +1,5 @@
+// ignore_for_file: unused_field, unused_local_variable, dead_code
+
 import 'dart:async';
 
 import 'package:card_app/nfc_prompt_bottom_sheet.dart';

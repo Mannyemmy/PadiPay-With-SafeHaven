@@ -1,4 +1,4 @@
-import 'package:card_app/utils.dart';
+﻿import 'package:card_app/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -101,7 +101,7 @@ class _CustomerSupportPageState extends State<CustomerSupportPage>
       final userName =
           '${data['firstName'] ?? ''} ${data['lastName'] ?? ''}'.trim();
       final userTag = data['userName'] ?? '';
-      final accountNumber = data['getAnchorData']?['virtualAccount']?['data']
+      final accountNumber = data['safehavenData']?['virtualAccount']?['data']
               ?['attributes']?['accountNumber'] ??
           '';
 

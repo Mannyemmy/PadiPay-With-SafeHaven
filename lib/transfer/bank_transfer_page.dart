@@ -1,4 +1,4 @@
-import 'package:card_app/my_padi/padi_aliases_page.dart';
+﻿import 'package:card_app/my_padi/padi_aliases_page.dart';
 import 'package:card_app/ui/account_image_scanner.dart';
 import 'package:card_app/ui/payment_successful_page.dart';
 import 'package:card_app/utils.dart';
@@ -146,7 +146,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
 
     if (accountNumberController.text.length == 10) {
       _autoLookupCounterparty(accountNumberController.text);
-      if (selectedBank != null) _verifyAccountNumber();
+      if (selectedBank != null) _safehavenNameEnquiry();
     }
   }
 
@@ -163,7 +163,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
       }
       if (bankList.isEmpty) {
         final result = await callCloudFunctionLogged(
-          'sudoBankList',
+          'safehavenBankList',
           source: 'bank_transfer_page.dart',
         );
         final data = result.data as Map<String, dynamic>;
@@ -201,40 +201,40 @@ class _BankTransferPageState extends State<BankTransferPage> {
         if (matched != null) {
           setState(() => selectedBank = matched['id'] as String);
           if (accountNumberController.text.length == 10) {
-            _verifyAccountNumber();
+            _safehavenNameEnquiry();
           }
         }
       }
     } catch (e) {
-      debugPrint('getAllBanks error: $e');
+      debugPrint('safehavenBankList error: $e');
       //showToast('Error fetching banks', Colors.red);
       setState(() => isFetchingBanks = false);
     }
   }
 
   Future<void> _autoLookupCounterparty(String accountNumber) async {
-    debugPrint('🔍 _autoLookupCounterparty called with: $accountNumber');
+    debugPrint('ðŸ” _autoLookupCounterparty called with: $accountNumber');
     if (accountNumber.length != 10) {
-      debugPrint('❌ Account number length is ${accountNumber.length}, not 10');
+      debugPrint(' Account number length is ${accountNumber.length}, not 10');
       return;
     }
     
     setState(() => isFetchingAccountName = true);
     try {
       // Search counterparties for matching account number across all users
-      debugPrint('🔎 Searching counterparties for recipientAccountNumber: $accountNumber');
+      debugPrint('ðŸ”Ž Searching counterparties for recipientAccountNumber: $accountNumber');
       final querySnapshot = await FirebaseFirestore.instance
           .collection('counterparties')
           .where('recipientAccountNumber', isEqualTo: accountNumber)
           .limit(1)
           .get();
 
-      debugPrint('📊 Query returned ${querySnapshot.docs.length} documents');
+      debugPrint(' Query returned ${querySnapshot.docs.length} documents');
       
       if (querySnapshot.docs.isNotEmpty) {
         final doc = querySnapshot.docs.first;
         final data = doc.data();
-        debugPrint('📋 Document data: $data');
+        debugPrint('ðŸ“‹ Document data: $data');
         
         String? bankId = data['recipientBankCode'] as String?;
 
@@ -247,13 +247,13 @@ class _BankTransferPageState extends State<BankTransferPage> {
         final bankName = data['bankName'] as String? ??
                          data['data']?['attributes']?['bank']?['name'] as String?;
 
-        debugPrint('🏦 Initial bankId: $bankId');
-        debugPrint('🏷️ bankName: $bankName');
-        debugPrint('👤 Found accountName: $accountName');
+        debugPrint('ðŸ¦ Initial bankId: $bankId');
+        debugPrint('ðŸ·ï¸ bankName: $bankName');
+        debugPrint('ðŸ‘¤ Found accountName: $accountName');
 
         // If bankId is null but we have a bankName, try to resolve bankId via the banks collection
         if (bankId == null && bankName != null) {
-          debugPrint('🔁 bankId missing, trying banks collection lookup by bankName: $bankName');
+          debugPrint('ðŸ” bankId missing, trying banks collection lookup by bankName: $bankName');
           try {
             // Try an equality query first
             final bankQuery = await FirebaseFirestore.instance
@@ -263,7 +263,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
                 .get();
             if (bankQuery.docs.isNotEmpty) {
               bankId = bankQuery.docs.first.id;
-              debugPrint('🔍 Found bankId by name (equal): $bankId');
+              debugPrint('ðŸ” Found bankId by name (equal): $bankId');
             } else {
               // Fallback: fetch and compare case-insensitively
               final allBanks = await FirebaseFirestore.instance.collection('banks').get();
@@ -271,7 +271,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
                 final bname = (bdoc.data()['name'] as String?) ?? '';
                 if (bname.toLowerCase() == bankName.toLowerCase()) {
                   bankId = bdoc.id;
-                  debugPrint('🔍 Found bankId by case-insensitive match: $bankId');
+                  debugPrint('ðŸ” Found bankId by case-insensitive match: $bankId');
                   break;
                 }
               }
@@ -282,7 +282,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
         }
 
         if (bankId != null && accountName != null) {
-          debugPrint('✅ Setting selectedBank to: $bankId and accountName to: $accountName');
+          debugPrint('âœ… Setting selectedBank to: $bankId and accountName to: $accountName');
           setState(() {
             selectedBank = bankId;
             accountNameController.text = accountName;
@@ -290,18 +290,18 @@ class _BankTransferPageState extends State<BankTransferPage> {
           });
           return;
         } else {
-          debugPrint('⚠️ bankId or accountName is null. bankId=$bankId, accountName=$accountName');
+          debugPrint('âš ï¸ bankId or accountName is null. bankId=$bankId, accountName=$accountName');
         }
       } else {
-        debugPrint('❌ No documents found for recipientAccountNumber: $accountNumber');
+        debugPrint(' No documents found for recipientAccountNumber: $accountNumber');
       }
     } catch (e) {
-      debugPrint('💥 _autoLookupCounterparty error: $e');
+      debugPrint('ðŸ’¥ _autoLookupCounterparty error: $e');
     }
     setState(() => isFetchingAccountName = false);
   }
 
-  Future<void> _verifyAccountNumber() async {
+  Future<void> _safehavenNameEnquiry() async {
     if (accountNumberController.text.length != 10 || selectedBank == null) {
       showSimpleDialog(
         'Please enter valid account number and select a bank',
@@ -323,7 +323,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
     setState(() => isLoading = true);
     try {
       final result = await callCloudFunctionLogged(
-          'sudoNameEnquiry',
+          'safehavenNameEnquiry',
           source: 'bank_transfer_page.dart',
           payload: {
             'accountNumber': accountNumberController.text,
@@ -338,7 +338,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
         'verifiedAt': FieldValue.serverTimestamp(),
       });
     } catch (e) {
-      debugPrint('verifyAccountNumber error: $e');
+      debugPrint('safehavenNameEnquiry error: $e');
       showSimpleDialog('Error verifying account', Colors.red);
     }
     setState(() => isLoading = false);
@@ -386,16 +386,16 @@ class _BankTransferPageState extends State<BankTransferPage> {
           .doc(user.uid)
           .get();
       final accountId = userDoc
-          .data()?['getAnchorData']?['virtualAccount']?['data']?['id'];
+          .data()?['safehavenData']?['virtualAccount']?['data']?['id'];
       final accountType = userDoc
-          .data()?['getAnchorData']?['virtualAccount']?['data']?['type'];
+          .data()?['safehavenData']?['virtualAccount']?['data']?['type'];
       // Prefer explicit bank id, otherwise resolve by bank name
       final bankIdRaw = userDoc
-          .data()?['getAnchorData']?['virtualAccount']?['data']?['attributes']?['bank']?['id'] as String?;
+          .data()?['safehavenData']?['virtualAccount']?['data']?['attributes']?['bank']?['id'] as String?;
       final bankNameCandidate = userDoc
-          .data()?['getAnchorData']?['virtualAccount']?['data']?['attributes']?['bank']?['name'] as String?;
+          .data()?['safehavenData']?['virtualAccount']?['data']?['attributes']?['bank']?['name'] as String?;
       final bankId = await resolveBankId(bankId: bankIdRaw, bankName: bankNameCandidate);
-      if (bankId == null) debugPrint('🔍 Failed to resolve user bankId; bankName=$bankNameCandidate');
+      if (bankId == null) debugPrint('ðŸ” Failed to resolve user bankId; bankName=$bankNameCandidate');
 
       // Make bankId available for later checks
       if (bankId != null) {
@@ -403,7 +403,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
       }
 
       final ownAccountNumber = userDoc
-          .data()?['getAnchorData']?['virtualAccount']?['data']?['attributes']?['accountNumber']?.toString();
+          .data()?['safehavenData']?['virtualAccount']?['data']?['attributes']?['accountNumber']?.toString();
 
       // Prevent sending to own account number
       if (ownAccountNumber != null && ownAccountNumber == accountNumberController.text) {
@@ -462,7 +462,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
       };
       print('createCounterparty payload: $payload');
       final result = await callCloudFunctionLogged(
-        'sudoCreateCounterparty',
+        'safehavenCreateCounterparty',
         source: 'bank_transfer_page.dart',
         payload: payload,
       );
@@ -487,7 +487,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
     setState(() => isLoading = false);
   }
 
-  Future<void> _createNipTransfer() async {
+  Future<void> _safehavenTransferNip() async {
     if (counterpartyId == null || amountController.text.isEmpty) {
       showSimpleDialog('Please complete all fields', Colors.red);
       return;
@@ -515,11 +515,11 @@ class _BankTransferPageState extends State<BankTransferPage> {
           .doc(user.uid)
           .get();
       final accountId = userDoc
-          .data()?['getAnchorData']?['virtualAccount']?['data']?['id'];
+          .data()?['safehavenData']?['virtualAccount']?['data']?['id'];
       final accountType = userDoc
-          .data()?['getAnchorData']?['virtualAccount']?['data']?['type'];
+          .data()?['safehavenData']?['virtualAccount']?['data']?['type'];
       final ownAccountNumber = userDoc
-          .data()?['getAnchorData']?['virtualAccount']?['data']?['attributes']?['accountNumber']?.toString();
+          .data()?['safehavenData']?['virtualAccount']?['data']?['attributes']?['accountNumber']?.toString();
 
       // Prevent sending to own account number (in case input was prefilled / using counterparty)
       if (ownAccountNumber != null && ownAccountNumber == accountNumberController.text) {
@@ -529,7 +529,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
       }
 
         final result = await callCloudFunctionLogged(
-          'sudoTransferNip',
+          'safehavenTransferNip',
           source: 'bank_transfer_page.dart',
           payload: {
             'accountType': accountType,
@@ -581,7 +581,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
         isScrollControlled: true,
       );
     } catch (e) {
-      print('createNipTransfer error: $e');
+      print('safehavenTransferNip error: $e');
       showSimpleDialog('Error processing transfer', Colors.red);
     }
     setState(() => isLoading = false);
@@ -615,7 +615,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
           .doc(user.uid)
           .get();
       final userVaData = userDoc
-          .data()?['getAnchorData']?['virtualAccount']?['data'];
+          .data()?['safehavenData']?['virtualAccount']?['data'];
       if (userVaData == null) {
         showSimpleDialog('User account not found', Colors.red);
         setState(() => isLoading = false);
@@ -678,7 +678,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
         debugPrint('createCompany counterparty payload: $companyPayload');
         try {
           final createCompanyCpResult = await callCloudFunctionLogged(
-            'sudoCreateCounterparty',
+            'safehavenCreateCounterparty',
             source: 'bank_transfer_page.dart',
             payload: companyPayload,
           );
@@ -714,10 +714,10 @@ class _BankTransferPageState extends State<BankTransferPage> {
             'narration': narration1,
             'idempotencyKey': const Uuid().v4(),
           };
-      debugPrint('createNipTransfer (to company) payload: $firstPayload');
+      debugPrint('safehavenTransferNip (to company) payload: $firstPayload');
       try {
         final firstResult = await callCloudFunctionLogged(
-          'sudoTransferNip',
+          'safehavenTransferNip',
           source: 'bank_transfer_page.dart',
           payload: firstPayload,
         );
@@ -733,7 +733,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
           return;
         }
       } catch (e) {
-        debugPrint('createNipTransfer (to company) failed: $e');
+        debugPrint('safehavenTransferNip (to company) failed: $e');
         rethrow;
       }
 
@@ -750,7 +750,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
         recipientCounterpartyId = queryRecipientCp.docs.first.id;
       } else {
         final createRecipientCpResult = await callCloudFunctionLogged(
-            'sudoCreateCounterparty',
+            'safehavenCreateCounterparty',
             source: 'bank_transfer_page.dart',
             payload: {
               'bankId': recipientBankId,
@@ -786,11 +786,11 @@ class _BankTransferPageState extends State<BankTransferPage> {
             'narration': narration2,
             'idempotencyKey': const Uuid().v4(),
           };
-      debugPrint('createNipTransfer (to recipient) payload: $secondPayload');
+      debugPrint('safehavenTransferNip (to recipient) payload: $secondPayload');
       dynamic secondResult;
       try {
         secondResult = await callCloudFunctionLogged(
-          'sudoTransferNip',
+          'safehavenTransferNip',
           source: 'bank_transfer_page.dart',
           payload: secondPayload,
         );
@@ -806,7 +806,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
           return;
         }
       } catch (e) {
-        debugPrint('createNipTransfer (to recipient) failed: $e');
+        debugPrint('safehavenTransferNip (to recipient) failed: $e');
         rethrow;
       }
 
@@ -929,7 +929,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
                           if (value.length == 10) {
                             _autoLookupCounterparty(value);
                             if (selectedBank != null) {
-                              _verifyAccountNumber();
+                              _safehavenNameEnquiry();
                             }
                           }
                         },
@@ -1011,7 +1011,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
                                     (b) => b['attributes']['name'] == value,
                                   )['id'];
                                   if (accountNumberController.text.length == 10) {
-                                    _verifyAccountNumber();
+                                    _safehavenNameEnquiry();
                                   }
                                 });
                               },
@@ -1116,7 +1116,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
                                     ),
                                   ),
                                   Text(
-                                    '${accountNumberController.text} · ${banks.firstWhere((b) => b['id'] == selectedBank, orElse: () => {'attributes': {'name': 'Unknown'}})['attributes']['name']}',
+                                    '${accountNumberController.text} Â· ${banks.firstWhere((b) => b['id'] == selectedBank, orElse: () => {'attributes': {'name': 'Unknown'}})['attributes']['name']}',
                                     style: TextStyle(
                                       color: Colors.grey.shade600,
                                       fontSize: 12,
@@ -1279,7 +1279,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
                                   await _ghostTransfer();
                                 } else {
                                   await _createCounterparty();
-                                  await _createNipTransfer();
+                                  await _safehavenTransferNip();
                                 }
                               },
                         style: ElevatedButton.styleFrom(
@@ -1302,7 +1302,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
               ),
               // Contacts & Recents sections - only on page 0
               if (_currentPage == 0) ...[
-                // ── Contacts (account-type aliases) ──
+                // â”€â”€ Contacts (account-type aliases) â”€â”€
                 if (_aliases.where((a) => a.type == 'account').isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
@@ -1379,7 +1379,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
                                     if (displayLabel.isNotEmpty) displayLabel,
                                     if (contact.bankName?.isNotEmpty == true)
                                       contact.bankName!,
-                                  ].join(' · '),
+                                  ].join(' Â· '),
                                   style: TextStyle(
                                     color: Colors.grey.shade600,
                                     fontSize: 12,
@@ -1413,7 +1413,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
                                   if (contact.accountNumber?.isNotEmpty ==
                                           true &&
                                       contact.displayName?.isEmpty != false) {
-                                    _verifyAccountNumber();
+                                    _safehavenNameEnquiry();
                                   }
                                 },
                               );
@@ -1423,7 +1423,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
                       ),
                     ),
                   ),
-                // ── Recents ──
+                // â”€â”€ Recents â”€â”€
                 if (_loadingRecents)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 16),
@@ -1528,7 +1528,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
                                   ],
                                 ),
                                 subtitle: Text(
-                                  '$acct · $bank',
+                                  '$acct Â· $bank',
                                   style: TextStyle(
                                     color: Colors.grey.shade600,
                                     fontSize: 12,
