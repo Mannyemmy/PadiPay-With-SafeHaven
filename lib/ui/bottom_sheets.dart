@@ -1931,7 +1931,7 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                             if (totalEquivalent != null) ...[
                               const SizedBox(height: 4),
                               Text(
-                                'Estimated total SafeHaven debit: \u20A6${NumberFormat('#,##0.##').format(totalEquivalent)}',
+                                'Total debit: \u20A6${NumberFormat('#,##0.##').format(totalEquivalent)}',
                                 style: const TextStyle(
                                   fontSize: 12,
                                   color: Colors.black87,

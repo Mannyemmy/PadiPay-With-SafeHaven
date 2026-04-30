@@ -50,9 +50,7 @@ class _CardsPageState extends State<CardsPage> {
 
   Map<String, dynamic>? _asStringKeyedMap(dynamic value) {
     if (value is Map) {
-      return value.map(
-        (key, mapValue) => MapEntry(key.toString(), mapValue),
-      );
+      return value.map((key, mapValue) => MapEntry(key.toString(), mapValue));
     }
     return null;
   }
@@ -121,7 +119,9 @@ class _CardsPageState extends State<CardsPage> {
       _logCardCreate('physical inventory reserve none available', {
         'brand': normalizedBrand,
       });
-      throw Exception('No unassigned $normalizedBrand physical card is available right now.');
+      throw Exception(
+        'No unassigned $normalizedBrand physical card is available right now.',
+      );
     }
 
     final selectedDoc = inventoryQuery.docs.first;
@@ -131,7 +131,9 @@ class _CardsPageState extends State<CardsPage> {
       _logCardCreate('physical inventory missing card number', {
         'inventoryCardDocId': selectedDoc.id,
       });
-      throw Exception('Selected physical card inventory record has no card number.');
+      throw Exception(
+        'Selected physical card inventory record has no card number.',
+      );
     }
 
     final now = DateTime.now();
@@ -155,7 +157,9 @@ class _CardsPageState extends State<CardsPage> {
     _logCardCreate('physical inventory reserved', {
       'inventoryCardDocId': selectedDoc.id,
       'brand': normalizedBrand,
-      'last4': cardNumber.length >= 4 ? cardNumber.substring(cardNumber.length - 4) : cardNumber,
+      'last4': cardNumber.length >= 4
+          ? cardNumber.substring(cardNumber.length - 4)
+          : cardNumber,
       'etaDate': etaDate,
     });
 
@@ -292,12 +296,22 @@ class _CardsPageState extends State<CardsPage> {
     }
   }
 
-  Future<Map<String, dynamic>> _fetchCardDetails(String cardId, String currency, {String? provider, String? sudoAccountId}) async {
+  Future<Map<String, dynamic>> _fetchCardDetails(
+    String cardId,
+    String currency, {
+    String? provider,
+    String? sudoAccountId,
+  }) async {
     // Detect Sudo cards: 24-char hex Mongo ObjectID, or explicit provider field
-    final isSudo = provider == 'sudo' ||
+    final isSudo =
+        provider == 'sudo' ||
         RegExp(r'^[0-9a-f]{24}$', caseSensitive: false).hasMatch(cardId);
-    print('[_fetchCardDetails] cardId=$cardId currency=$currency isSudo=$isSudo sudoAccountId=$sudoAccountId');
-    print('[_fetchCardDetails] cardId=$cardId currency=$currency isSudo=$isSudo sudoAccountId=$sudoAccountId');
+    print(
+      '[_fetchCardDetails] cardId=$cardId currency=$currency isSudo=$isSudo sudoAccountId=$sudoAccountId',
+    );
+    print(
+      '[_fetchCardDetails] cardId=$cardId currency=$currency isSudo=$isSudo sudoAccountId=$sudoAccountId',
+    );
 
     if (isSudo || currency == 'USD') {
       // Sudo path  both NGN and new USD Sudo cards
@@ -340,25 +354,40 @@ class _CardsPageState extends State<CardsPage> {
         final accountRaw = data['account'];
         final String? accountIdFromCard = (accountRaw is Map)
             ? accountRaw['_id']?.toString()
-            : (accountRaw is String && accountRaw.isNotEmpty ? accountRaw : null);
+            : (accountRaw is String && accountRaw.isNotEmpty
+                  ? accountRaw
+                  : null);
         final String? resolvedAccountId = sudoAccountId ?? accountIdFromCard;
-        print('[_fetchCardDetails] resolvedAccountId=$resolvedAccountId (fromFirestore=$sudoAccountId, fromCard=$accountIdFromCard)');
+        print(
+          '[_fetchCardDetails] resolvedAccountId=$resolvedAccountId (fromFirestore=$sudoAccountId, fromCard=$accountIdFromCard)',
+        );
         if (resolvedAccountId != null && resolvedAccountId.isNotEmpty) {
-          final balCallable = FirebaseFunctions.instance
-              .httpsCallable('sudoGetAccountBalance');
-          final balResult = await balCallable.call({'accountId': resolvedAccountId});
+          final balCallable = FirebaseFunctions.instance.httpsCallable(
+            'sudoGetAccountBalance',
+          );
+          final balResult = await balCallable.call({
+            'accountId': resolvedAccountId,
+          });
           print('[_fetchCardDetails] balance raw response: ${balResult.data}');
           final balData = _asStringKeyedMap(
-              _asStringKeyedMap(balResult.data)?['data']);
-          final rawBal = (balData?['availableBalance'] as num?)?.toDouble() ?? 0.0;
+            _asStringKeyedMap(balResult.data)?['data'],
+          );
+          final rawBal =
+              (balData?['availableBalance'] as num?)?.toDouble() ?? 0.0;
           // Sudo returns balance in minor units (kobo for NGN, cents for USD)
           availableBalance = rawBal / 100;
-          print('[_fetchCardDetails] resolved balance=$availableBalance $currency');
+          print(
+            '[_fetchCardDetails] resolved balance=$availableBalance $currency',
+          );
         } else {
-          print('[_fetchCardDetails] WARNING: no accountId found for $cardId, balance will be 0');
+          print(
+            '[_fetchCardDetails] WARNING: no accountId found for $cardId, balance will be 0',
+          );
         }
       } catch (e) {
-        print('[_fetchCardDetails] Error fetching Sudo account balance for card $cardId: $e');
+        print(
+          '[_fetchCardDetails] Error fetching Sudo account balance for card $cardId: $e',
+        );
       }
 
       return {
@@ -378,139 +407,146 @@ class _CardsPageState extends State<CardsPage> {
     throw Exception('Unsupported card provider');
   }
 
- Future<void> _fetchCards() async {
-  User? user = FirebaseAuth.instance.currentUser;
-  if (user == null) {
-    if (mounted) setState(() => _isLoading = false);
-    return;
-  }
-
-  // Prioritize business cards
-
-  QuerySnapshot<Map<String, dynamic>> cardsSnap;
-
-  // Fallback to personal
-  cardsSnap = await FirebaseFirestore.instance
-      .collection('users/${user.uid}/cards')
-      .get();
-
-  List<Map<String, dynamic>> cards = [];
-  for (QueryDocumentSnapshot doc in cardsSnap.docs) {
-    final Map<String, dynamic> docData = doc.data() as Map<String, dynamic>;
-   
-    
-    // Skip docs with null type or selectedCurrency
-    if (docData['type'] == null || docData['selectedCurrency'] == null) {
-      continue;
+  Future<void> _fetchCards() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
     }
 
-    // Skip terminated/deleted cards
-    if (docData['deleted'] == true) continue;
+    // Prioritize business cards
 
-    final Map<String, dynamic> card = {
-      ...docData,
-      'id': doc.id,
-      'details': null,
-    };
-    cards.add(card);
-  }
+    QuerySnapshot<Map<String, dynamic>> cardsSnap;
 
-  // Deduplicate cards by card_id; keep only pending cards (no card_id); discard failed cards from UI
-  Map<String, Map<String, dynamic>> uniqueCardsMap = {};
-  List<Map<String, dynamic>> pendingCards = [];
-  for (var card in cards) {
-    final String? cardId = card['card_id']?.toString();
-    if (cardId == null) {
-      final status = card['status']?.toString();
-      if (status == 'pending') pendingCards.add(card);
-      // failed cards are silently dropped from UI (user already notified via push)
-    } else if (!uniqueCardsMap.containsKey(cardId)) {
-      uniqueCardsMap[cardId] = card;
-    }
-  }
-  cards = [...uniqueCardsMap.values, ...pendingCards];
+    // Fallback to personal
+    cardsSnap = await FirebaseFirestore.instance
+        .collection('users/${user.uid}/cards')
+        .get();
 
-  // Sort most recent first
-  cards.sort((a, b) {
-    final aTime = (a['createdAt'] as Timestamp?)?.millisecondsSinceEpoch ?? 0;
-    final bTime = (b['createdAt'] as Timestamp?)?.millisecondsSinceEpoch ?? 0;
-    return bTime.compareTo(aTime);
-  });
+    List<Map<String, dynamic>> cards = [];
+    for (QueryDocumentSnapshot doc in cardsSnap.docs) {
+      final Map<String, dynamic> docData = doc.data() as Map<String, dynamic>;
 
-  // Initialize showNumber to true for all cards
-  for (var card in cards) {
-    card['showNumber'] = true;
-  }
-   
-
-  if (mounted) {
-    setState(() {
-      _cards = cards;
-      _isLoading = false;
-      // Set current card ID for the transaction stream (first card in current category)
-      final filtered = cards.where((c) => _getCardCurrency(c) == _currentCategory).toList();
-      if (filtered.isNotEmpty) {
-        _currentCardPage = 0;
-        _currentCardId = filtered[0]['card_id']?.toString();
+      // Skip docs with null type or selectedCurrency
+      if (docData['type'] == null || docData['selectedCurrency'] == null) {
+        continue;
       }
-    });
-  }
 
-  // DEBUG: fetch and print the full Sudo customer object on page load
-  try {
-    final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-    final sudoRaw = userDoc.data()?['sudoCustomer'];
-    final safehavenData = (sudoRaw is Map) ? sudoRaw['data'] : null;
-    final debugCustomerId = (safehavenData is Map) ? safehavenData['_id']?.toString() : null;
-    if (debugCustomerId != null) {
-      final debugResult = await FirebaseFunctions.instance
-          .httpsCallable('sudoGetCustomer')
-          .call({'customerId': debugCustomerId});
-      print('[DEBUG] Sudo customer full data: ${debugResult.data}');
-    } else {
-      print('[DEBUG] No sudoCustomerId found in Firestore user doc');
+      // Skip terminated/deleted cards
+      if (docData['deleted'] == true) continue;
+
+      final Map<String, dynamic> card = {
+        ...docData,
+        'id': doc.id,
+        'details': null,
+      };
+      cards.add(card);
     }
-  } catch (e) {
-    print('[DEBUG] sudoGetCustomer error in _fetchCards: $e');
+
+    // Deduplicate cards by card_id; keep only pending cards (no card_id); discard failed cards from UI
+    Map<String, Map<String, dynamic>> uniqueCardsMap = {};
+    List<Map<String, dynamic>> pendingCards = [];
+    for (var card in cards) {
+      final String? cardId = card['card_id']?.toString();
+      if (cardId == null) {
+        final status = card['status']?.toString();
+        if (status == 'pending') pendingCards.add(card);
+        // failed cards are silently dropped from UI (user already notified via push)
+      } else if (!uniqueCardsMap.containsKey(cardId)) {
+        uniqueCardsMap[cardId] = card;
+      }
+    }
+    cards = [...uniqueCardsMap.values, ...pendingCards];
+
+    // Sort most recent first
+    cards.sort((a, b) {
+      final aTime = (a['createdAt'] as Timestamp?)?.millisecondsSinceEpoch ?? 0;
+      final bTime = (b['createdAt'] as Timestamp?)?.millisecondsSinceEpoch ?? 0;
+      return bTime.compareTo(aTime);
+    });
+
+    // Initialize showNumber to true for all cards
+    for (var card in cards) {
+      card['showNumber'] = true;
+    }
+
+    if (mounted) {
+      setState(() {
+        _cards = cards;
+        _isLoading = false;
+        // Set current card ID for the transaction stream (first card in current category)
+        final filtered = cards
+            .where((c) => _getCardCurrency(c) == _currentCategory)
+            .toList();
+        if (filtered.isNotEmpty) {
+          _currentCardPage = 0;
+          _currentCardId = filtered[0]['card_id']?.toString();
+        }
+      });
+    }
+
+    // DEBUG: fetch and print the full Sudo customer object on page load
+    try {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      final sudoRaw = userDoc.data()?['sudoCustomer'];
+      final safehavenData = (sudoRaw is Map) ? sudoRaw['data'] : null;
+      final debugCustomerId = (safehavenData is Map)
+          ? safehavenData['_id']?.toString()
+          : null;
+      if (debugCustomerId != null) {
+        final debugResult = await FirebaseFunctions.instance
+            .httpsCallable('sudoGetCustomer')
+            .call({'customerId': debugCustomerId});
+        print('[DEBUG] Sudo customer full data: ${debugResult.data}');
+      } else {
+        print('[DEBUG] No sudoCustomerId found in Firestore user doc');
+      }
+    } catch (e) {
+      print('[DEBUG] sudoGetCustomer error in _fetchCards: $e');
+    }
+
+    for (var card in cards) {
+      final cardId = card['card_id'] as String?;
+      final cardCurrency = _getCardCurrency(card);
+      if (cardId == null) continue;
+
+      _fetchCardDetails(
+            cardId,
+            cardCurrency,
+            provider: card['provider']?.toString(),
+            sudoAccountId: card['sudoAccountId']?.toString(),
+          )
+          .then((details) {
+            print(
+              'Fetched details for $cardId: success (keys: ${details.keys.toList()}), balance: ${details["available_balance"]}',
+            );
+            if (mounted) {
+              setState(() {
+                card['details'] = details;
+              });
+            }
+          })
+          .catchError((e) {
+            print('Error fetching details for card $cardId: $e');
+            if (mounted) {
+              setState(() {
+                card['details'] = {};
+              });
+            }
+          });
+    }
   }
 
-  for (var card in cards) {
-    final cardId = card['card_id'] as String?;
-    final cardCurrency = _getCardCurrency(card);
-    if (cardId == null) continue;
-
-    _fetchCardDetails(
-      cardId,
-      cardCurrency,
-      provider: card['provider']?.toString(),
-      sudoAccountId: card['sudoAccountId']?.toString(),
-    ).then((details) {
-          print(
-            'Fetched details for $cardId: success (keys: ${details.keys.toList()}), balance: ${details["available_balance"]}',
-          );
-          if (mounted) {
-            setState(() {
-              card['details'] = details;
-            });
-          }
-        })
-        .catchError((e) {
-          print('Error fetching details for card $cardId: $e');
-          if (mounted) {
-            setState(() {
-              card['details'] = {};
-            });
-          }
-        });
-  }
-}
   String _getCardCurrency(Map<String, dynamic> card) {
     final dynamic selectedCurrencyRaw = card['selectedCurrency'];
     String selectedCurrency = 'NGN';
     if (selectedCurrencyRaw != null) {
       selectedCurrency = selectedCurrencyRaw.toString();
     }
-  
+
     // Extract currency code from parentheses if present, or check for USD/NGN keywords
     RegExp codeRegex = RegExp(r'\(([A-Z]{3})\)');
     Match? match = codeRegex.firstMatch(selectedCurrency.toUpperCase());
@@ -532,20 +568,24 @@ class _CardsPageState extends State<CardsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      floatingActionButton: InkWell(
-        onTap: _startCardCreation,
-        child: Container(
-          margin: EdgeInsets.only(bottom: 120),
-          padding: EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: primaryColor,
+      floatingActionButton: Container(
+                  margin: EdgeInsets.only(bottom: 120),
+
+        child: InkWell(
+          onTap: _startCardCreation,
+          child: Container(
+            padding: EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: primaryColor,
+            ),
+            child: Icon(Icons.add, color: Colors.white, size: 28),
           ),
-          child: Icon(Icons.add, color: Colors.white, size: 28),
         ),
       ),
       backgroundColor: Colors.white,
-      body: SafeArea(bottom: true,
+      body: SafeArea(
+        bottom: true,
         child: SizedBox.expand(
           child: Stack(
             children: [
@@ -647,11 +687,15 @@ class _CardsPageState extends State<CardsPage> {
         .length;
     return GestureDetector(
       onTap: () {
-        final filtered = _cards.where((c) => _getCardCurrency(c) == category).toList();
+        final filtered = _cards
+            .where((c) => _getCardCurrency(c) == category)
+            .toList();
         setState(() {
           _currentCategory = category;
           _currentCardPage = 0;
-          _currentCardId = filtered.isNotEmpty ? filtered[0]['card_id']?.toString() : null;
+          _currentCardId = filtered.isNotEmpty
+              ? filtered[0]['card_id']?.toString()
+              : null;
         });
         _pageController.jumpToPage(0);
       },
@@ -692,20 +736,37 @@ class _CardsPageState extends State<CardsPage> {
     );
   }
 
-  void _showCardTransactionDetail(BuildContext context, Map<String, dynamic> data, String displayAmount, String prefix) {
+  void _showCardTransactionDetail(
+    BuildContext context,
+    Map<String, dynamic> data,
+    String displayAmount,
+    String prefix,
+  ) {
     final type = data['type']?.toString() ?? '';
     final merchant = data['merchant']?.toString() ?? 'Unknown';
     final channel = data['channel']?.toString() ?? '';
     final reference = data['reference']?.toString() ?? '';
     final currency = data['currency']?.toString() ?? 'NGN';
-    final status = data['status']?.toString() ?? (type == 'card_declined' ? 'declined' : 'approved');
+    final status =
+        data['status']?.toString() ??
+        (type == 'card_declined' ? 'declined' : 'approved');
     final ts = data['timestamp'] as Timestamp?;
-    final date = ts != null ? DateFormat('dd MMM yyyy, hh:mm a').format(ts.toDate()) : '';
+    final date = ts != null
+        ? DateFormat('dd MMM yyyy, hh:mm a').format(ts.toDate())
+        : '';
 
     final isDeclined = type == 'card_declined' || status == 'declined';
     final isRefund = type == 'card_refund';
-    final statusLabel = isDeclined ? 'Declined' : isRefund ? 'Refunded' : 'Successful';
-    final statusColor = isDeclined ? Colors.red : isRefund ? Colors.blue : Colors.green;
+    final statusLabel = isDeclined
+        ? 'Declined'
+        : isRefund
+        ? 'Refunded'
+        : 'Successful';
+    final statusColor = isDeclined
+        ? Colors.red
+        : isRefund
+        ? Colors.blue
+        : Colors.green;
 
     showModalBottomSheet(
       context: context,
@@ -719,11 +780,16 @@ class _CardsPageState extends State<CardsPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 40, height: 4,
-              decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
             const SizedBox(height: 20),
-            Text('$prefix$displayAmount',
+            Text(
+              '$prefix$displayAmount',
               style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 4),
@@ -733,15 +799,24 @@ class _CardsPageState extends State<CardsPage> {
                 color: statusColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Text(statusLabel, style: TextStyle(color: statusColor, fontWeight: FontWeight.w600, fontSize: 12)),
+              child: Text(
+                statusLabel,
+                style: TextStyle(
+                  color: statusColor,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
+              ),
             ),
             const SizedBox(height: 20),
             _detailRow('Merchant', merchant),
-            if (channel.isNotEmpty) _detailRow('Channel', channel.toUpperCase()),
+            if (channel.isNotEmpty)
+              _detailRow('Channel', channel.toUpperCase()),
             _detailRow('Currency', currency),
             if (date.isNotEmpty) _detailRow('Date', date),
             if (reference.isNotEmpty) _detailRow('Reference', reference),
-            if (data['reason'] != null) _detailRow('Reason', data['reason'].toString()),
+            if (data['reason'] != null)
+              _detailRow('Reason', data['reason'].toString()),
             const SizedBox(height: 16),
           ],
         ),
@@ -755,8 +830,17 @@ class _CardsPageState extends State<CardsPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
-          Flexible(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13), textAlign: TextAlign.end)),
+          Text(
+            label,
+            style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+          ),
+          Flexible(
+            child: Text(
+              value,
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+              textAlign: TextAlign.end,
+            ),
+          ),
         ],
       ),
     );
@@ -814,20 +898,22 @@ class _CardsPageState extends State<CardsPage> {
                     ? '₦${NumberFormat('#,##0.00').format(amount)}'
                     : '\$${amount.toStringAsFixed(2)}';
 
-                final icon = isRefund
-                    ? Icons.undo
-                    : Icons.credit_card;
+                final icon = isRefund ? Icons.undo : Icons.credit_card;
                 final iconColor = isDeclined
                     ? Colors.red
                     : isRefund
-                        ? Colors.green
-                        : Colors.orange;
+                    ? Colors.green
+                    : Colors.orange;
                 final amountColor = isDeclined
                     ? Colors.red
                     : isRefund
-                        ? Colors.green
-                        : Colors.black87;
-                final prefix = isRefund ? '+' : isDeclined ? '' : '-';
+                    ? Colors.green
+                    : Colors.black87;
+                final prefix = isRefund
+                    ? '+'
+                    : isDeclined
+                    ? ''
+                    : '-';
 
                 return GestureDetector(
                   onTap: () => navigateTo(
@@ -839,71 +925,96 @@ class _CardsPageState extends State<CardsPage> {
                     type: NavigationType.push,
                   ),
                   child: Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade100, width: 1),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 24,
-                        backgroundColor: iconColor.withOpacity(0.15),
-                        child: Icon(icon, color: iconColor, size: 20),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade100, width: 1),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 24,
+                          backgroundColor: iconColor.withOpacity(0.15),
+                          child: Icon(icon, color: iconColor, size: 20),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                merchant,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
+                                  color: Colors.black87,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              if (date.isNotEmpty)
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.access_time,
+                                      color: Colors.grey.shade500,
+                                      size: 13,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      date,
+                                      style: TextStyle(
+                                        color: Colors.grey.shade600,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
-                              merchant,
-                              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: Colors.black87),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 4),
-                            if (date.isNotEmpty)
-                              Row(
-                                children: [
-                                  Icon(Icons.access_time, color: Colors.grey.shade500, size: 13),
-                                  const SizedBox(width: 4),
-                                  Text(date, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
-                                ],
+                              '$prefix$displayAmount',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
+                                color: amountColor,
                               ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              isDeclined
+                                  ? 'Declined'
+                                  : isRefund
+                                  ? 'Refunded'
+                                  : 'Successful',
+                              style: TextStyle(
+                                color: iconColor,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                           ],
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            '$prefix$displayAmount',
-                            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: amountColor),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            isDeclined ? 'Declined' : isRefund ? 'Refunded' : 'Successful',
-                            style: TextStyle(
-                              color: iconColor,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
                   ),
                 );
               }),
@@ -985,9 +1096,12 @@ class _CardsPageState extends State<CardsPage> {
               String currencyCode = _getCardCurrency(card);
 
               String financialType = card['cardFinancialType'] ?? 'Debit';
-              final String cardFormFactor = (card['type']?.toString() ?? 'Virtual');
+              final String cardFormFactor =
+                  (card['type']?.toString() ?? 'Virtual');
               // Normalize to title-case for display
-              final String formFactorLabel = cardFormFactor[0].toUpperCase() + cardFormFactor.substring(1).toLowerCase();
+              final String formFactorLabel =
+                  cardFormFactor[0].toUpperCase() +
+                  cardFormFactor.substring(1).toLowerCase();
 
               final String brandStr =
                   (details?['brand'] ?? card['scheme'] ?? 'Visa')
@@ -998,9 +1112,12 @@ class _CardsPageState extends State<CardsPage> {
               final String designId = card['design']?.toString() ?? '';
               CardTemplate? cardTemplate = getTemplateById(designId);
               // Backward compat: map legacy design names to first template for brand
-              final String brandLabel = brandStr.contains('master') ? 'MasterCard'
-                  : brandStr.contains('verve') ? 'Verve'
-                  : brandStr.contains('afrigo') ? 'AfriGo'
+              final String brandLabel = brandStr.contains('master')
+                  ? 'MasterCard'
+                  : brandStr.contains('verve')
+                  ? 'Verve'
+                  : brandStr.contains('afrigo')
+                  ? 'AfriGo'
                   : 'Visa';
               if (cardTemplate == null) {
                 final templates = getTemplatesForCard(brandLabel, currencyCode);
@@ -1013,7 +1130,8 @@ class _CardsPageState extends State<CardsPage> {
 
               // For NGN Sudo cards use maskedPan to derive last4 + display number
               final String maskedPan = details?['masked_pan']?.toString() ?? '';
-              final String last4 = details?['last_4']?.toString() ??
+              final String last4 =
+                  details?['last_4']?.toString() ??
                   (maskedPan.length >= 4
                       ? maskedPan.substring(maskedPan.length - 4)
                       : '****');
@@ -1043,7 +1161,9 @@ class _CardsPageState extends State<CardsPage> {
                   details?['card_name'] ?? card['nameOnCard'] ?? 'JOHN DOE';
               String displayedCardName = isLoadingDetails
                   ? 'CARD HOLDER'
-                  : (cardFormFactor.toLowerCase() == 'anonymous' ? 'PadiPay' : cardName);
+                  : (cardFormFactor.toLowerCase() == 'anonymous'
+                        ? 'PadiPay'
+                        : cardName);
 
               String expiryMonth = (details?['expiry_month'] ?? 'MM')
                   .toString()
@@ -1072,20 +1192,23 @@ class _CardsPageState extends State<CardsPage> {
                               ),
                         const Spacer(),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: cardFormFactor.toLowerCase() == 'physical'
                                 ? Colors.blue.shade50
                                 : cardFormFactor.toLowerCase() == 'anonymous'
-                                    ? Colors.purple.shade50
-                                    : Colors.green.shade50,
+                                ? Colors.purple.shade50
+                                : Colors.green.shade50,
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: cardFormFactor.toLowerCase() == 'physical'
                                   ? Colors.blue.shade200
                                   : cardFormFactor.toLowerCase() == 'anonymous'
-                                      ? Colors.purple.shade200
-                                      : Colors.green.shade200,
+                                  ? Colors.purple.shade200
+                                  : Colors.green.shade200,
                             ),
                           ),
                           child: Row(
@@ -1094,15 +1217,18 @@ class _CardsPageState extends State<CardsPage> {
                               Icon(
                                 cardFormFactor.toLowerCase() == 'physical'
                                     ? Icons.credit_card
-                                    : cardFormFactor.toLowerCase() == 'anonymous'
-                                        ? Icons.visibility_off_outlined
-                                        : Icons.cloud_outlined,
+                                    : cardFormFactor.toLowerCase() ==
+                                          'anonymous'
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.cloud_outlined,
                                 size: 12,
-                                color: cardFormFactor.toLowerCase() == 'physical'
+                                color:
+                                    cardFormFactor.toLowerCase() == 'physical'
                                     ? Colors.blue.shade700
-                                    : cardFormFactor.toLowerCase() == 'anonymous'
-                                        ? Colors.purple.shade700
-                                        : Colors.green.shade700,
+                                    : cardFormFactor.toLowerCase() ==
+                                          'anonymous'
+                                    ? Colors.purple.shade700
+                                    : Colors.green.shade700,
                               ),
                               const SizedBox(width: 4),
                               Text(
@@ -1110,11 +1236,13 @@ class _CardsPageState extends State<CardsPage> {
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
-                                  color: cardFormFactor.toLowerCase() == 'physical'
+                                  color:
+                                      cardFormFactor.toLowerCase() == 'physical'
                                       ? Colors.blue.shade700
-                                      : cardFormFactor.toLowerCase() == 'anonymous'
-                                          ? Colors.purple.shade700
-                                          : Colors.green.shade700,
+                                      : cardFormFactor.toLowerCase() ==
+                                            'anonymous'
+                                      ? Colors.purple.shade700
+                                      : Colors.green.shade700,
                                 ),
                               ),
                             ],
@@ -1127,7 +1255,8 @@ class _CardsPageState extends State<CardsPage> {
                   GestureDetector(
                     onTap: () {
                       final cardStatus = card['status']?.toString();
-                      if (cardStatus == 'pending' || cardStatus == 'failed') return;
+                      if (cardStatus == 'pending' || cardStatus == 'failed')
+                        return;
                       _showPinForCard(card);
                     },
                     child: Column(
@@ -1162,10 +1291,13 @@ class _CardsPageState extends State<CardsPage> {
                                       borderRadius: BorderRadius.circular(16),
                                     ),
                                     child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         if (card['status'] == 'pending') ...[
-                                          const CircularProgressIndicator(color: Colors.white),
+                                          const CircularProgressIndicator(
+                                            color: Colors.white,
+                                          ),
                                           const SizedBox(height: 12),
                                           const Text(
                                             'Creating your card...',
@@ -1178,10 +1310,18 @@ class _CardsPageState extends State<CardsPage> {
                                           const SizedBox(height: 6),
                                           const Text(
                                             "We'll notify you when it's ready",
-                                            style: TextStyle(color: Colors.white70, fontSize: 13),
+                                            style: TextStyle(
+                                              color: Colors.white70,
+                                              fontSize: 13,
+                                            ),
                                           ),
-                                        ] else if (card['status'] == 'terminated') ...[
-                                          const Icon(Icons.block, color: Colors.orangeAccent, size: 40),
+                                        ] else if (card['status'] ==
+                                            'terminated') ...[
+                                          const Icon(
+                                            Icons.block,
+                                            color: Colors.orangeAccent,
+                                            size: 40,
+                                          ),
                                           const SizedBox(height: 12),
                                           const Text(
                                             'Card Terminated',
@@ -1194,10 +1334,17 @@ class _CardsPageState extends State<CardsPage> {
                                           const SizedBox(height: 6),
                                           const Text(
                                             'This card has been terminated',
-                                            style: TextStyle(color: Colors.white70, fontSize: 13),
+                                            style: TextStyle(
+                                              color: Colors.white70,
+                                              fontSize: 13,
+                                            ),
                                           ),
                                         ] else ...[
-                                          const Icon(Icons.error_outline, color: Colors.redAccent, size: 40),
+                                          const Icon(
+                                            Icons.error_outline,
+                                            color: Colors.redAccent,
+                                            size: 40,
+                                          ),
                                           const SizedBox(height: 12),
                                           const Text(
                                             'Card creation failed',
@@ -1210,7 +1357,10 @@ class _CardsPageState extends State<CardsPage> {
                                           const SizedBox(height: 6),
                                           const Text(
                                             'Please try again',
-                                            style: TextStyle(color: Colors.white70, fontSize: 13),
+                                            style: TextStyle(
+                                              color: Colors.white70,
+                                              fontSize: 13,
+                                            ),
                                           ),
                                         ],
                                       ],
@@ -1243,7 +1393,9 @@ class _CardsPageState extends State<CardsPage> {
         ),
       ],
     );
-  }  void _showPinForCard(Map<String, dynamic> card) async {
+  }
+
+  void _showPinForCard(Map<String, dynamic> card) async {
     final cardPin = card['pin']?.toString();
     final result = await showModalBottomSheet<String?>(
       context: context,
@@ -1308,8 +1460,15 @@ class _CardsPageState extends State<CardsPage> {
         showModalBottomSheet<Map<String, dynamic>?>(
           context: context,
           builder: (context) => CustomizeCardBottomSheet(
-            scheme: basicData['selectedScheme'] ?? basicData['scheme'] ?? 'Visa',
-            currency: (basicData['selectedCurrency'] ?? 'NGN').toString().toUpperCase().contains('USD') ? 'USD' : 'NGN',
+            scheme:
+                basicData['selectedScheme'] ?? basicData['scheme'] ?? 'Visa',
+            currency:
+                (basicData['selectedCurrency'] ?? 'NGN')
+                    .toString()
+                    .toUpperCase()
+                    .contains('USD')
+                ? 'USD'
+                : 'NGN',
             cardType: type,
             nameOnCard: basicData['nameOnCard'] ?? 'CARD HOLDER',
           ),
@@ -1405,8 +1564,8 @@ class _CardsPageState extends State<CardsPage> {
         'sudoDigitalizeCard',
       );
       final response = await callable.call({'cardId': cardId});
-      final responseData = _asStringKeyedMap(response.data) ??
-          {'raw': response.data};
+      final responseData =
+          _asStringKeyedMap(response.data) ?? {'raw': response.data};
       print('Map physical card response: $responseData');
 
       if (!mounted) return;
@@ -1425,17 +1584,29 @@ class _CardsPageState extends State<CardsPage> {
 
   Future<Map<String, dynamic>?> getCompanyVirtualAccount() async {
     try {
-      final doc = await FirebaseFirestore.instance.collection('company').doc('account_details').get();
-      if (!doc.exists) return null;
-      final data = doc.data() ?? <String, dynamic>{};
+      // Fetch company account details directly from SafeHaven API via Cloud Function
+      final companyResult = await FirebaseFunctions.instance
+          .httpsCallable('fetchCompanySafehavenAccounts')
+          .call({'isSubAccount': false, 'page': 0, 'limit': 100});
+
+      final companyData = companyResult.data;
+      final companyAccount = companyData['companyAccount'];
+
+      if (companyAccount == null ||
+          companyAccount['id'] == null ||
+          companyAccount['accountNumber'] == null) {
+        print('Company account not found in API response');
+        return null;
+      }
+
       return {
-        'uid': doc.id,
-        'id': data['accountId']?.toString() ?? '',
-        'type': data['accountType']?.toString() ?? '',
-        'bankId': data['bankId']?.toString() ?? '',
-        'bankName': data['bankName']?.toString() ?? '',
-        'accountNumber': data['accountNumber']?.toString() ?? '',
-        'accountName': data['accountName']?.toString() ?? '',
+        'uid': 'company',
+        'id': companyAccount['id'],
+        'type': companyAccount['accountType'] ?? 'BankAccount',
+        'bankId': '090286', // Safe Haven MFB code
+        'bankName': 'SAFE HAVEN MICROFINANCE BANK',
+        'accountNumber': companyAccount['accountNumber'],
+        'accountName': companyAccount['accountName'] ?? 'PadiPay Limited',
       };
     } catch (e) {
       print('getCompanyVirtualAccount error: $e');
@@ -1525,7 +1696,9 @@ class _CardsPageState extends State<CardsPage> {
           if (accountType == null) 'accountType',
           if (bankId == null) 'bankId',
         ].join(', ');
-        print('Card creation blocked  missing fields: $missing | userDetails: $userDetails');
+        print(
+          'Card creation blocked  missing fields: $missing | userDetails: $userDetails',
+        );
         Navigator.pop(context);
         showSimpleDialog("Please create a bank account first", Colors.red);
         return;
@@ -1576,8 +1749,8 @@ class _CardsPageState extends State<CardsPage> {
           : null;
       final double? safehavenChargeAmountNgn =
           !isPhysicalCard && cardCurrency == 'NGN'
-              ? cardFeeNgn
-              : numberFrom(basicData['safehavenChargeAmountNgn']);
+          ? cardFeeNgn
+          : numberFrom(basicData['safehavenChargeAmountNgn']);
       _logCardCreate('safehaven card charge', {
         'cardFeeNgn': cardFeeNgn,
         'cardFeeUsd': cardFeeUsd,
@@ -1589,16 +1762,21 @@ class _CardsPageState extends State<CardsPage> {
       String? sudoCustomerId;
       final sudoCustomerRaw = _asStringKeyedMap(userData?['sudoCustomer']);
       final sudoCustomerData = _asStringKeyedMap(sudoCustomerRaw?['data']);
-      sudoCustomerId = sudoCustomerData?['_id']?.toString() ??
+      sudoCustomerId =
+          sudoCustomerData?['_id']?.toString() ??
           sudoCustomerRaw?['_id']?.toString();
       _logCardCreate('sudo customer from profile', {'id': sudoCustomerId});
 
       // Fetch company settlement account id for this currency
       _logCardCreate('fetching company settlement account', cardCurrency);
-      final String? sudoDebitAccountId = await sudoGetSettlementAccountId(cardCurrency);
+      final String? sudoDebitAccountId = await sudoGetSettlementAccountId(
+        cardCurrency,
+      );
       _logCardCreate('sudo settlement account', {'id': sudoDebitAccountId});
       if (sudoDebitAccountId == null) {
-        throw Exception('Could not resolve company settlement account for $cardCurrency');
+        throw Exception(
+          'Could not resolve company settlement account for $cardCurrency',
+        );
       }
 
       // Anonymous cards use company Sudo customer; skip individual customer setup entirely
@@ -1612,8 +1790,9 @@ class _CardsPageState extends State<CardsPage> {
         final addressRaw = _asStringKeyedMap(userData?['address']);
 
         _logCardCreate('creating sudo customer', user.uid);
-        final createCustomerCallable = FirebaseFunctions.instance
-            .httpsCallable('sudoCreateCustomer');
+        final createCustomerCallable = FirebaseFunctions.instance.httpsCallable(
+          'sudoCreateCustomer',
+        );
         final customerResponse = await createCustomerCallable.call({
           'type': 'individual',
           'name': '$firstName $lastName'.trim(),
@@ -1631,12 +1810,8 @@ class _CardsPageState extends State<CardsPage> {
             'firstName': firstName,
             'lastName': lastName,
             if (bvn.isNotEmpty && dob.isNotEmpty)
-              'identity': {
-                'type': 'BVN',
-                'number': bvn,
-              },
-            if (dob.isNotEmpty)
-              'dob': dob,
+              'identity': {'type': 'BVN', 'number': bvn},
+            if (dob.isNotEmpty) 'dob': dob,
           },
         });
         print('[SUDO] sudoCreateCustomer response: ${customerResponse.data}');
@@ -1666,7 +1841,6 @@ class _CardsPageState extends State<CardsPage> {
       } catch (e) {
         print('[DEBUG] sudoGetCustomer fetch error: $e');
       }
-
 
       // Save a pending card immediately so it shows in the UI
       final pendingCardData = <String, dynamic>{
@@ -1706,14 +1880,15 @@ class _CardsPageState extends State<CardsPage> {
           .add(pendingCardData);
 
       if (reservedInventory != null) {
-        final String? inventoryDocId =
-            reservedInventory['inventoryCardDocId']?.toString();
+        final String? inventoryDocId = reservedInventory['inventoryCardDocId']
+            ?.toString();
         if (inventoryDocId != null && inventoryDocId.isNotEmpty) {
           await FirebaseFirestore.instance
               .collection('physical_card_inventory')
               .doc(inventoryDocId)
               .update({
-                'assignedCardDocPath': 'users/${user.uid}/cards/${pendingDocRef.id}',
+                'assignedCardDocPath':
+                    'users/${user.uid}/cards/${pendingDocRef.id}',
                 'assignedCardDocId': pendingDocRef.id,
                 'updatedAt': FieldValue.serverTimestamp(),
               });
@@ -1764,8 +1939,8 @@ class _CardsPageState extends State<CardsPage> {
               'fundAmountNgnEquivalent':
                   (basicData['fundAmountNgnEquivalent'] as num).toDouble(),
             if (basicData['cardFeeNgnEquivalent'] != null)
-              'cardFeeNgnEquivalent':
-                  (basicData['cardFeeNgnEquivalent'] as num).toDouble(),
+              'cardFeeNgnEquivalent': (basicData['cardFeeNgnEquivalent'] as num)
+                  .toDouble(),
           })
           .then((_) {
             if (mounted) _fetchCards();
@@ -1784,12 +1959,16 @@ class _CardsPageState extends State<CardsPage> {
       // Keep internal logs detailed, but avoid exposing inventory/provider internals.
       if (type == 'Physical' &&
           (errorText.contains('no unassigned') ||
-              errorText.contains('physical card creation requires an assigned inventory card number') ||
+              errorText.contains(
+                'physical card creation requires an assigned inventory card number',
+              ) ||
               errorText.contains('already linked') ||
               errorText.contains('replacement physical card number'))) {
-        userMessage = 'Physical cards are currently unavailable. Please try again later.';
+        userMessage =
+            'Physical cards are currently unavailable. Please try again later.';
       } else if (errorText.contains('settlement account')) {
-        userMessage = 'Card service is temporarily unavailable. Please try again later.';
+        userMessage =
+            'Card service is temporarily unavailable. Please try again later.';
       }
 
       showSimpleDialog(userMessage, Colors.red);
@@ -1821,7 +2000,8 @@ class _EnterPinBottomSheetState extends State<EnterPinBottomSheet> {
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      child: SafeArea(bottom: true,
+      child: SafeArea(
+        bottom: true,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -1900,4 +2080,3 @@ class _EnterPinBottomSheetState extends State<EnterPinBottomSheet> {
     );
   }
 }
-
