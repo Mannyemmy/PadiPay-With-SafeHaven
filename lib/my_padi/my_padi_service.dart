@@ -9,7 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 const String _kGeminiApiKey = 'AIzaSyAsQ8zSoIKzK89Qh8PwijvYOjp6486VRP8';
 
-/// Actions that MyPadi can trigger â€” the UI layer handles navigation.
+/// Actions that MyPadi can trigger  the UI layer handles navigation.
 enum PadiAction {
   transfer,
   buyAirtime,
@@ -104,8 +104,8 @@ class PadiLanguage {
 
   // UI strings
   final String greeting;       // "Hey! I'm MyPadi ðŸ‘‹"
-  final String subtitle;       // "Your personal financial assistantâ€¦"
-  final String inputHint;      // "Ask MyPadi anythingâ€¦"
+  final String subtitle;       // "Your personal financial assistant."
+  final String inputHint;      // "Ask MyPadi anything"
   final String sendMoney;
   final String buyAirtime;
   final String payBills;
@@ -391,7 +391,7 @@ class MyPadiService {
     ),
     FunctionDeclaration(
       'do_giveaway',
-      'Create a giveaway â€” send money to multiple PadiTag recipients. Use this whenever the user mentions giveaway, sharing money to multiple people by their tags/usernames, or distributing money to a list of people.',
+      'Create a giveaway  send money to multiple PadiTag recipients. Use this whenever the user mentions giveaway, sharing money to multiple people by their tags/usernames, or distributing money to a list of people.',
       Schema.object(properties: {
         'tags': Schema.array(
             items: Schema.string(),
@@ -402,7 +402,7 @@ class MyPadiService {
     ),
     FunctionDeclaration(
       'open_feature',
-      'Navigate to a specific app feature/page. Do NOT use this for giveaway when you have recipient tags â€” use do_giveaway instead.',
+      'Navigate to a specific app feature/page. Do NOT use this for giveaway when you have recipient tags  use do_giveaway instead.',
       Schema.object(properties: {
         'feature': Schema.string(
             description:
@@ -569,7 +569,7 @@ class MyPadiService {
     }).join('\n');
 
     return '''
-You are MyPadi, a friendly and helpful AI financial assistant inside the PadiPay app â€” a Nigerian fintech app.
+You are MyPadi, a friendly and helpful AI financial assistant inside the PadiPay app  a Nigerian fintech app.
 Your personality: warm, concise, and smart.
 
 LANGUAGE INSTRUCTION:
@@ -589,20 +589,20 @@ SAVED CONTACTS (user's personal aliases / nicknames):
 ${_buildAliasesPrompt()}
 When the user mentions any alias name, resolve it to the corresponding account or PadiTag.
 
-CAPABILITIES â€” you can help users with:
-1. **Transfer money** â€” call transfer_money with recipient details
-2. **Buy airtime** â€” call buy_airtime with phone number and amount
-3. **Pay bills** â€” call pay_bill for electricity, cable, data
-4. **Check balance** â€” call check_balance to fetch real-time balance
-5. **Search transactions** â€” call search_transactions to look up history
-6. **Generate statement** â€” call generate_statement for date ranges
-7. **Navigate the app** â€” call open_feature to go to specific pages
-8. **Spending insights** â€” call get_spending_summary for analytics
-9. **Giveaway** â€” call do_giveaway when user wants to send money to multiple people by their tags/usernames. Extract all mentioned tags/usernames. NEVER use transfer_money for giveaway requests.
-10. **Customer support** â€” answer common questions directly. If the issue needs human intervention (failed transaction not reversed, account frozen, KYC disputes, fraud, etc.), call submit_support_ticket to log it.
+CAPABILITIES  you can help users with:
+1. **Transfer money**  call transfer_money with recipient details
+2. **Buy airtime**  call buy_airtime with phone number and amount
+3. **Pay bills**  call pay_bill for electricity, cable, data
+4. **Check balance**  call check_balance to fetch real-time balance
+5. **Search transactions**  call search_transactions to look up history
+6. **Generate statement**  call generate_statement for date ranges
+7. **Navigate the app**  call open_feature to go to specific pages
+8. **Spending insights**  call get_spending_summary for analytics
+9. **Giveaway**  call do_giveaway when user wants to send money to multiple people by their tags/usernames. Extract all mentioned tags/usernames. NEVER use transfer_money for giveaway requests.
+10. **Customer support**  answer common questions directly. If the issue needs human intervention (failed transaction not reversed, account frozen, KYC disputes, fraud, etc.), call submit_support_ticket to log it.
 
 CUSTOMER SUPPORT KNOWLEDGE:
-- **Failed transaction / debit without credit**: Ask for the transaction date, amount, and recipient. Reassure the user that most reversals happen within 24â€“72 hours. If it's been longer, submit a support ticket.
+- **Failed transaction / debit without credit**: Ask for the transaction date, amount, and recipient. Reassure the user that most reversals happen within 24 - 72 hours. If it's been longer, submit a support ticket.
 - **Account frozen / restricted**: This is usually due to BVN mismatch, tier limit exceeded, or a compliance flag. Advise the user to check their profile and complete any pending verification. Escalate by submitting a ticket.
 - **KYC / Tier upgrade**: Tier 1 requires BVN; Tier 2 requires a valid government ID and a selfie. Direct the user to their Profile page to upload documents.
 - **Wrong transfer**: PadiPay can initiate a recall request, but reversal is not guaranteed. Collect details and submit a support ticket immediately.
@@ -614,15 +614,15 @@ CUSTOMER SUPPORT KNOWLEDGE:
 
 RULES:
 - For money actions (transfer, airtime, bills), gather the needed info conversationally. Don't call the function until you have enough details.
-- For giveaway: extract ALL tags mentioned and call do_giveaway immediately â€” do NOT ask for bank account or bank name.
+- For giveaway: extract ALL tags mentioned and call do_giveaway immediately  do NOT ask for bank account or bank name.
 - Always confirm amounts before executing. Say something like "I'll set up a ₦X,000 transfer to [name]. Let me take you there."
 - Never expose internal API details, account IDs, or error stack traces.
 - If you're unsure, ask a clarifying question rather than guessing.
-- Keep responses SHORT â€” 1-3 sentences max unless the user asks for detail.
+- Keep responses SHORT  1-3 sentences max unless the user asks for detail.
 - When providing transaction summaries, format amounts with ₦ and commas.
 - Currency is always Nigerian Naira (₦ / NGN).
 - IMPORTANT: "spent" and "debits" only refers to OUTGOING transactions (direction=sent) with status=successful or status=completed. NEVER count incoming credits (direction=received) or failed/pending transactions as spending.
-- IMPORTANT: "atm_payment" transactions are INCOMING credits (a customer paid you via their ATM card). NEVER treat them as spending or expenses â€” always treat them as money received.
+- IMPORTANT: "atm_payment" transactions are INCOMING credits (a customer paid you via their ATM card). NEVER treat them as spending or expenses  always treat them as money received.
 - Today's date is ${DateFormat('MMMM d, yyyy').format(DateTime.now())}.
 ''';
   }
@@ -810,7 +810,7 @@ RULES:
       return {'balance': _cachedBalance, 'raw_balance': balance};
     } catch (e) {
       if (_cachedBalance.isNotEmpty) {
-        return {'balance': _cachedBalance, 'note': 'Cached balance â€” could not fetch live data.'};
+        return {'balance': _cachedBalance, 'note': 'Cached balance  could not fetch live data.'};
       }
       return {'error': 'Unable to fetch balance right now.'};
     }
@@ -875,7 +875,7 @@ RULES:
     }
 
     // Only count outgoing (sent) successful/completed transactions as "spending"
-    // atm_payment is stored as 'sent' but is actually money RECEIVED (credit) â€” exclude it
+    // atm_payment is stored as 'sent' but is actually money RECEIVED (credit)  exclude it
     final txInPeriod = _recentTransactions.where((tx) {
       final ts = _parseTimestamp(tx);
       final dir = (tx['_direction'] ?? '').toString();

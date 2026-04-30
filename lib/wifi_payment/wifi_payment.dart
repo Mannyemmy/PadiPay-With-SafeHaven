@@ -58,6 +58,55 @@ class _DevicesListScreenState extends State<DevicesListScreen>
   final _purposeController = TextEditingController();
   bool _isWaiting = false;
 
+  Future<Map<String, dynamic>?> _getSafehavenAccountForUser(String uid) async {
+    final userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(uid).get();
+    final data = userDoc.data() ?? <String, dynamic>{};
+    final safehavenVa =
+        data['safehavenData']?['virtualAccount']?['data'] as Map?;
+
+    final setupDoc = await FirebaseFirestore.instance
+        .collection('safehavenUserSetup')
+        .doc(uid)
+        .get();
+    final setup = setupDoc.data() ?? <String, dynamic>{};
+
+    final accountId =
+        safehavenVa?['id']?.toString() ?? setup['safehavenAccountId']?.toString();
+    final accountNumber = safehavenVa?['attributes']?['accountNumber']
+            ?.toString() ??
+        setup['safehavenAccountNumber']?.toString();
+    final rawBankId =
+        safehavenVa?['attributes']?['bank']?['id']?.toString() ??
+            setup['safehavenBankCode']?.toString();
+    final bankName =
+        safehavenVa?['attributes']?['bank']?['name']?.toString() ??
+            setup['safehavenBankName']?.toString();
+    final bankId =
+        await resolveBankId(bankId: rawBankId, bankName: bankName) ?? '999240';
+    final accountName =
+        safehavenVa?['attributes']?['accountName']?.toString() ??
+            setup['safehavenAccountName']?.toString();
+    final accountType =
+        safehavenVa?['type']?.toString() ??
+            setup['safehavenAccountType']?.toString() ??
+            'BankAccount';
+
+    if ((accountId == null || accountId.isEmpty) &&
+        (accountNumber == null || accountNumber.isEmpty)) {
+      return null;
+    }
+
+    return {
+      'accountId': accountId,
+      'accountNumber': accountNumber,
+      'bankId': bankId,
+      'bankName': bankName,
+      'accountName': accountName,
+      'accountType': accountType,
+    };
+  }
+
   @override
   void initState() {
     super.initState();
@@ -974,24 +1023,18 @@ class _DevicesListScreenState extends State<DevicesListScreen>
         bool paymentConfirmation = prefs.getBool('paymentConfirmation') ?? false;
 
         if (!paymentConfirmation) {
-          // Auto-accept: include receiver VA details in the reply so the sender can settle the payment.
+          // Auto-accept: include receiver SafeHaven VA details so the sender can settle the payment.
           final currentUser = FirebaseAuth.instance.currentUser!;
-          final userDoc = await FirebaseFirestore.instance.collection('users').doc(currentUser.uid).get();
-          final vaData = userDoc.data()?['safehavenData']?['virtualAccount']?['data'];
-          if (vaData == null) {
-            // cannot accept â€” inform sender
+          final receiverAccount =
+              await _getSafehavenAccountForUser(currentUser.uid);
+          if (receiverAccount == null) {
+            // cannot accept  inform sender
             Nearby().sendBytesPayload(id, utf8.encode(jsonEncode({'type': 'payment_rejected', 'reason': 'receiver_account_missing'})));
             showSimpleDialog('Your account is not configured to receive payments', Colors.red);
             return;
           }
-          final accountNumber = vaData['attributes']?['accountNumber'];
-          final bankId = vaData['attributes']?['bank']?['id']?.toString();
-          final bankName = vaData['attributes']?['bank']?['name'];
-          final accountName = vaData['attributes']?['accountName'];
-          final accountId = vaData['id']?.toString();
-          final accountType = vaData['type']?.toString();
 
-          // create a pending transaction locally â€” final success will be marked by sender's settlement
+          // create a pending transaction locally  final success will be marked by sender's settlement
           await FirebaseFirestore.instance.collection('transactions').add({
             'senderId': senderId,
             'receiverId': currentUser.uid,
@@ -1008,12 +1051,12 @@ class _DevicesListScreenState extends State<DevicesListScreen>
               utf8.encode(jsonEncode({
                 'type': 'payment_accepted',
                 'receiverId': currentUser.uid,
-                'accountNumber': accountNumber,
-                'bankId': bankId,
-                'bankName': bankName,
-                'accountName': accountName,
-                'accountId': accountId,
-                'accountType': accountType,
+                'accountNumber': receiverAccount['accountNumber'],
+                'bankId': receiverAccount['bankId'],
+                'bankName': receiverAccount['bankName'],
+                'accountName': receiverAccount['accountName'],
+                'accountId': receiverAccount['accountId'],
+                'accountType': receiverAccount['accountType'],
               })));
         } else {
           showDialog<bool>(
@@ -1035,20 +1078,13 @@ class _DevicesListScreenState extends State<DevicesListScreen>
           ).then((accept) async {
             if (accept == true) {
               final currentUser = FirebaseAuth.instance.currentUser!;
-              final userDoc = await FirebaseFirestore.instance.collection('users').doc(currentUser.uid).get();
-              final vaData = userDoc.data()?['safehavenData']?['virtualAccount']?['data'];
-              if (vaData == null) {
+              final receiverAccount =
+                  await _getSafehavenAccountForUser(currentUser.uid);
+              if (receiverAccount == null) {
                 Nearby().sendBytesPayload(id, utf8.encode(jsonEncode({'type': 'payment_rejected', 'reason': 'receiver_account_missing'})));
                 showSimpleDialog('Your account is not configured to receive payments', Colors.red);
                 return;
               }
-
-              final accountNumber = vaData['attributes']?['accountNumber'];
-              final bankId = vaData['attributes']?['bank']?['id']?.toString();
-              final bankName = vaData['attributes']?['bank']?['name'];
-              final accountName = vaData['attributes']?['accountName'];
-              final accountId = vaData['id']?.toString();
-              final accountType = vaData['type']?.toString();
 
               await FirebaseFirestore.instance.collection('transactions').add({
                 'senderId': senderId,
@@ -1065,12 +1101,12 @@ class _DevicesListScreenState extends State<DevicesListScreen>
                   utf8.encode(jsonEncode({
                     'type': 'payment_accepted',
                     'receiverId': currentUser.uid,
-                    'accountNumber': accountNumber,
-                    'bankId': bankId,
-                    'bankName': bankName,
-                    'accountName': accountName,
-                    'accountId': accountId,
-                    'accountType': accountType,
+                    'accountNumber': receiverAccount['accountNumber'],
+                    'bankId': receiverAccount['bankId'],
+                    'bankName': receiverAccount['bankName'],
+                    'accountName': receiverAccount['accountName'],
+                    'accountId': receiverAccount['accountId'],
+                    'accountType': receiverAccount['accountType'],
                   })));
             } else if (accept == false) {
               Nearby().sendBytesPayload(id, utf8.encode(jsonEncode({'type': 'payment_rejected'})));
@@ -1084,7 +1120,7 @@ class _DevicesListScreenState extends State<DevicesListScreen>
             _isWaiting = false;
           });
           if (type == 'payment_accepted') {
-            // The receiver sent their VA details â€” settle the payment from this (sender) device.
+            // The receiver sent their SafeHaven VA details; settle from this sender device.
             final amountText = _amountController.text;
             final amount = double.tryParse(amountText) ?? 0.0;
             final payload = parsed; // should contain receiverId, accountNumber, bankId, bankName, accountName, accountId, accountType
@@ -1333,12 +1369,16 @@ Future<String> _getUserNameById(String userId) async {
     }
   }
 
-  void _sendPayment(String endpointId) {
+  void _sendPayment(String endpointId) async {
     final amountText = _amountController.text;
     if (amountText.isEmpty) return;
     final amount = double.parse(amountText);
     final purpose = _purposeController.text;
     final senderId = FirebaseAuth.instance.currentUser!.uid;
+    final pinVerified = await verifyTransactionPin();
+    if (!pinVerified) {
+      return;
+    }
     final message = jsonEncode({
       'type': 'payment_request',
       'amount': amount,
@@ -1359,42 +1399,52 @@ Future<String> _getUserNameById(String userId) async {
         return false;
       }
 
-      final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-      final accountId = userDoc.data()?['safehavenData']?['virtualAccount']?['data']?['id'];
-      if (accountId == null) {
+      final senderAccount = await _getSafehavenAccountForUser(user.uid);
+      final senderAccountId = senderAccount?['accountId']?.toString() ?? '';
+      final senderAccountNumber =
+          senderAccount?['accountNumber']?.toString() ?? '';
+      final fromAccountId = senderAccountId.isNotEmpty
+          ? senderAccountId
+          : senderAccountNumber;
+      if (fromAccountId.isEmpty) {
         showSimpleDialog('Account details not found', Colors.red);
         return false;
       }
 
-      // Recipient's Sudo account ID is in the WiFi acceptance payload
-      final toAccountId = payload['accountId']?.toString();
+      // Recipient's SafeHaven account ID is in the WiFi acceptance payload.
+      final recipientAccountNumber = payload['accountNumber']?.toString() ?? '';
+      final toAccountId = recipientAccountNumber.isNotEmpty
+          ? recipientAccountNumber
+          : payload['accountId']?.toString();
       if (toAccountId == null || toAccountId.isEmpty) {
-        showSimpleDialog('Recipient account ID not found', Colors.red);
+        showSimpleDialog('Recipient account details not found', Colors.red);
         return false;
       }
 
-      final recipientAccountNumber = payload['accountNumber'];
-      final recipientBankId = payload['bankId']?.toString();
+      final recipientBankId = payload['bankId']?.toString() ?? '999240';
       final recipientBankName = payload['bankName'];
       final recipientAccountName = payload['accountName'];
 
-      final ownAccountNumber = userDoc.data()?['safehavenData']?['virtualAccount']?['data']?['attributes']?['accountNumber']?.toString();
-      if (ownAccountNumber != null && ownAccountNumber == recipientAccountNumber) {
+      final ownAccountNumber = senderAccount?['accountNumber']?.toString();
+      if (ownAccountNumber != null &&
+          ownAccountNumber.isNotEmpty &&
+          ownAccountNumber == recipientAccountNumber) {
         showSimpleDialog('You cannot send money to your own account', Colors.red);
         return false;
       }
 
-      // Book transfer (both parties on Sudo â€” no counterparty needed)
-      final amountKobo = (amount * 100).toInt();
-      debugPrint('safehavenTransferIntra: from=$accountId to=$toAccountId amount=$amountKobo');
+      // SafeHaven book transfer; no counterparty needed for internal accounts.
+      final amountKobo = (amount * 100).round();
+      debugPrint('safehavenTransferIntra: from=$fromAccountId to=$toAccountId amount=$amountKobo bank=$recipientBankId');
       final transferResult = await FirebaseFunctions.instance
           .httpsCallable('safehavenTransferIntra')
           .call({
-        'fromAccountId': accountId,
+        'fromAccountId': fromAccountId,
         'toAccountId': toAccountId,
+        'toBankCode': recipientBankId,
         'amount': amountKobo,
         'currency': 'NGN',
-        'narration': purpose,
+        'narration': purpose.trim().isEmpty ? 'WiFi payment' : purpose.trim(),
         'idempotencyKey': const Uuid().v4(),
       });
 

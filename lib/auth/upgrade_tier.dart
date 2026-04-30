@@ -435,7 +435,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
       final fm = Map<String, dynamic>.from(resData['fieldMatches'] as Map? ?? {});
       final rawBd = resData['bvnData'];
       final bvnDobRaw = rawBd != null ? (rawBd as Map)['birthdate']?.toString() : null;
-      // BVN API returns YYYY-MM-DD; controller holds DD-MM-YYYY â€” convert for comparison
+      // BVN API returns YYYY-MM-DD; controller holds DD-MM-YYYY  convert for comparison
       final bvnDobDisplay = (bvnDobRaw != null && bvnDobRaw.isNotEmpty)
           ? _formatDateFromApi(bvnDobRaw)
           : null;
@@ -549,7 +549,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
           ? 'BVN not found'
           : raw.isNotEmpty
           ? raw
-          : 'Verification failed â€” please try again';
+          : 'Verification failed please try again';
       setState(() {
         _bvnVerified = false;
         _bvnVerifyStatus = userMsg;
@@ -558,7 +558,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
     } catch (e) {
       setState(() {
         _bvnVerified = false;
-        _bvnVerifyStatus = 'Verification failed â€” please try again';
+        _bvnVerifyStatus = 'Verification failed  please try again';
       });
       print('BVN verification error: $e');
     } finally {
@@ -1043,7 +1043,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
 
     bool isFormValid;
     if (widget.tier == 2) {
-      // If BVN is verified, allow submission even if a conflict was detected â€”
+      // If BVN is verified, allow submission even if a conflict was detected 
       // the submit flow resolves conflicts via BVN/email matching.
       final bvnAllowed = _bvnVerified == true || !_bvnConflict || _externalBvnMatch;
       isFormValid =
@@ -1443,7 +1443,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
                           Text(
                             _bvnVerifyStatus == 'EXACT_MATCH'
                                 ? 'BVN verified'
-                                : 'BVN verified â€” partial name match',
+                                : 'BVN verified  partial name match',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.green.shade700,
@@ -1634,7 +1634,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
                   ),
                 ),
               ] else ...[
-                // â”€â”€ TIER 3: NIN + ID â€” completely unchanged â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+                // â”€â”€ TIER 3: NIN + ID  completely unchanged â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 Text(
                   "NIN",
                   style: TextStyle(
@@ -3149,7 +3149,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
                     }
                   }
                 } else {
-                  // No accountId â€” fall back to raw response attrs
+                  // No accountId  fall back to raw response attrs
                   final dynamic vaAttrs = vaData is Map ? vaData['attributes'] : null;
                   if (vaAttrs is Map) {
                     vaAccountNumber = vaAttrs['accountNumber']?.toString() ?? 'N/A';

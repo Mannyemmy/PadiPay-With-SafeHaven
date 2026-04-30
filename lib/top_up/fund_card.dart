@@ -213,7 +213,7 @@ class _FundCardState extends State<FundCard> {
         return false;
       }
 
-      // Refund: company â†’ user (book transfer â€” both on Sudo)
+      // Refund: company to user via SafeHaven book transfer.
       final refundResult = await FirebaseFunctions.instance
           .httpsCallable('safehavenTransferIntra')
           .call({
@@ -289,7 +289,7 @@ class _FundCardState extends State<FundCard> {
       companyVa = await getCompanyVirtualAccount();
       if (companyVa == null) throw Exception('Company account not found');
 
-      // Transfer total NGN to company VA (book transfer â€” both on Sudo)
+      // Transfer total NGN to company VA via SafeHaven book transfer.
       final transferResult = await FirebaseFunctions.instance
           .httpsCallable('safehavenTransferIntra')
           .call({

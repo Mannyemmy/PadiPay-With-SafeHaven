@@ -583,7 +583,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
         setState(() => isLoading = false);
         return;
       }
-      // Transfer from company to recipient (book transfer â€” both on Sudo)
+      // Transfer from company to recipient via SafeHaven book transfer.
       final amountKobo = giveawayData['amountPerPerson'] * 100;
       final transferResult = await callCloudFunctionLogged(
         'safehavenTransferIntra',
@@ -1977,7 +1977,7 @@ class GiveawaysHistoryPage extends StatelessWidget {
                   final status = data['status'] ?? '';
                   final createdAt = _parseDate(data);
                   final formattedDate = DateFormat(
-                    'MMM d, yyyy â€¢ HH:mm',
+                    'MMM d, yyyy HH:mm',
                   ).format(createdAt);
 
                   return ListTile(
@@ -1985,9 +1985,9 @@ class GiveawaysHistoryPage extends StatelessWidget {
                       backgroundColor: primaryColor,
                       child: Icon(FontAwesomeIcons.gift, color: Colors.white),
                     ),
-                    title: Text('$code â€¢ ${type.toString().toUpperCase()}'),
+                    title: Text('$code • ${type.toString().toUpperCase()}'),
                     subtitle: Text(
-                      '$formattedDate â€¢ ${role == 'created' ? 'Creator' : 'Claimed'} â€¢ Status: $status',
+                      '$formattedDate • ${role == 'created' ? 'Creator' : 'Claimed'} • Status: $status',
                     ),
                     trailing: Column(
                       mainAxisSize: MainAxisSize.min,

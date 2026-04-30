@@ -1544,6 +1544,10 @@ class BasicDetailsBottomSheet extends StatefulWidget {
 }
 
 class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
+  static const int _minimumUsdFundingAmount = 3;
+  static const int _usdVirtualCardFee = 2;
+  static const double _ngnVirtualCardFee = 500;
+
   String _selectedScheme = '';
   String? _selectedState;
   String? _selectedCity;
@@ -1604,6 +1608,8 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
     super.initState();
     if (widget.cardType == 'Physical') {
       selectedCurrency = 'NGN';
+    } else {
+      _fundAmountController.text = _minimumUsdFundingAmount.toString();
     }
     _fetchUserData();
     _loadUsdNgnRate();
@@ -1829,6 +1835,11 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                     setState(() {
                       selectedCurrency = value!;
                       _selectedScheme = '';
+                      if (selectedCurrency.contains('USD') &&
+                          _fundAmountController.text.trim().isEmpty) {
+                        _fundAmountController.text =
+                            _minimumUsdFundingAmount.toString();
+                      }
                     });
                   },
                 ),
@@ -1857,6 +1868,13 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                       final parsedUsd = int.tryParse(_fundAmountController.text.trim());
                       final equivalent =
                           parsedUsd == null ? null : _computeNgnEquivalent(parsedUsd);
+                      final feeEquivalent =
+                          _computeNgnEquivalent(_usdVirtualCardFee);
+                      final totalEquivalent = parsedUsd == null
+                          ? null
+                          : _computeNgnEquivalent(
+                              parsedUsd + _usdVirtualCardFee,
+                            );
                       final rate = _usdNgnRate;
 
                       return Container(
@@ -1885,7 +1903,35 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                             if (equivalent != null) ...[
                               const SizedBox(height: 4),
                               Text(
-                                'Estimated debit equivalent: ₦${NumberFormat('#,##0.##').format(equivalent)}',
+                                'Funding equivalent: \u20A6${NumberFormat('#,##0.##').format(equivalent)}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 4),
+                            Text(
+                              'Card fee: \$$_usdVirtualCardFee',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            if (feeEquivalent != null) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                'Fee equivalent: \u20A6${NumberFormat('#,##0.##').format(feeEquivalent)}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ],
+                            if (totalEquivalent != null) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                'Estimated total SafeHaven debit: \u20A6${NumberFormat('#,##0.##').format(totalEquivalent)}',
                                 style: const TextStyle(
                                   fontSize: 12,
                                   color: Colors.black87,
@@ -2049,8 +2095,11 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                     }
                     if (selectedCurrency.contains('USD')) {
                       final parsed = int.tryParse(_fundAmountController.text.trim());
-                      if (parsed == null || parsed < 3) {
-                        showSimpleDialog('Enter a valid funding amount (minimum \$3)', Colors.red);
+                      if (parsed == null || parsed < _minimumUsdFundingAmount) {
+                        showSimpleDialog(
+                          'Enter a valid funding amount (minimum \$$_minimumUsdFundingAmount)',
+                          Colors.red,
+                        );
                         return;
                       }
                       final rate = _usdNgnRate;
@@ -2105,13 +2154,27 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                       'nameOnCard': _nameController.text,
                       'selectedCurrency': selectedCurrency,
                       'selectedScheme': _selectedScheme,
+                      if (selectedCurrency.contains('NGN') &&
+                          widget.cardType != 'Physical')
+                        'cardFeeNgn': _ngnVirtualCardFee,
                       if (selectedCurrency.contains('USD'))
                         'fundAmount': int.parse(_fundAmountController.text.trim()),
+                      if (selectedCurrency.contains('USD'))
+                        'cardFeeUsd': _usdVirtualCardFee,
                       if (selectedCurrency.contains('USD') && _usdNgnRate != null)
                         'usdNgnRate': _usdNgnRate,
                       if (selectedCurrency.contains('USD'))
                         'fundAmountNgnEquivalent': _computeNgnEquivalent(
                           int.parse(_fundAmountController.text.trim()),
+                        ),
+                      if (selectedCurrency.contains('USD'))
+                        'cardFeeNgnEquivalent': _computeNgnEquivalent(
+                          _usdVirtualCardFee,
+                        ),
+                      if (selectedCurrency.contains('USD'))
+                        'safehavenChargeAmountNgn': _computeNgnEquivalent(
+                          int.parse(_fundAmountController.text.trim()) +
+                              _usdVirtualCardFee,
                         ),
                     };
                     if (widget.cardType == 'Physical') {
@@ -2729,6 +2792,20 @@ class ReviewConfirmBottomSheet extends StatelessWidget {
     final ngnEquivalent = basicData['fundAmountNgnEquivalent'] is num
       ? (basicData['fundAmountNgnEquivalent'] as num).toDouble()
       : (usdAmount != null && usdRate != null ? usdAmount * usdRate : null);
+    final usdCardFee = basicData['cardFeeUsd'] is num
+      ? (basicData['cardFeeUsd'] as num).toDouble()
+      : 2.0;
+    final usdFeeNgnEquivalent = basicData['cardFeeNgnEquivalent'] is num
+      ? (basicData['cardFeeNgnEquivalent'] as num).toDouble()
+      : (usdRate != null ? usdCardFee * usdRate : null);
+    final totalSafehavenDebit = basicData['safehavenChargeAmountNgn'] is num
+      ? (basicData['safehavenChargeAmountNgn'] as num).toDouble()
+      : (ngnEquivalent != null && usdFeeNgnEquivalent != null
+          ? ngnEquivalent + usdFeeNgnEquivalent
+          : null);
+    final ngnCardFee = basicData['cardFeeNgn'] is num
+      ? (basicData['cardFeeNgn'] as num).toDouble()
+      : 500.0;
 
     return Container(
       decoration: const BoxDecoration(
@@ -2817,14 +2894,21 @@ class ReviewConfirmBottomSheet extends StatelessWidget {
                               'Summary',
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
-                            selectedCurrency.contains("USD")
-                                ? Text(
-                                    "\$3 Fee",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  )
-                                : SizedBox.shrink(),
+                            if (selectedCurrency.contains("USD"))
+                              Text(
+                                "\$${NumberFormat('#,##0.##').format(usdCardFee)} Fee",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            if (selectedCurrency.contains("NGN") &&
+                                cardType != 'Physical')
+                              Text(
+                                "\u20A6${NumberFormat('#,##0.##').format(ngnCardFee)} Fee",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                           ],
                         ),
                         const SizedBox(height: 10),
@@ -2855,8 +2939,31 @@ class ReviewConfirmBottomSheet extends StatelessWidget {
                         if (selectedCurrency.toUpperCase().contains('USD') &&
                             ngnEquivalent != null)
                           _buildSummaryRow(
-                            'Estimated NGN Equivalent',
-                            '₦${NumberFormat('#,##0.##').format(ngnEquivalent)}',
+                            'Funding NGN Equivalent',
+                            '\u20A6${NumberFormat('#,##0.##').format(ngnEquivalent)}',
+                          ),
+                        if (selectedCurrency.toUpperCase().contains('USD'))
+                          _buildSummaryRow(
+                            'Card Fee',
+                            '\$${NumberFormat('#,##0.##').format(usdCardFee)}',
+                          ),
+                        if (selectedCurrency.toUpperCase().contains('USD') &&
+                            usdFeeNgnEquivalent != null)
+                          _buildSummaryRow(
+                            'Fee NGN Equivalent',
+                            '\u20A6${NumberFormat('#,##0.##').format(usdFeeNgnEquivalent)}',
+                          ),
+                        if (selectedCurrency.toUpperCase().contains('USD') &&
+                            totalSafehavenDebit != null)
+                          _buildSummaryRow(
+                            'SafeHaven Debit',
+                            '\u20A6${NumberFormat('#,##0.##').format(totalSafehavenDebit)}',
+                          ),
+                        if (selectedCurrency.toUpperCase().contains('NGN') &&
+                            cardType != 'Physical')
+                          _buildSummaryRow(
+                            'Card Fee',
+                            '\u20A6${NumberFormat('#,##0.##').format(ngnCardFee)}',
                           ),
                         _buildSummaryRow(
                           'DELIVERY',

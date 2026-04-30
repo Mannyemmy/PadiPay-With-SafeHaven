@@ -510,7 +510,7 @@ class _AliasFormSheetState extends State<_AliasFormSheet> {
         }
       }
     } catch (_) {}
-    // Counterparty not found â€” fall back to direct verify if bank already set
+    // Counterparty not found  fall back to direct verify if bank already set
     if (!mounted) return;
     if (_selectedBankId != null) {
       await _verifyAccount();
@@ -961,7 +961,7 @@ class _AliasFormSheetState extends State<_AliasFormSheet> {
                     if (v == null || v.trim().isEmpty) return 'Enter a PadiTag';
                     final cleaned = v.trim().replaceAll('@', '');
                     if (!RegExp(r'^[a-zA-Z0-9_]{3,20}$').hasMatch(cleaned)) {
-                      return '3â€“20 characters: letters, numbers, underscores only';
+                      return '3-20 characters: letters, numbers, underscores only';
                     }
                     return null;
                   },

@@ -300,7 +300,7 @@ class _CardsPageState extends State<CardsPage> {
     print('[_fetchCardDetails] cardId=$cardId currency=$currency isSudo=$isSudo sudoAccountId=$sudoAccountId');
 
     if (isSudo || currency == 'USD') {
-      // Sudo path â€” both NGN and new USD Sudo cards
+      // Sudo path  both NGN and new USD Sudo cards
       final callable = FirebaseFunctions.instance.httpsCallable('sudoGetCard');
       final response = await callable.call({'cardId': cardId});
       print('Sudo card details response for $cardId: ${response.data}');
@@ -308,7 +308,7 @@ class _CardsPageState extends State<CardsPage> {
       final rawData = _asStringKeyedMap(response.data);
       final data = _asStringKeyedMap(rawData?['data']) ?? <String, dynamic>{};
 
-      // maskedPan format: "506321*********0824" â€” extract last 4
+      // maskedPan format: "506321*********0824"  extract last 4
       final String maskedPan = data['maskedPan']?.toString() ?? '';
       final String last4 = maskedPan.length >= 4
           ? maskedPan.substring(maskedPan.length - 4)
@@ -1016,18 +1016,18 @@ class _CardsPageState extends State<CardsPage> {
               final String last4 = details?['last_4']?.toString() ??
                   (maskedPan.length >= 4
                       ? maskedPan.substring(maskedPan.length - 4)
-                      : 'â€¢â€¢â€¢â€¢');
+                      : '****');
               String cardTypeStr = '$financialType | **** $last4';
 
-              // Build display number: â€¢â€¢â€¢â€¢ â€¢â€¢â€¢â€¢ â€¢â€¢â€¢â€¢ XXXX from masked pan
+              // Build display number: **** **** **** XXXX from masked pan
               String displayedNumber;
               if (isLoadingDetails) {
-                displayedNumber = 'â€¢â€¢â€¢â€¢ â€¢â€¢â€¢â€¢ â€¢â€¢â€¢â€¢ â€¢â€¢â€¢â€¢';
+                displayedNumber = '**** **** **** ****';
               } else if (!(card['showNumber'] ?? true)) {
-                displayedNumber = 'â€¢â€¢â€¢â€¢ â€¢â€¢â€¢â€¢ â€¢â€¢â€¢â€¢ â€¢â€¢â€¢â€¢';
+                displayedNumber = '**** **** **** ****';
               } else if (maskedPan.isNotEmpty && currencyCode == 'NGN') {
                 // Sudo maskedPan is like "506321*********0824"
-                displayedNumber = 'â€¢â€¢â€¢â€¢ â€¢â€¢â€¢â€¢ â€¢â€¢â€¢â€¢ $last4';
+                displayedNumber = '**** **** **** $last4';
               } else {
                 final String rawNumber =
                     (details['card_number'] ?? '0000000000000000').toString();
@@ -1455,7 +1455,7 @@ class _CardsPageState extends State<CardsPage> {
         return false;
       }
 
-      // Refund: company â†’ user (book transfer â€” both on Sudo)
+      // Refund: company to user via SafeHaven book transfer.
       final refundResult = await FirebaseFunctions.instance
           .httpsCallable('safehavenTransferIntra')
           .call({
@@ -1525,7 +1525,7 @@ class _CardsPageState extends State<CardsPage> {
           if (accountType == null) 'accountType',
           if (bankId == null) 'bankId',
         ].join(', ');
-        print('Card creation blocked â€” missing fields: $missing | userDetails: $userDetails');
+        print('Card creation blocked  missing fields: $missing | userDetails: $userDetails');
         Navigator.pop(context);
         showSimpleDialog("Please create a bank account first", Colors.red);
         return;
@@ -1562,6 +1562,27 @@ class _CardsPageState extends State<CardsPage> {
           ? 'USD'
           : 'NGN';
       _logCardCreate('derived currency', cardCurrency);
+      double? numberFrom(dynamic value) {
+        if (value is num) return value.toDouble();
+        return double.tryParse(value?.toString() ?? '');
+      }
+
+      final isPhysicalCard = type == 'Physical';
+      final double? cardFeeNgn = !isPhysicalCard && cardCurrency == 'NGN'
+          ? (numberFrom(basicData['cardFeeNgn']) ?? 500.0)
+          : null;
+      final double? cardFeeUsd = !isPhysicalCard && cardCurrency == 'USD'
+          ? (numberFrom(basicData['cardFeeUsd']) ?? 2.0)
+          : null;
+      final double? safehavenChargeAmountNgn =
+          !isPhysicalCard && cardCurrency == 'NGN'
+              ? cardFeeNgn
+              : numberFrom(basicData['safehavenChargeAmountNgn']);
+      _logCardCreate('safehaven card charge', {
+        'cardFeeNgn': cardFeeNgn,
+        'cardFeeUsd': cardFeeUsd,
+        'safehavenChargeAmountNgn': safehavenChargeAmountNgn,
+      });
 
       // Both NGN and USD cards now go through Sudo
       // Resolve Sudo customer
@@ -1655,6 +1676,16 @@ class _CardsPageState extends State<CardsPage> {
         'selectedCurrency': basicData['selectedCurrency'],
         'design': design,
         if (colorOverride != null) 'colorOverride': colorOverride,
+        if (cardFeeNgn != null) 'cardFeeNgn': cardFeeNgn,
+        if (cardFeeUsd != null) 'cardFeeUsd': cardFeeUsd,
+        if (safehavenChargeAmountNgn != null)
+          'safehavenChargeAmountNgn': safehavenChargeAmountNgn,
+        if (basicData['fundAmount'] != null)
+          'fundAmountUsd': basicData['fundAmount'],
+        if (basicData['fundAmountNgnEquivalent'] != null)
+          'fundAmountNgnEquivalent': basicData['fundAmountNgnEquivalent'],
+        if (basicData['cardFeeNgnEquivalent'] != null)
+          'cardFeeNgnEquivalent': basicData['cardFeeNgnEquivalent'],
         'status': 'pending',
         'pin': pin,
         'createdAt': FieldValue.serverTimestamp(),
@@ -1721,6 +1752,10 @@ class _CardsPageState extends State<CardsPage> {
             'brand': basicData['scheme'],
             'currency': cardCurrency,
             'issuerCountry': cardCurrency == 'USD' ? 'USA' : 'NGA',
+            if (cardFeeNgn != null) 'cardFeeNgn': cardFeeNgn,
+            if (cardFeeUsd != null) 'cardFeeUsd': cardFeeUsd,
+            if (safehavenChargeAmountNgn != null)
+              'safehavenChargeAmountNgn': safehavenChargeAmountNgn,
             if (basicData['fundAmount'] != null)
               'fundAmount': basicData['fundAmount'] as int,
             if (basicData['usdNgnRate'] != null)
@@ -1728,6 +1763,9 @@ class _CardsPageState extends State<CardsPage> {
             if (basicData['fundAmountNgnEquivalent'] != null)
               'fundAmountNgnEquivalent':
                   (basicData['fundAmountNgnEquivalent'] as num).toDouble(),
+            if (basicData['cardFeeNgnEquivalent'] != null)
+              'cardFeeNgnEquivalent':
+                  (basicData['cardFeeNgnEquivalent'] as num).toDouble(),
           })
           .then((_) {
             if (mounted) _fetchCards();

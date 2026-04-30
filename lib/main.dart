@@ -162,7 +162,7 @@ Future<void> _showNotification(RemoteMessage message) async {
       category: AndroidNotificationCategory.message,
       color: const Color(0xFF16C79A),
       colorized: true,
-      subText: 'Padi Pay â€¢ Incoming',
+      subText: 'Padi Pay Incoming',
       styleInformation: BigTextStyleInformation(
         incomingBigText,
         htmlFormatBigText: true,

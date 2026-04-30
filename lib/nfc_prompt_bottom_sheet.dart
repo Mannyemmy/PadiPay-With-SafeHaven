@@ -425,6 +425,50 @@ class _TransferPageState extends State<TransferPage> {
     }
   }
 
+  Future<Map<String, dynamic>?> _getSafehavenAccountForUser(String uid) async {
+    final userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(uid).get();
+    final data = userDoc.data() ?? <String, dynamic>{};
+    final safehavenVa =
+        data['safehavenData']?['virtualAccount']?['data'] as Map?;
+
+    final setupDoc = await FirebaseFirestore.instance
+        .collection('safehavenUserSetup')
+        .doc(uid)
+        .get();
+    final setup = setupDoc.data() ?? <String, dynamic>{};
+
+    final accountId =
+        safehavenVa?['id']?.toString() ?? setup['safehavenAccountId']?.toString();
+    final accountNumber = safehavenVa?['attributes']?['accountNumber']
+            ?.toString() ??
+        setup['safehavenAccountNumber']?.toString();
+    final rawBankId =
+        safehavenVa?['attributes']?['bank']?['id']?.toString() ??
+            setup['safehavenBankCode']?.toString();
+    final bankName =
+        safehavenVa?['attributes']?['bank']?['name']?.toString() ??
+            setup['safehavenBankName']?.toString();
+    final bankId =
+        await resolveBankId(bankId: rawBankId, bankName: bankName) ?? '999240';
+    final accountName =
+        safehavenVa?['attributes']?['accountName']?.toString() ??
+            setup['safehavenAccountName']?.toString();
+
+    if ((accountId == null || accountId.isEmpty) &&
+        (accountNumber == null || accountNumber.isEmpty)) {
+      return null;
+    }
+
+    return {
+      'accountId': accountId,
+      'accountNumber': accountNumber,
+      'bankId': bankId,
+      'bankName': bankName,
+      'accountName': accountName,
+    };
+  }
+
   void _sendPayment() async {
     if (_amountController.text.isEmpty) {
       ScaffoldMessenger.of(
@@ -448,7 +492,12 @@ class _TransferPageState extends State<TransferPage> {
     }
     String purpose = _purposeController.text;
 
-    // Perform real settlement: create (or reuse) counterparty and call safehavenTransferNip
+    final pinVerified = await verifyTransactionPin();
+    if (!pinVerified) {
+      return;
+    }
+
+    // Perform real settlement with SafeHaven book transfer.
     try {
       final settled = await _settleNfcPayment(amount, purpose);
       if (!settled) {
@@ -488,49 +537,61 @@ class _TransferPageState extends State<TransferPage> {
       }
 
       // Sender's account details
-      final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-      final accountId = userDoc.data()?['safehavenData']?['virtualAccount']?['data']?['id'];
-      if (accountId == null) {
+      final senderAccount = await _getSafehavenAccountForUser(user.uid);
+      final senderAccountId = senderAccount?['accountId']?.toString() ?? '';
+      final senderAccountNumber =
+          senderAccount?['accountNumber']?.toString() ?? '';
+      final fromAccountId = senderAccountId.isNotEmpty
+          ? senderAccountId
+          : senderAccountNumber;
+      if (fromAccountId.isEmpty) {
         showSimpleDialog('Account details not found', Colors.red);
         return false;
       }
 
       // Recipient's VA details
-      final recipientDoc = await FirebaseFirestore.instance.collection('users').doc(widget.endpointId).get();
-      final recipientVa = recipientDoc.data()?['safehavenData']?['virtualAccount']?['data'];
-      if (recipientVa == null) {
+      final recipientAccount =
+          await _getSafehavenAccountForUser(widget.endpointId);
+      if (recipientAccount == null) {
         showSimpleDialog('Recipient does not have a virtual account', Colors.red);
         return false;
       }
-      final toAccountId = recipientVa['id']?.toString();
+      final recipientAccountNumber =
+          recipientAccount['accountNumber']?.toString() ?? '';
+      final toAccountId = recipientAccountNumber.isNotEmpty
+          ? recipientAccountNumber
+          : recipientAccount['accountId']?.toString();
       if (toAccountId == null || toAccountId.isEmpty) {
-        showSimpleDialog('Recipient account ID not found', Colors.red);
+        showSimpleDialog('Recipient account details not found', Colors.red);
         return false;
       }
 
-      final recipientAccountNumber = recipientVa['attributes']?['accountNumber'];
-      final recipientBankName = recipientVa['attributes']?['bank']?['name'];
-      final recipientAccountName = recipientVa['attributes']?['accountName'];
-      final recipientBankId = recipientVa['attributes']?['bank']?['id']?.toString();
+      final recipientBankName = recipientAccount['bankName'];
+      final recipientAccountName = recipientAccount['accountName'];
+      final recipientBankId =
+          recipientAccount['bankId']?.toString() ?? '999240';
 
       // Prevent sending to own account
-      final ownAccountNumber = userDoc.data()?['safehavenData']?['virtualAccount']?['data']?['attributes']?['accountNumber']?.toString();
-      if (ownAccountNumber != null && ownAccountNumber == recipientAccountNumber) {
+      final ownAccountNumber = senderAccount?['accountNumber']?.toString();
+      if (ownAccountNumber != null &&
+          ownAccountNumber.isNotEmpty &&
+          ownAccountNumber == recipientAccountNumber) {
         showSimpleDialog('You cannot send money to your own account', Colors.red);
         return false;
       }
 
-      // Book transfer (both parties on Sudo â€” no counterparty needed)
-      final amountKobo = (amount * 100).toInt();
-      debugPrint('safehavenTransferIntra: from=$accountId to=$toAccountId amount=$amountKobo');
+      // SafeHaven book transfer; no counterparty needed for internal accounts.
+      final amountKobo = (amount * 100).round();
+      debugPrint('safehavenTransferIntra: from=$fromAccountId to=$toAccountId amount=$amountKobo bank=$recipientBankId');
       final transferResult = await FirebaseFunctions.instance
           .httpsCallable('safehavenTransferIntra')
           .call({
-        'fromAccountId': accountId,
+        'fromAccountId': fromAccountId,
         'toAccountId': toAccountId,
+        'toBankCode': recipientBankId,
         'amount': amountKobo,
         'currency': 'NGN',
-        'narration': purpose,
+        'narration': purpose.trim().isEmpty ? 'NFC payment' : purpose.trim(),
         'idempotencyKey': const Uuid().v4(),
       });
 

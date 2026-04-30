@@ -798,11 +798,11 @@ class _HomePageState extends State<HomePage> {
       final depositBank = depositAttrs?['bank'] as Map?;
       String? bankId = depositBank?['id']?.toString();
 
-      print('safehavenFetchDepositAccount parsed â€” bankId: $bankId');
+      print('safehavenFetchDepositAccount parsed  bankId: $bankId');
 
       if (bankId == null) {
         print(
-          'safehavenFetchDepositAccount: bank.id is null â€” continuing to try safehavenFetchAccountNumber',
+          'safehavenFetchDepositAccount: bank.id is null  continuing to try safehavenFetchAccountNumber',
         );
       }
 
@@ -830,7 +830,7 @@ class _HomePageState extends State<HomePage> {
           }
         }
         print(
-          'safehavenFetchAccountNumber parsed â€” accountNumber: $accountNumber, bankName: $bankName',
+          'safehavenFetchAccountNumber parsed  accountNumber: $accountNumber, bankName: $bankName',
         );
       } catch (e) {
         print('safehavenFetchAccountNumber failed (non-fatal): $e');

@@ -54,11 +54,18 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
       });
     }
 
-    if (result.bankName != null && result.bankName!.isNotEmpty && banks.isNotEmpty) {
+    if (result.bankName != null &&
+        result.bankName!.isNotEmpty &&
+        banks.isNotEmpty) {
       final bankNameLower = result.bankName!.toLowerCase();
       final matched = banks.cast<Map<String, dynamic>?>().firstWhere(
-        (b) => (b!['attributes']['name'] as String).toLowerCase().contains(bankNameLower) ||
-               bankNameLower.contains((b['attributes']['name'] as String).toLowerCase()),
+        (b) =>
+            (b!['attributes']['name'] as String).toLowerCase().contains(
+              bankNameLower,
+            ) ||
+            bankNameLower.contains(
+              (b['attributes']['name'] as String).toLowerCase(),
+            ),
         orElse: () => null,
       );
       if (matched != null) {
@@ -75,7 +82,9 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
   Future<void> _fetchBanks() async {
     setState(() => isFetchingBanks = true);
     try {
-      final snapshot = await FirebaseFirestore.instance.collection('banks').get();
+      final snapshot = await FirebaseFirestore.instance
+          .collection('banks')
+          .get();
       List<Map<String, dynamic>> bankList = [];
       for (var doc in snapshot.docs) {
         bankList.add({
@@ -84,20 +93,26 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
         });
       }
       if (bankList.isEmpty) {
-        final result = await FirebaseFunctions.instance.httpsCallable('safehavenBankList').call();
+        final result = await FirebaseFunctions.instance
+            .httpsCallable('safehavenBankList')
+            .call();
         final data = result.data as Map<String, dynamic>;
         final apiBankList = data['data'] as List<dynamic>;
         final batch = FirebaseFirestore.instance.batch();
         for (var item in apiBankList) {
           final map = item as Map;
-          final docRef = FirebaseFirestore.instance.collection('banks').doc(map['id'].toString());
+          final docRef = FirebaseFirestore.instance
+              .collection('banks')
+              .doc(map['id'].toString());
           batch.set(docRef, {
             'name': (map['attributes'] as Map)['name']?.toString(),
           });
         }
         await batch.commit();
         // Reload from Firestore after saving
-        final newSnapshot = await FirebaseFirestore.instance.collection('banks').get();
+        final newSnapshot = await FirebaseFirestore.instance
+            .collection('banks')
+            .get();
         for (var doc in newSnapshot.docs) {
           bankList.add({
             'id': doc.id,
@@ -126,7 +141,10 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
     }
 
     final docId = '${selectedBank}_${accountNumberController.text}';
-    final doc = await FirebaseFirestore.instance.collection('verified_accounts').doc(docId).get();
+    final doc = await FirebaseFirestore.instance
+        .collection('verified_accounts')
+        .doc(docId)
+        .get();
 
     if (doc.exists) {
       setState(() {
@@ -147,10 +165,13 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
       setState(() {
         accountNameController.text = accountName;
       });
-      await FirebaseFirestore.instance.collection('verified_accounts').doc(docId).set({
-        'accountName': accountName,
-        'verifiedAt': FieldValue.serverTimestamp(),
-      });
+      await FirebaseFirestore.instance
+          .collection('verified_accounts')
+          .doc(docId)
+          .set({
+            'accountName': accountName,
+            'verifiedAt': FieldValue.serverTimestamp(),
+          });
     } catch (e) {
       debugPrint('safehavenNameEnquiry error: $e');
       showSimpleDialog('Error verifying account', Colors.red);
@@ -177,17 +198,22 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
         debugPrint('ðŸ“‹ Document data: $data');
 
         String? bankId = data['recipientBankCode'] as String?;
-        final accountName = data['data']?['attributes']?['accountName'] as String?
-            ?? data['attributes']?['accountName'] as String?
-            ?? data['accountName'] as String?;
-        final bankName = data['bankName'] as String? ?? data['data']?['attributes']?['bank']?['name'] as String?;
+        final accountName =
+            data['data']?['attributes']?['accountName'] as String? ??
+            data['attributes']?['accountName'] as String? ??
+            data['accountName'] as String?;
+        final bankName =
+            data['bankName'] as String? ??
+            data['data']?['attributes']?['bank']?['name'] as String?;
 
         debugPrint('ðŸ¦ Initial bankId: $bankId');
         debugPrint('ðŸ·ï¸ bankName: $bankName');
         debugPrint('ðŸ‘¤ Found accountName: $accountName');
 
         if (bankId == null && bankName != null) {
-          debugPrint('ðŸ” bankId missing, trying banks collection lookup by bankName: $bankName');
+          debugPrint(
+            'ðŸ” bankId missing, trying banks collection lookup by bankName: $bankName',
+          );
           try {
             final bankQuery = await FirebaseFirestore.instance
                 .collection('banks')
@@ -200,7 +226,9 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
             } else if (banks.isNotEmpty) {
               // Use already-loaded banks list instead of reading entire collection again
               final matched = banks.cast<Map<String, dynamic>?>().firstWhere(
-                (b) => (b!['attributes']['name'] as String).toLowerCase() == bankName.toLowerCase(),
+                (b) =>
+                    (b!['attributes']['name'] as String).toLowerCase() ==
+                    bankName.toLowerCase(),
                 orElse: () => null,
               );
               if (matched != null) {
@@ -223,10 +251,14 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
           _safehavenNameEnquiry();
           return;
         } else {
-          debugPrint('âš ï¸ bankId or accountName is null. bankId=$bankId, accountName=$accountName');
+          debugPrint(
+            'âš ï¸ bankId or accountName is null. bankId=$bankId, accountName=$accountName',
+          );
         }
       } else {
-        debugPrint(' No documents found for recipientAccountNumber: $accountNumber');
+        debugPrint(
+          ' No documents found for recipientAccountNumber: $accountNumber',
+        );
       }
     } catch (e) {
       debugPrint('ðŸ’¥ _autoLookupCounterparty error: $e');
@@ -236,7 +268,10 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
 
   Future<Map<String, dynamic>?> getCompanyVirtualAccount() async {
     try {
-      final doc = await FirebaseFirestore.instance.collection('company').doc('account_details').get();
+      final doc = await FirebaseFirestore.instance
+          .collection('company')
+          .doc('account_details')
+          .get();
       if (!doc.exists) return null;
       final data = doc.data() ?? <String, dynamic>{};
       return {
@@ -254,108 +289,201 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
     }
   }
 
-  Future<void> _safehavenTransferNip() async {
-    final accountName = accountNameController.text;
-    final selectedBankValue = selectedBank;
-    final amountText = amountController.text;
-    if (accountName.isEmpty ||
-        selectedBankValue == null ||
-        amountText.isEmpty) {
-      showSimpleDialog('Please complete and verify all fields', Colors.red);
+
+
+Future<void> _safehavenTransferNip() async {
+  final accountName = accountNameController.text;
+  final selectedBankValue = selectedBank;
+  final amountText = amountController.text;
+  if (accountName.isEmpty ||
+      selectedBankValue == null ||
+      amountText.isEmpty) {
+    showSimpleDialog('Please complete and verify all fields', Colors.red);
+    return;
+  }
+  final amountNaira = double.tryParse(amountText);
+  if (amountNaira == null || amountNaira <= 0) {
+    showSimpleDialog('Please enter a valid amount', Colors.red);
+    return;
+  }
+
+  // Verify PIN before proceeding
+  final pinVerified = await verifyTransactionPin();
+  if (!pinVerified) {
+    return;
+  }
+
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) {
+    showSimpleDialog('No authenticated user found', Colors.red);
+    return;
+  }
+
+  setState(() => isLoading = true);
+  
+  String? firstTransferId;
+  bool firstTransferCompleted = false;
+  
+  try {
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+    final userVaData = userDoc
+        .data()?['safehavenData']?['virtualAccount']?['data'];
+    if (userVaData == null) {
+      showSimpleDialog('User account not found', Colors.red);
       return;
     }
-    final amountNaira = double.tryParse(amountText);
-    if (amountNaira == null || amountNaira <= 0) {
-      showSimpleDialog('Please enter a valid amount', Colors.red);
-      return;
-    }
+    final userAccountId = userVaData['id']?.toString() ?? '';
+    final userAccountType = userVaData['type']?.toString() ?? '';
+    final userBankIdRaw = userVaData['attributes']?['bank']?['id']
+        ?.toString();
+    final userBankName = userVaData['attributes']?['bank']?['name']
+        ?.toString();
+    final userBankId =
+        (await resolveBankId(
+          bankId: userBankIdRaw,
+          bankName: userBankName,
+        )) ??
+        '';
 
-    // Verify PIN before proceeding
-    final pinVerified = await verifyTransactionPin();
-    if (!pinVerified) {
-      return;
-    }
-
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      showSimpleDialog('No authenticated user found', Colors.red);
-      return;
-    }
-
-    setState(() => isLoading = true);
-    try {
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
-      final userVaData = userDoc
-          .data()?['safehavenData']?['virtualAccount']?['data'];
-      if (userVaData == null) {
-        showSimpleDialog('User account not found', Colors.red);
-        return;
-      }
-      final userAccountId = userVaData['id']?.toString() ?? '';
-      final userAccountType = userVaData['type']?.toString() ?? '';
-      final userBankIdRaw = userVaData['attributes']?['bank']?['id']?.toString();
-      final userBankName = userVaData['attributes']?['bank']?['name']?.toString();
-      final userBankId = (await resolveBankId(bankId: userBankIdRaw, bankName: userBankName)) ?? '';
-
-      if (userAccountId.isEmpty ||
-          userAccountType.isEmpty ||
-          userBankId.isEmpty) {
-        showSimpleDialog('User account details not found', Colors.red);
-        setState(() => isLoading = false);
-        return;
-      }
-
-      final companyVa = await getCompanyVirtualAccount();
-      if (companyVa == null ||
-          companyVa['id'].isEmpty ||
-          companyVa['type'].isEmpty ||
-          companyVa['bankId'].isEmpty ||
-          companyVa['accountNumber'].isEmpty) {
-        showSimpleDialog('Company account not found', Colors.red);
-        setState(() {
-          isLoading = false;
-        });
-        return;
-      }
-
-      final recipientAccountNumber = accountNumberController.text;
-      final recipientBankId = selectedBank;
-      final recipientBank = banks.firstWhere(
-        (b) => b['id'] == selectedBank,
+    // Check user balance first
+    final balanceResult = await FirebaseFunctions.instance
+        .httpsCallable('safehavenFetchAccountBalance')
+        .call({'accountId': userAccountId});
+    final userBalanceKobo = balanceResult.data['data']['availableBalance']?.toDouble() ?? 0.0;
+    final fee = 50.0;
+    final totalRequiredKobo = (amountNaira + fee) * 100;
+    
+    if (userBalanceKobo < totalRequiredKobo) {
+      showSimpleDialog(
+        'Insufficient balance. Your balance is ₦${(userBalanceKobo / 100).toStringAsFixed(2)}. Required: ₦${(totalRequiredKobo / 100).toStringAsFixed(2)}',
+        Colors.red,
       );
-      final recipientBankName = recipientBank['attributes']['name'];
+      setState(() => isLoading = false);
+      return;
+    }
 
-      // First transfer: user to company (book transfer â€” both on Sudo)
-      final fee = 50.0;
-      final amountToCompanyKobo = (amountNaira + fee) * 100;
-      final narration1 =
-          'Ghost Mode to Company: ${remarkController.text.isNotEmpty ? remarkController.text : 'Transfer'}';
-      final firstResult = await FirebaseFunctions.instance
-          .httpsCallable('safehavenTransferIntra')
-          .call({
-            'fromAccountId': userAccountId,
-            'toAccountId': companyVa['id'],
-            'amount': amountToCompanyKobo,
-            'currency': 'NGN',
-            'narration': narration1,
-            'idempotencyKey': const Uuid().v4(),
-          });
-      final firstStatus = firstResult.data['data']['attributes']['status'];
-      final firstFailureReason =
-          firstResult.data['data']['attributes']['failureReason'];
-      if (firstStatus == "FAILED") {
+    // Fetch company account details directly from SafeHaven API via Cloud Function
+    final companyResult = await FirebaseFunctions.instance
+        .httpsCallable('fetchCompanySafehavenAccounts')
+        .call({'isSubAccount': false, 'page': 0, 'limit': 100});
+
+    final companyData = companyResult.data;
+    final companyAccount = companyData['companyAccount'];
+
+    if (companyAccount == null ||
+        companyAccount['id'] == null ||
+        companyAccount['accountNumber'] == null) {
+      showSimpleDialog(
+        'Company account not found. Please try again.',
+        Colors.red,
+      );
+      setState(() => isLoading = false);
+      return;
+    }
+
+    final companyVa = {
+      'id': companyAccount['id'],
+      'accountNumber': companyAccount['accountNumber'],
+      'accountName': companyAccount['accountName'] ?? 'PadiPay Limited',
+      'type': companyAccount['accountType'] ?? 'BankAccount',
+      'bankId': '090286',
+      'bankName': 'SAFE HAVEN MICROFINANCE BANK',
+      'uid': 'company',
+    };
+
+    final recipientAccountNumber = accountNumberController.text;
+    final recipientBank = banks.firstWhere((b) => b['id'] == selectedBank);
+    final recipientBankId = recipientBank['id'];
+    final recipientBankName = recipientBank['attributes']['name'];
+    
+    // Check if recipient bank is Safe Haven MFB (code 090286)
+    final isRecipientSafeHaven = recipientBankId == '090286' || 
+                                   recipientBankId == '999240' ||
+                                   recipientBankName.toLowerCase().contains('safe haven');
+
+    // First transfer: user to company (book transfer)
+    final amountToCompanyKobo = (amountNaira + fee) * 100;
+    final narration1 =
+        'Ghost Mode to Company: ${remarkController.text.isNotEmpty ? remarkController.text : 'Transfer'}';
+    final firstResult = await FirebaseFunctions.instance
+        .httpsCallable('safehavenTransferIntra')
+        .call({
+          'fromAccountId': userAccountId,
+          'toAccountId': companyVa['id'],
+          'amount': amountToCompanyKobo,
+          'currency': 'NGN',
+          'narration': narration1,
+          'idempotencyKey': const Uuid().v4(),
+        });
+    
+    firstTransferId = firstResult.data['data']['id'];
+    final firstStatus = firstResult.data['data']['attributes']['status'];
+    final firstFailureReason = firstResult.data['data']['attributes']['failureReason'];
+    
+    if (firstStatus == "FAILED") {
+      showSimpleDialog(
+        'Transfer to company failed: $firstFailureReason',
+        Colors.red,
+      );
+      return;
+    }
+    
+    firstTransferCompleted = true;
+
+    final amountToRecipientKobo = amountNaira * 100;
+    final narration2 = remarkController.text.isNotEmpty
+        ? remarkController.text
+        : 'Ghost Mode Transfer';
+    
+    dynamic secondResult;
+    
+    if (isRecipientSafeHaven) {
+      // Intra-bank transfer (same Safe Haven MFB)
+      print('Using intra-bank transfer to Safe Haven account: $recipientAccountNumber');
+      
+      // For intra-bank, we need the recipient's Safe Haven account ID
+      final recipientUserQuery = await FirebaseFirestore.instance
+          .collection('users')
+          .where('safehavenData.virtualAccount.data.attributes.accountNumber', isEqualTo: recipientAccountNumber)
+          .limit(1)
+          .get();
+      
+      String? recipientSafeHavenAccountId;
+      if (recipientUserQuery.docs.isNotEmpty) {
+        recipientSafeHavenAccountId = recipientUserQuery.docs.first
+            .data()['safehavenData']?['virtualAccount']?['data']?['id']?.toString();
+      }
+      
+      if (recipientSafeHavenAccountId == null) {
+        // Refund user since we can't complete the transfer
+        await _refundUser(userAccountId, companyVa['id'], amountToCompanyKobo, firstTransferId!);
         showSimpleDialog(
-          'Transfer to company failed: $firstFailureReason',
+          'Could not find recipient\'s Safe Haven account ID. Your funds have been refunded.',
           Colors.red,
         );
         return;
       }
-
+      
+      secondResult = await FirebaseFunctions.instance
+          .httpsCallable('safehavenTransferIntra')
+          .call({
+            'fromAccountId': companyVa['id'],
+            'toAccountId': recipientSafeHavenAccountId,
+            'amount': amountToRecipientKobo,
+            'currency': 'NGN',
+            'narration': narration2,
+            'idempotencyKey': const Uuid().v4(),
+          });
+    } else {
+      // Inter-bank NIP transfer
+      print('Using NIP transfer to external bank: $recipientBankName');
+      
       // Check/create counterparty for recipient (from company)
-      final queryRecipientCp = await FirebaseFirestore.instance.collection('counterparties')
+      final queryRecipientCp = await FirebaseFirestore.instance
+          .collection('counterparties')
           .where('ownerAccountId', isEqualTo: companyVa['id'])
           .where('recipientAccountNumber', isEqualTo: recipientAccountNumber)
           .where('recipientBankCode', isEqualTo: recipientBankId)
@@ -390,12 +518,7 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
             });
       }
 
-      // Second transfer: company to recipient
-      final amountToRecipientKobo = amountNaira * 100;
-      final narration2 = remarkController.text.isNotEmpty
-          ? remarkController.text
-          : 'Ghost Mode Transfer';
-      final secondResult = await FirebaseFunctions.instance
+      secondResult = await FirebaseFunctions.instance
           .httpsCallable('safehavenTransferNip')
           .call({
             'accountType': companyVa['type'],
@@ -406,51 +529,137 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
             'narration': narration2,
             'idempotencyKey': const Uuid().v4(),
           });
-      final secondStatus = secondResult.data['data']['attributes']['status'];
-      final secondFailureReason =
-          secondResult.data['data']['attributes']['failureReason'];
-      if (secondStatus == "FAILED") {
+    }
+    
+    final secondStatus = secondResult.data['data']['attributes']['status'];
+    final secondFailureReason = secondResult.data['data']['attributes']['failureReason'];
+    
+    if (secondStatus == "FAILED") {
+      // Second transfer failed - refund the user
+      await _refundUser(userAccountId, companyVa['id'], amountToCompanyKobo, firstTransferId!);
+      showSimpleDialog(
+        'Transfer to recipient failed: $secondFailureReason. Your funds have been refunded.',
+        Colors.red,
+      );
+      return;
+    }
+
+    // Log transaction
+    await FirebaseFirestore.instance.collection('transactions').add({
+      'actualSender': user.uid,
+      'userId': 'company',
+      'type': 'ghost_transfer',
+      'bank_code': selectedBank,
+      'account_number': accountNumberController.text,
+      'amount': amountNaira,
+      'reason': remarkController.text,
+      'currency': 'NGN',
+      'api_response': secondResult.data,
+      'reference': secondResult.data['data']['id'],
+      'recipientName': accountName,
+      'bankName': recipientBankName,
+      'firstTransferId': firstTransferId,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+
+    // Clear form after successful transfer
+    amountController.clear();
+    accountNumberController.clear();
+    remarkController.clear();
+    accountNameController.clear();
+    setState(() {
+      _currentPage = 0;
+      selectedBank = null;
+    });
+
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => const SuccessBottomSheet(
+        actionText: "Done",
+        title: "Transfer Successful",
+        description: "Your transfer has been processed successfully.",
+      ),
+      isScrollControlled: true,
+    );
+  } catch (e) {
+    print('safehavenTransferNip error: $e');
+    
+    // If first transfer completed but something else failed, attempt refund
+    if (firstTransferCompleted) {
+      try {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user!.uid)
+            .get();
+        final userVaData = userDoc.data()?['safehavenData']?['virtualAccount']?['data'];
+        final userAccountId = userVaData?['id']?.toString() ?? '';
+        
+        final companyResult = await FirebaseFunctions.instance
+            .httpsCallable('fetchCompanySafehavenAccounts')
+            .call({'isSubAccount': false, 'page': 0, 'limit': 100});
+        final companyAccount = companyResult.data['companyAccount'];
+        final companyId = companyAccount?['id'];
+        
+        if (userAccountId.isNotEmpty && companyId != null) {
+          await _refundUser(userAccountId, companyId, (amountNaira + 50) * 100, firstTransferId!);
+          showSimpleDialog(
+            'An error occurred but your funds have been refunded: ${e.toString()}',
+            Colors.red,
+          );
+        } else {
+          showSimpleDialog('Error processing transfer: ${e.toString()}', Colors.red);
+        }
+      } catch (refundErr) {
+        print('Refund error: $refundErr');
         showSimpleDialog(
-          'Transfer to recipient failed: $secondFailureReason',
+          'CRITICAL: Transfer failed and automatic refund failed. Please contact support immediately. Error: ${e.toString()}',
           Colors.red,
         );
-        return;
       }
-
-      // Log transaction (for the final transfer)
-      await FirebaseFirestore.instance.collection('transactions').add({
-        'actualSender': user.uid,
-        'userId': companyVa['uid'],
-        'type': 'ghost_transfer',
-        'bank_code': selectedBank,
-        'account_number': accountNumberController.text,
-        'amount': amountNaira,
-        'reason': remarkController.text,
-        'currency': 'NGN',
-        'api_response': secondResult.data,
-        'reference': secondResult.data['data']['id'],
-        'recipientName': accountName,
-        'bankName': recipientBankName,
-        'timestamp': FieldValue.serverTimestamp(),
-      });
-
-      showModalBottomSheet(
-        context: context,
-        builder: (context) => const SuccessBottomSheet(
-          actionText: "Done",
-          title: "Transfer Successful",
-          description: "Your transfer has been processed successfully.",
-        ),
-        isScrollControlled: true,
-      );
-    } catch (e) {
-      print('safehavenTransferNip error: $e');
-      showSimpleDialog('Error processing transfer', Colors.red);
+    } else {
+      showSimpleDialog('Error processing transfer: ${e.toString()}', Colors.red);
     }
+  } finally {
     setState(() => isLoading = false);
   }
+}
 
-  @override
+// Helper method to refund user from company
+Future<void> _refundUser(String userAccountId, String companyAccountId, double amountKobo, String originalTransferId) async {
+  print('Initiating refund: user=$userAccountId, amount=$amountKobo kobo, originalTransfer=$originalTransferId');
+  
+  final refundResult = await FirebaseFunctions.instance
+      .httpsCallable('safehavenTransferIntra')
+      .call({
+        'fromAccountId': companyAccountId,
+        'toAccountId': userAccountId,
+        'amount': amountKobo,
+        'currency': 'NGN',
+        'narration': 'REFUND: Ghost mode transfer failed (Original: $originalTransferId)',
+        'idempotencyKey': const Uuid().v4(),
+      });
+  
+  final refundStatus = refundResult.data['data']['attributes']['status'];
+  if (refundStatus == "FAILED") {
+    throw Exception('Refund transfer failed: ${refundResult.data['data']['attributes']['failureReason']}');
+  }
+  
+  // Log the refund transaction
+  await FirebaseFirestore.instance.collection('transactions').add({
+    'type': 'ghost_mode_refund',
+    'userId': 'company',
+    'recipientId': userAccountId,
+    'amount': amountKobo / 100,
+    'originalTransferId': originalTransferId,
+    'reason': 'Automatic refund for failed ghost mode transfer',
+    'currency': 'NGN',
+    'api_response': refundResult.data,
+    'reference': refundResult.data['data']['id'],
+    'timestamp': FieldValue.serverTimestamp(),
+  });
+  
+  print('Refund successful: $refundResult');
+} @override
   void dispose() {
     amountController.removeListener(_updateFee);
     amountController.dispose();
@@ -469,7 +678,8 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
         66,
         66,
       ).withValues(alpha: 0.2),
-      body: SafeArea(bottom: true,
+      body: SafeArea(
+        bottom: true,
         child: Stack(
           children: [
             SizedBox.expand(child: Image.asset("assets/mdi_anonymous.png")),
@@ -686,7 +896,8 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
                                                 value,
                                           )['id']
                                           as String?;
-                                  if (accountNumberController.text.length == 10) {
+                                  if (accountNumberController.text.length ==
+                                      10) {
                                     _safehavenNameEnquiry();
                                   }
                                 });
@@ -748,7 +959,8 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
                       ),
                       const SizedBox(height: 40),
                       ElevatedButton(
-                        onPressed: accountNumberController.text.length == 10 &&
+                        onPressed:
+                            accountNumberController.text.length == 10 &&
                                 selectedBank != null &&
                                 accountNameController.text.isNotEmpty
                             ? () => setState(() => _currentPage = 1)
@@ -809,7 +1021,9 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
                                     ),
                                   ),
                                   Text(
-                                    '${accountNumberController.text} Â· ${banks.firstWhere((b) => b['id'] == selectedBank, orElse: () => {'attributes': {'name': 'Unknown'}})['attributes']['name']}',
+                                    '${accountNumberController.text} Â· ${banks.firstWhere((b) => b['id'] == selectedBank, orElse: () => {
+                                      'attributes': {'name': 'Unknown'},
+                                    })['attributes']['name']}',
                                     style: TextStyle(
                                       color: Colors.white54,
                                       fontSize: 12,
@@ -854,9 +1068,10 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
                             Expanded(
                               child: TextField(
                                 controller: amountController,
-                                keyboardType: const TextInputType.numberWithOptions(
-                                  decimal: true,
-                                ),
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w100,
@@ -910,7 +1125,11 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
                       ),
                       const SizedBox(height: 40),
                       ElevatedButton(
-                        onPressed: isLoading || (double.tryParse(amountController.text) ?? 0.0) <= 0
+                        onPressed:
+                            isLoading ||
+                                (double.tryParse(amountController.text) ??
+                                        0.0) <=
+                                    0
                             ? null
                             : () async {
                                 await _safehavenTransferNip();
@@ -923,7 +1142,9 @@ class _GhostModeTransferState extends State<GhostModeTransfer> {
                           ),
                         ),
                         child: isLoading
-                            ? const CircularProgressIndicator(color: Colors.white)
+                            ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
                             : const Text(
                                 'Confirm',
                                 style: TextStyle(
