@@ -223,15 +223,34 @@ class _TargetedGiveawayPageState extends State<TargetedGiveawayPage> {
           .get();
       if (!doc.exists) return;
       final data = doc.data() ?? <String, dynamic>{};
+      final rawCompanyId =
+          data['safehavenAccountId']?.toString() ??
+          data['safehaven_account_id']?.toString() ??
+          data['accountId']?.toString() ??
+          '';
+      final companyAccountNumber =
+          data['safehavenAccountNumber']?.toString() ??
+          data['safehaven_account_number']?.toString() ??
+          data['accountNumber']?.toString() ??
+          '';
+      final companyBankId =
+          data['safehavenBankCode']?.toString() ??
+          data['safehaven_bank_code']?.toString() ??
+          data['bankId']?.toString() ??
+          '999240';
+      final companyId =
+          (rawCompanyId.isNotEmpty && !rawCompanyId.toLowerCase().contains('anc_acc'))
+              ? rawCompanyId
+              : companyAccountNumber;
       setState(() {
         _companyVa = {
           'uid': doc.id,
-          'id': data['accountId']?.toString() ?? '',
-          'type': data['accountType']?.toString() ?? '',
-          'bankId': data['bankId']?.toString() ?? '',
-          'bankName': data['bankName']?.toString() ?? '',
-          'accountNumber': data['accountNumber']?.toString() ?? '',
-          'accountName': data['accountName']?.toString() ?? '',
+          'id': companyId,
+          'type': data['safehavenAccountType']?.toString() ?? data['accountType']?.toString() ?? 'BankAccount',
+          'bankId': companyBankId,
+          'bankName': data['safehavenBankName']?.toString() ?? data['bankName']?.toString() ?? 'SAFE HAVEN MICROFINANCE BANK',
+          'accountNumber': companyAccountNumber,
+          'accountName': data['safehavenAccountName']?.toString() ?? data['accountName']?.toString() ?? '',
         };
       });
     } catch (e) {
@@ -706,14 +725,20 @@ If none found, return an empty array: []
         code = await _generateUniqueCode();
       }
 
-      // Transfer to company (book transfer ï¿½ both on Sudo)
+      final companyDestination = (_companyVa!['id']?.toString() ?? '').trim();
+      if (companyDestination.isEmpty) {
+        showSimpleDialog('Company SafeHaven account not configured', Colors.red);
+        return;
+      }
+      // Transfer to company (book transfer)
       final transferAmountKobo = _transferAmount * 100;
       final transferResult = await callCloudFunctionLogged(
           'safehavenTransferIntra',
           source: 'targeted_giveaway_page.dart',
           payload: {
             'fromAccountId': _accountId,
-            'toAccountId': _companyVa!['id'],
+            'toAccountId': companyDestination,
+            'toBankCode': _companyVa!['bankId'] ?? '999240',
             'amount': transferAmountKobo,
             'currency': 'NGN',
             'narration': 'Targeted Giveaway Funding',

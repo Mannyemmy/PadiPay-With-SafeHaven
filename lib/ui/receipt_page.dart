@@ -224,6 +224,38 @@ class _ReceiptPageState extends State<ReceiptPage> {
     return '${accountNumber.substring(0, 3)}****${accountNumber.substring(accountNumber.length - 3)}';
   }
 
+  String _normalizedStatus() {
+    final raw = status.trim().toUpperCase();
+    if (raw == 'SUCCESSFUL' || raw == 'SUCCESS' || raw == 'COMPLETED' || raw == 'APPROVED') {
+      return 'SUCCESSFUL';
+    }
+    if (raw == 'FAILED' || raw == 'FAIL' || raw == 'DECLINED' || raw == 'UNSUCCESSFUL') {
+      return 'FAILED';
+    }
+    if (raw == 'PENDING' || raw == 'PROCESSING' || raw == 'IN_PROGRESS') {
+      return 'PENDING';
+    }
+    if (raw == 'REFUNDED') return 'REFUNDED';
+    return raw.isEmpty ? 'PENDING' : raw;
+  }
+
+  String _statusDisplayLabel() {
+    switch (_normalizedStatus()) {
+      case 'SUCCESSFUL':
+        return 'Successful';
+      case 'FAILED':
+        return 'Failed';
+      case 'PENDING':
+        return 'Pending';
+      case 'REFUNDED':
+        return 'Refunded';
+      default:
+        final s = status.trim();
+        if (s.isEmpty) return 'Pending';
+        return s[0].toUpperCase() + s.substring(1).toLowerCase();
+    }
+  }
+
   void _populateFromCardData(Map<String, dynamic> data) {
     final type = data['type']?.toString() ?? '';
     final ts = data['timestamp'] as Timestamp?;
@@ -281,11 +313,10 @@ class _ReceiptPageState extends State<ReceiptPage> {
   }
 
   Color _getStatusColor() {
-    switch (status.toUpperCase()) {
+    switch (_normalizedStatus()) {
       case 'SUCCESSFUL':
         return Color(0xFF00A86B); // Green
       case 'FAILED':
-      case 'DECLINED':
         return Colors.red;
       case 'PENDING':
         return Colors.orange;
@@ -297,11 +328,10 @@ class _ReceiptPageState extends State<ReceiptPage> {
   }
 
   PdfColor _getPdfStatusColor() {
-    switch (status.toUpperCase()) {
+    switch (_normalizedStatus()) {
       case 'SUCCESSFUL':
         return PdfColor.fromHex('00A86B');
       case 'FAILED':
-      case 'DECLINED':
         return PdfColors.red;
       case 'PENDING':
         return PdfColors.orange;
@@ -336,12 +366,12 @@ class _ReceiptPageState extends State<ReceiptPage> {
         canvas.setLineWidth(2);
         canvas.drawEllipse(0, 0, size.x, size.y);
         canvas.strokePath();
-        if (status.toUpperCase() == 'SUCCESSFUL') {
+        if (_normalizedStatus() == 'SUCCESSFUL') {
           canvas.moveTo(size.x * 0.2, size.y * 0.55);
           canvas.lineTo(size.x * 0.45, size.y * 0.75);
           canvas.lineTo(size.x * 0.8, size.y * 0.35);
           canvas.strokePath();
-        } else if (status.toUpperCase() == 'FAILED' || status.toUpperCase() == 'DECLINED') {
+        } else if (_normalizedStatus() == 'FAILED') {
           canvas.moveTo(size.x * 0.3, size.y * 0.3);
           canvas.lineTo(size.x * 0.7, size.y * 0.7);
           canvas.moveTo(size.x * 0.7, size.y * 0.3);
@@ -455,7 +485,7 @@ class _ReceiptPageState extends State<ReceiptPage> {
                         _buildStatusIcon(16),
                         pw.SizedBox(width: 5),
                         pw.Text(
-                          status,
+                          _statusDisplayLabel(),
                           style: pw.TextStyle(color: _getPdfStatusColor()),
                         ),
                       ],
@@ -538,20 +568,30 @@ class _ReceiptPageState extends State<ReceiptPage> {
         ...details.map((item) => Column(
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  item['label'] ?? '',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: Colors.grey,fontSize: 12
+                Expanded(
+                  flex: 3,
+                  child: Text(
+                    item['label'] ?? '',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: Colors.grey,fontSize: 12
+                    ),
                   ),
                 ),
-                Text(
-                  item['value'] ?? '',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 12,
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 5,
+                  child: Text(
+                    item['value'] ?? '',
+                    textAlign: TextAlign.right,
+                    softWrap: true,
+                    overflow: TextOverflow.visible,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
                   ),
                 ),
               ],
@@ -683,11 +723,11 @@ class _ReceiptPageState extends State<ReceiptPage> {
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
-                              status.toUpperCase() == 'SUCCESSFUL'
-                                  ? Icons.check_circle_outline_rounded
-                                  : (status.toUpperCase() == 'FAILED' || status.toUpperCase() == 'DECLINED')
-                                  ? Icons.cancel_outlined
-                                  : Icons.hourglass_empty_rounded,
+                              _normalizedStatus() == 'SUCCESSFUL'
+                                  ? Icons.check_circle_rounded
+                                  : (_normalizedStatus() == 'FAILED')
+                                      ? Icons.cancel_outlined
+                                      : Icons.hourglass_empty_rounded,
                               size: 30,
                               color: _getStatusColor(),
                             ),
@@ -705,17 +745,17 @@ class _ReceiptPageState extends State<ReceiptPage> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(
-                                status.toUpperCase() == 'SUCCESSFUL'
-                                    ? Icons.check_circle_outline_rounded
-                                    : (status.toUpperCase() == 'FAILED' || status.toUpperCase() == 'DECLINED')
-                                    ? Icons.cancel_outlined
-                                    : Icons.hourglass_empty_rounded,
+                                _normalizedStatus() == 'SUCCESSFUL'
+                                    ? Icons.check_circle_rounded
+                                    : (_normalizedStatus() == 'FAILED')
+                                        ? Icons.cancel_outlined
+                                        : Icons.hourglass_empty_rounded,
                                 size: 16,
                                 color: _getStatusColor(),
                               ),
                               SizedBox(width: 5),
                               Text(
-                                status,
+                                _statusDisplayLabel(),
                                 style: TextStyle(color: _getStatusColor()),
                               ),
                             ],
@@ -725,7 +765,6 @@ class _ReceiptPageState extends State<ReceiptPage> {
                             transactionDateTime,
                             style: TextStyle(
                               color: Colors.grey.shade500,
-                              fontSize: 14,
                               fontWeight: FontWeight.w600,
                             ),
                           ),

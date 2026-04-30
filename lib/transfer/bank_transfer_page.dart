@@ -349,14 +349,33 @@ class _BankTransferPageState extends State<BankTransferPage> {
       final doc = await FirebaseFirestore.instance.collection('company').doc('account_details').get();
       if (!doc.exists) return null;
       final data = doc.data() ?? <String, dynamic>{};
+      final rawCompanyId =
+          data['safehavenAccountId']?.toString() ??
+          data['safehaven_account_id']?.toString() ??
+          data['accountId']?.toString() ??
+          '';
+      final companyAccountNumber =
+          data['safehavenAccountNumber']?.toString() ??
+          data['safehaven_account_number']?.toString() ??
+          data['accountNumber']?.toString() ??
+          '';
+      final companyBankId =
+          data['safehavenBankCode']?.toString() ??
+          data['safehaven_bank_code']?.toString() ??
+          data['bankId']?.toString() ??
+          '999240';
+      final companyId =
+          (rawCompanyId.isNotEmpty && !rawCompanyId.toLowerCase().contains('anc_acc'))
+              ? rawCompanyId
+              : companyAccountNumber;
       return {
         'uid': doc.id,
-        'id': data['accountId']?.toString() ?? '',
-        'type': data['accountType']?.toString() ?? '',
-        'bankId': data['bankId']?.toString() ?? '',
-        'bankName': data['bankName']?.toString() ?? '',
-        'accountNumber': data['accountNumber']?.toString() ?? '',
-        'accountName': data['accountName']?.toString() ?? '',
+        'id': companyId,
+        'type': data['safehavenAccountType']?.toString() ?? data['accountType']?.toString() ?? 'BankAccount',
+        'bankId': companyBankId,
+        'bankName': data['safehavenBankName']?.toString() ?? data['bankName']?.toString() ?? 'SAFE HAVEN MICROFINANCE BANK',
+        'accountNumber': companyAccountNumber,
+        'accountName': data['safehavenAccountName']?.toString() ?? data['accountName']?.toString() ?? '',
       };
     } catch (e) {
       debugPrint('getCompanyVirtualAccount error: $e');
@@ -520,10 +539,80 @@ class _BankTransferPageState extends State<BankTransferPage> {
           .data()?['safehavenData']?['virtualAccount']?['data']?['type'];
       final ownAccountNumber = userDoc
           .data()?['safehavenData']?['virtualAccount']?['data']?['attributes']?['accountNumber']?.toString();
+      final selectedBankName = banks
+          .cast<Map<String, dynamic>?>()
+          .firstWhere(
+            (b) => b?['id'] == selectedBank,
+            orElse: () => null,
+          )?['attributes']?['name']?.toString();
 
       // Prevent sending to own account number (in case input was prefilled / using counterparty)
       if (ownAccountNumber != null && ownAccountNumber == accountNumberController.text) {
         showSimpleDialog('You cannot send money to your own account', Colors.red);
+        setState(() => isLoading = false);
+        return;
+      }
+
+      final isSafehavenBank =
+          (selectedBank == '999240') ||
+          (selectedBankName?.toLowerCase().contains('safe haven') ?? false);
+
+      if (isSafehavenBank) {
+        final intraPayload = {
+          'fromAccountId': accountId,
+          'toAccountId': accountNumberController.text.trim(),
+          'amount': double.parse(amountController.text) * 100,
+          'narration': remarkController.text.isNotEmpty
+              ? remarkController.text
+              : 'Transfer',
+          'idempotencyKey': const Uuid().v4(),
+        };
+        debugPrint('safehavenTransferIntra payload: $intraPayload');
+        final intraResult = await callCloudFunctionLogged(
+          'safehavenTransferIntra',
+          source: 'bank_transfer_page.dart',
+          payload: intraPayload,
+        );
+        final intraStatus = intraResult.data['data']['attributes']['status'];
+        final intraFailureReason =
+            intraResult.data['data']['attributes']['failureReason'];
+        if (intraStatus == "FAILED") {
+          showSimpleDialog('Transfer failed: $intraFailureReason', Colors.red);
+          setState(() => isLoading = false);
+          return;
+        }
+
+        final bank = banks.firstWhere((b) => b['id'] == selectedBank);
+        await FirebaseFirestore.instance.collection('transactions').add({
+          'userId': user.uid,
+          'type': 'transfer',
+          'bank_code': selectedBank,
+          'account_number': accountNumberController.text,
+          'amount': double.parse(amountController.text),
+          'reason': remarkController.text,
+          'currency': 'NGN',
+          'api_response': intraResult.data,
+          'reference': intraResult.data['data']['id'],
+          'recipientName': accountNameController.text,
+          'bankName': bank['attributes']['name'],
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+
+        showModalBottomSheet(
+          context: context,
+          builder: (context) => PaymentSuccessfulPage(
+            amount: amountController.text,
+            actionText: "Done",
+            title: "Payment Successful",
+            description: "Your transfer has been processed successfully.",
+            recipientName: accountNameController.text,
+            bankName: bank['attributes']['name'] ?? 'Unknown Bank',
+            bankCode: selectedBank ?? '',
+            accountNumber: accountNumberController.text,
+            reference: intraResult.data['data']['id'] ?? "",
+          ),
+          isScrollControlled: true,
+        );
         setState(() => isLoading = false);
         return;
       }
@@ -652,72 +741,25 @@ class _BankTransferPageState extends State<BankTransferPage> {
       )['attributes']['name'];
       final recipientAccountName = accountNameController.text;
 
-      // Check/create counterparty for company (from user)
-      final companyAccountNumber = companyVa['accountNumber'];
-      final companyBankCode = companyVa['bankId'];
-      final queryCompanyCp = await FirebaseFirestore.instance.collection('counterparties')
-          .where('userId', isEqualTo: user.uid)
-          .where('recipientAccountNumber', isEqualTo: companyAccountNumber)
-          .where('recipientBankCode', isEqualTo: companyBankCode)
-          .limit(1)
-          .get();
-
-      String companyCounterpartyId;
-      if (queryCompanyCp.docs.isNotEmpty) {
-        companyCounterpartyId = queryCompanyCp.docs.first.id;
-      } else {
-        final companyPayload = {
-          'accountId': userAccountId,
-          'bankId': companyVa['bankId'],
-          'accountType': userAccountType,
-          'accountName': companyVa['accountName'],
-          'bankName': companyVa['bankName'],
-          'accountNumber': companyVa['accountNumber'],
-          'bankCode': companyVa['bankId'],
-        };
-        debugPrint('createCompany counterparty payload: $companyPayload');
-        try {
-          final createCompanyCpResult = await callCloudFunctionLogged(
-            'safehavenCreateCounterparty',
-            source: 'bank_transfer_page.dart',
-            payload: companyPayload,
-          );
-          companyCounterpartyId = createCompanyCpResult.data['data']['id'];
-          await FirebaseFirestore.instance
-              .collection('counterparties')
-              .doc(companyCounterpartyId)
-              .set({
-                ...createCompanyCpResult.data,
-                'userId': user.uid,
-                'recipientAccountNumber': companyVa['accountNumber'],
-                'recipientBankCode': companyVa['bankId'],
-                'ownerAccountId': userAccountId,
-              });
-        } catch (e) {
-          debugPrint('createCompanyCp failed: $e');
-          rethrow;
-        }
-      }
-
-      // First transfer: user to company
+      // First transfer: user to company (intra)
       final amountNaira = double.parse(amountController.text);
       final fee = 50.0;
       final amountToCompanyKobo = (amountNaira + fee) * 100;
       final narration1 =
           'Ghost Mode to Company: ${remarkController.text.isNotEmpty ? remarkController.text : 'Transfer'}';
       final firstPayload = {
-            'accountType': userAccountType,
-            'accountId': userAccountId,
-            'counterpartyId': companyCounterpartyId,
+            'fromAccountId': userAccountId,
+            'toAccountId': companyVa['id'],
+            'toBankCode': companyVa['bankId'],
             'amount': amountToCompanyKobo,
             'currency': 'NGN',
             'narration': narration1,
             'idempotencyKey': const Uuid().v4(),
           };
-      debugPrint('safehavenTransferNip (to company) payload: $firstPayload');
+      debugPrint('safehavenTransferIntra (to company) payload: $firstPayload');
       try {
         final firstResult = await callCloudFunctionLogged(
-          'safehavenTransferNip',
+          'safehavenTransferIntra',
           source: 'bank_transfer_page.dart',
           payload: firstPayload,
         );
@@ -733,7 +775,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
           return;
         }
       } catch (e) {
-        debugPrint('safehavenTransferNip (to company) failed: $e');
+        debugPrint('safehavenTransferIntra (to company) failed: $e');
         rethrow;
       }
 
