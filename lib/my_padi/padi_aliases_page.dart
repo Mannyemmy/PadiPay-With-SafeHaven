@@ -312,7 +312,7 @@ class _PadiAliasesPageState extends State<PadiAliasesPage> {
   }
 }
 
-// â”€â”€ Avatar widget â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Avatar widget 
 
 class _AliasAvatar extends StatelessWidget {
   final PadiAlias alias;
@@ -342,7 +342,7 @@ class _AliasAvatar extends StatelessWidget {
   }
 }
 
-// â”€â”€ Add / Edit bottom sheet â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Add / Edit bottom sheet 
 
 class _AliasFormSheet extends StatefulWidget {
   final PadiAlias? editing;
@@ -778,7 +778,7 @@ class _AliasFormSheetState extends State<_AliasFormSheet> {
               ),
               const SizedBox(height: 16),
 
-              // â”€â”€ Account fields â”€â”€
+              //  Account fields 
               if (_type == 'account') ...[
                 _label('Account Number *'),
                 const SizedBox(height: 6),
@@ -924,7 +924,7 @@ class _AliasFormSheetState extends State<_AliasFormSheet> {
                     ),
                   ),
 
-              // â”€â”€ PadiTag fields â”€â”€
+              //  PadiTag fields 
               ] else ...[
                 _label('PadiTag / Username *'),
                 const SizedBox(height: 6),

@@ -95,7 +95,7 @@ class PadiChatSession {
   });
 }
 
-// â”€â”€ Language definitions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Language definitions 
 
 class PadiLanguage {
   final String code;
@@ -297,7 +297,7 @@ const List<PadiLanguage> padiLanguages = [
   ),
 ];
 
-// â”€â”€ Service â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Service 
 
 class MyPadiService {
   GenerativeModel? _model;
@@ -320,7 +320,7 @@ class MyPadiService {
 
   String get currentLangCode => _currentLangCode;
 
-  // â”€â”€ Function declarations for Gemini â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  //  Function declarations for Gemini 
 
   static final _functionDeclarations = [
     FunctionDeclaration(
@@ -432,7 +432,7 @@ class MyPadiService {
     ),
   ];
 
-  // â”€â”€ Initialization â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  //  Initialization 
 
   Future<void> initialize({String langCode = 'en'}) async {
     _currentLangCode = langCode;
@@ -654,7 +654,7 @@ RULES:
     _aliases = snap.docs.map(PadiAlias.fromDoc).toList();
   }
 
-  // â”€â”€ Send message (streaming) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  //  Send message (streaming) 
 
   Stream<String> sendMessageStream(String userMessage) async* {
     if (!_initialized) await initialize(langCode: _currentLangCode);
@@ -694,7 +694,7 @@ RULES:
     }
   }
 
-  // â”€â”€ Last action extracted from function calls â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  //  Last action extracted from function calls 
 
   PadiActionResult? lastAction;
 
@@ -907,7 +907,7 @@ RULES:
     };
   }
 
-  // â”€â”€ Support ticket â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  //  Support ticket 
 
   Future<Map<String, dynamic>> _submitSupportTicket({
     required String subject,
@@ -946,7 +946,7 @@ RULES:
     }
   }
 
-  // â”€â”€ Chat history persistence â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  //  Chat history persistence 
 
   static Future<void> saveChat(
       String sessionId, String title, List<ChatMessage> messages) async {

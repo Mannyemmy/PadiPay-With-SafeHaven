@@ -282,7 +282,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
         }
 
         if (bankId != null && accountName != null) {
-          debugPrint('âœ… Setting selectedBank to: $bankId and accountName to: $accountName');
+          debugPrint('✅ Setting selectedBank to: $bankId and accountName to: $accountName');
           setState(() {
             selectedBank = bankId;
             accountNameController.text = accountName;
@@ -1344,7 +1344,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
               ),
               // Contacts & Recents sections - only on page 0
               if (_currentPage == 0) ...[
-                // â”€â”€ Contacts (account-type aliases) â”€â”€
+                //  Contacts (account-type aliases) 
                 if (_aliases.where((a) => a.type == 'account').isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
@@ -1465,7 +1465,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
                       ),
                     ),
                   ),
-                // â”€â”€ Recents â”€â”€
+                //  Recents 
                 if (_loadingRecents)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 16),

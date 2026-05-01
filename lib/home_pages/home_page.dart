@@ -783,7 +783,7 @@ class _HomePageState extends State<HomePage> {
     DocumentReference userDocRef,
   ) async {
     try {
-      // â”€â”€ Step 1: safehavenFetchDepositAccount â†’ bank.id only â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      //  Step 1: safehavenFetchDepositAccount â†’ bank.id only 
       print('Calling safehavenFetchDepositAccount for accountId: $accountId');
       final depositResult = await FirebaseFunctions.instance
           .httpsCallable('safehavenFetchDepositAccount')
@@ -806,7 +806,7 @@ class _HomePageState extends State<HomePage> {
         );
       }
 
-      // â”€â”€ Step 2: safehavenFetchAccountNumber â†’ real accountNumber + bankName â”€â”€â”€â”€â”€â”€â”€â”€
+      //  Step 2: safehavenFetchAccountNumber â†’ real accountNumber + bankName 
       String? accountNumber;
       String? bankName;
       try {
@@ -836,7 +836,7 @@ class _HomePageState extends State<HomePage> {
         print('safehavenFetchAccountNumber failed (non-fatal): $e');
       }
 
-      // â”€â”€ Step 3: Persist to Firestore â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      //  Step 3: Persist to Firestore 
       final updates = <String, dynamic>{};
       if (bankId != null) {
         updates['safehavenData.virtualAccount.data.attributes.bank'] = {

@@ -29,13 +29,19 @@ class UpgradeTier extends StatefulWidget {
   State<UpgradeTier> createState() => _UpgradeTierState();
 }
 
-class _UpgradeTierState extends State<UpgradeTier> {
+class _UpgradeTierState extends State<UpgradeTier>
+    with TickerProviderStateMixin {
   final TextEditingController _controller = TextEditingController();
   final TextEditingController ninController = TextEditingController();
   final TextEditingController _idNumberController = TextEditingController();
   final TextEditingController _expiryController = TextEditingController();
   final TextEditingController _dobController = TextEditingController();
   final TextEditingController _streetController = TextEditingController();
+  // Add these to your state fields:
+  AnimationController? _progressController;
+  final ValueNotifier<String> _loadingStatusNotifier = ValueNotifier(
+    'Preparing your details...',
+  );
   bool _bvnVerifying = false;
   bool? _bvnVerified;
   String? _bvnVerifyStatus;
@@ -65,22 +71,208 @@ class _UpgradeTierState extends State<UpgradeTier> {
   String? _lastQueriedBvn;
   bool _externalBvnMatch = false;
 
-  bool get _isIdentityVerificationStep =>
-      widget.tier == 1 || widget.tier == 2;
+  bool get _isIdentityVerificationStep => widget.tier == 1;
 
-  String get _screenTitle =>
-      _isIdentityVerificationStep ? 'Verify Your Identity' : 'Complete Your Profile';
+  String get _screenTitle => _isIdentityVerificationStep
+      ? 'Verify Your Identity'
+      : 'Complete Your Profile';
 
   String get _screenSubtitle => _isIdentityVerificationStep
       ? 'Confirm your BVN details, verify the OTP sent to your phone, and activate your wallet.'
-      : 'Add your NIN and a valid government ID to complete your profile details.';
+      : 'Add a valid government ID to complete your profile details.';
 
   String get _primaryButtonText => _isIdentityVerificationStep
       ? 'Verify and Continue'
-      : 'Save Profile Details';
+      : 'Verify and Upgrade';
+
+  void _showLoadingDialog({bool resetStep = false}) {
+    if (_loadingDialogShowing || !mounted) return;
+    _loadingDialogShowing = true;
+    _loadingStatusNotifier.value = 'Preparing your details...';
+
+    // Dispose any existing controller AND clear the reference
+    _progressController?.dispose();
+    _progressController = null; // ⬅️ CRITICAL
+
+    // Create a fresh controller
+    _progressController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 18),
+    )..animateTo(0.88, curve: Curves.easeOut);
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => PopScope(
+        canPop: false,
+        child: Dialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'Verifying your account',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                AnimatedBuilder(
+                  animation: _progressController!,
+                  builder: (context, _) {
+                    final pct = (_progressController!.value * 100).round();
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: LinearProgressIndicator(
+                            value: _progressController!.value,
+                            minHeight: 8,
+                            backgroundColor: Colors.grey.shade200,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              primaryColor,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            ValueListenableBuilder<String>(
+                              valueListenable: _loadingStatusNotifier,
+                              builder: (_, status, __) => Text(
+                                status,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              '$pct%',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: primaryColor,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ).whenComplete(() => _loadingDialogShowing = false);
+  }
+
+  void _forceHideLoadingDialog() {
+    if (!mounted) return;
+    // Just check null – if it's null, it's either never created or already disposed
+    if (_progressController == null) return;
+    _progressController!.stop();
+    if (!_loadingDialogShowing) return;
+    _loadingDialogShowing = false;
+    if (!mounted) return;
+    try {
+      Navigator.of(context, rootNavigator: true).pop();
+    } catch (_) {}
+  }
+
+  Future<void> _forceHideAndShowError({
+    required String errorMessage,
+    required String errorType,
+    StackTrace? stackTrace,
+  }) async {
+    _forceHideLoadingDialog();
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
+    showGenericError(
+      errorMessage: errorMessage,
+      errorType: errorType,
+      stackTrace: stackTrace,
+    );
+  }
+
+  void _hideLoadingDialogImmediate() {
+    if (!mounted) return;
+    if (!_loadingDialogShowing) return;
+    if (_progressController != null) {
+      _progressController!.stop();
+    }
+    _loadingDialogShowing = false;
+    try {
+      Navigator.of(context, rootNavigator: true).pop();
+    } catch (_) {}
+  }
+
+  Future<void> _hideLoadingDialog() async {
+    if (!mounted) return;
+    if (!_loadingDialogShowing) return;
+    _loadingDialogShowing = false;
+
+    if (_progressController != null) {
+      // Animate to 100% and wait for the pop to finish
+      await _progressController!
+          .animateTo(1.0, duration: const Duration(milliseconds: 400))
+          .then((_) {
+            if (!mounted) return;
+            Navigator.of(context, rootNavigator: true).pop();
+          });
+    } else {
+      // No animation, just pop
+      try {
+        Navigator.of(context, rootNavigator: true).pop();
+      } catch (_) {}
+    }
+  }
 
   void _setLoadingStep(int step) {
-    _loadingStepNotifier.value = step;
+    const messages = {
+      1: 'Setting up your profile...',
+      2: 'Creating your wallet...',
+      3: 'Finalising verification...',
+    };
+    if (messages.containsKey(step)) {
+      _loadingStatusNotifier.value = messages[step]!;
+    }
+    final targets = {1: 0.30, 2: 0.60, 3: 0.85};
+    final target = targets[step];
+    if (target != null &&
+        _progressController != null &&
+        _progressController!.value < target) {
+      _progressController!.animateTo(
+        target,
+        duration: const Duration(milliseconds: 600),
+        curve: Curves.easeOut,
+      );
+    }
   }
 
   @override
@@ -106,10 +298,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
 
   void _scheduleDraftAutosave() {
     _draftSaveTimer?.cancel();
-    _draftSaveTimer = Timer(
-      const Duration(milliseconds: 700),
-      _autosaveDraft,
-    );
+    _draftSaveTimer = Timer(const Duration(milliseconds: 700), _autosaveDraft);
   }
 
   Future<void> _autosaveDraft() async {
@@ -174,106 +363,6 @@ class _UpgradeTierState extends State<UpgradeTier> {
     } catch (e) {
       print('Draft autosave failed: $e');
     }
-  }
-
-  void _showLoadingDialog({bool resetStep = false}) {
-    if (_loadingDialogShowing || !mounted) return;
-    _loadingDialogShowing = true;
-    if (resetStep) _loadingStepNotifier.value = 0;
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => PopScope(
-        canPop: false,
-        child: ValueListenableBuilder<int>(
-          valueListenable: _loadingStepNotifier,
-          builder: (context, step, __) {
-            const stepLabels = ['Step 1', 'Step 2', 'Step 3'];
-            final progress = step == 0 ? 0.05 : step / 3.0;
-            final pct = step == 0 ? '' : '${(step / 3 * 100).round()}%';
-            return Dialog(
-              backgroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Verifying your account',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Please wait, this may take a moment...',
-                      style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
-                    ),
-                    const SizedBox(height: 24),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: List.generate(3, (i) {
-                        final done = i < step;
-                        final current = i == step - 1;
-                        return Text(
-                          stepLabels[i],
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: current || done
-                                ? FontWeight.w600
-                                : FontWeight.w400,
-                            color: done
-                                ? primaryColor
-                                : current
-                                    ? primaryColor
-                                    : Colors.grey.shade400,
-                          ),
-                        );
-                      }),
-                    ),
-                    const SizedBox(height: 8),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: LinearProgressIndicator(
-                        value: progress,
-                        minHeight: 8,
-                        backgroundColor: Colors.grey.shade200,
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(primaryColor),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Text(
-                        pct,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: primaryColor,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    ).whenComplete(() => _loadingDialogShowing = false);
-  }
-
-  void _hideLoadingDialog() {
-    if (!_loadingDialogShowing || !mounted) return;
-    _loadingDialogShowing = false;
-    Navigator.of(context, rootNavigator: true).pop();
   }
 
   Future<void> _showSuccessModal() async {
@@ -432,14 +521,20 @@ class _UpgradeTierState extends State<UpgradeTier> {
       String? verifyStatus = resData['status']?.toString();
 
       // Compute per-field match results BEFORE setting verified state
-      final fm = Map<String, dynamic>.from(resData['fieldMatches'] as Map? ?? {});
+      final fm = Map<String, dynamic>.from(
+        resData['fieldMatches'] as Map? ?? {},
+      );
       final rawBd = resData['bvnData'];
-      final bvnDobRaw = rawBd != null ? (rawBd as Map)['birthdate']?.toString() : null;
+      final bvnDobRaw = rawBd != null
+          ? (rawBd as Map)['birthdate']?.toString()
+          : null;
       // BVN API returns YYYY-MM-DD; controller holds DD-MM-YYYY  convert for comparison
       final bvnDobDisplay = (bvnDobRaw != null && bvnDobRaw.isNotEmpty)
           ? _formatDateFromApi(bvnDobRaw)
           : null;
-      final bvnGender = rawBd != null ? (rawBd as Map)['gender']?.toString() : null;
+      final bvnGender = rawBd != null
+          ? (rawBd as Map)['gender']?.toString()
+          : null;
       final enteredDob = _dobController.text.trim();
       final enteredGender = selectedGender;
       final fieldMatches = {
@@ -488,7 +583,8 @@ class _UpgradeTierState extends State<UpgradeTier> {
             updates['dateOfBirth'] = bvnData['birthdate'];
           }
           // Only save BVN gender if the user hasn't selected one yet
-          if ((bvnData['gender'] ?? '').toString().isNotEmpty && selectedGender == null) {
+          if ((bvnData['gender'] ?? '').toString().isNotEmpty &&
+              selectedGender == null) {
             updates['gender'] = bvnData['gender'];
           }
           if ((bvnData['phone'] ?? '').toString().isNotEmpty) {
@@ -503,7 +599,9 @@ class _UpgradeTierState extends State<UpgradeTier> {
           // Fall back to BVN-returned names only if fields are still empty
           if (currentFn.isEmpty &&
               (bvnData['firstname'] ?? '').toString().isNotEmpty) {
-            updates['firstName'] = _toTitleCase(bvnData['firstname'].toString());
+            updates['firstName'] = _toTitleCase(
+              bvnData['firstname'].toString(),
+            );
           }
           if (currentLn.isEmpty &&
               (bvnData['lastname'] ?? '').toString().isNotEmpty) {
@@ -533,11 +631,15 @@ class _UpgradeTierState extends State<UpgradeTier> {
               selectedGender = gender;
             }
             final fn = bvnData['firstname']?.toString();
-            if (fn != null && fn.isNotEmpty && _firstNameController.text.isEmpty) {
+            if (fn != null &&
+                fn.isNotEmpty &&
+                _firstNameController.text.isEmpty) {
               _firstNameController.text = _toTitleCase(fn);
             }
             final ln = bvnData['lastname']?.toString();
-            if (ln != null && ln.isNotEmpty && _lastNameController.text.isEmpty) {
+            if (ln != null &&
+                ln.isNotEmpty &&
+                _lastNameController.text.isEmpty) {
               _lastNameController.text = _toTitleCase(ln);
             }
           });
@@ -545,7 +647,9 @@ class _UpgradeTierState extends State<UpgradeTier> {
       }
     } on FirebaseFunctionsException catch (e) {
       final raw = e.message ?? '';
-      final userMsg = raw.toLowerCase().contains('404') || raw.toLowerCase().contains('not found')
+      final userMsg =
+          raw.toLowerCase().contains('404') ||
+              raw.toLowerCase().contains('not found')
           ? 'BVN not found'
           : raw.isNotEmpty
           ? raw
@@ -600,7 +704,9 @@ class _UpgradeTierState extends State<UpgradeTier> {
           // (i.e. _bvnVerified == null means we haven't run verification yet).
           // Once the user has attempted verification locally, don't let
           // Firestore snapshots override the result.
-          if (_bvnVerified == null && bvnVerif != null && bvnVerif['verified'] == true) {
+          if (_bvnVerified == null &&
+              bvnVerif != null &&
+              bvnVerif['verified'] == true) {
             _bvnVerified = true;
             _bvnVerifyStatus = bvnVerif['status']?.toString();
           }
@@ -803,9 +909,8 @@ class _UpgradeTierState extends State<UpgradeTier> {
             builder: (context, setModalState) {
               final filteredItems = items
                   .where(
-                    (item) => item.toLowerCase().contains(
-                      searchQuery.toLowerCase(),
-                    ),
+                    (item) =>
+                        item.toLowerCase().contains(searchQuery.toLowerCase()),
                   )
                   .toList();
 
@@ -858,7 +963,10 @@ class _UpgradeTierState extends State<UpgradeTier> {
                         },
                         decoration: InputDecoration(
                           hintText: 'Search...',
-                          prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                          prefixIcon: const Icon(
+                            Icons.search,
+                            color: Colors.grey,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(color: Colors.grey.shade300),
@@ -871,7 +979,9 @@ class _UpgradeTierState extends State<UpgradeTier> {
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(color: Colors.grey.shade400),
                           ),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 12,
+                          ),
                         ),
                       ),
                     ),
@@ -1034,18 +1144,19 @@ class _UpgradeTierState extends State<UpgradeTier> {
   @override
   Widget build(BuildContext context) {
     // BVN can only be entered once name, DOB, gender are filled and user is 18+
-    final bool bvnPrereqsMet = widget.tier == 2 &&
+    // Replace bvnPrereqsMet in build()
+    final bool bvnPrereqsMet =
+        (widget.tier == 1 || widget.tier == 2) &&
         _firstNameController.text.isNotEmpty &&
         _lastNameController.text.isNotEmpty &&
         _dobController.text.isNotEmpty &&
         selectedGender != null &&
         _isUnder18() != true;
 
+    // Replace the isFormValid block in build()
     bool isFormValid;
-    if (widget.tier == 2) {
-      // If BVN is verified, allow submission even if a conflict was detected 
-      // the submit flow resolves conflicts via BVN/email matching.
-      final bvnAllowed = _bvnVerified == true || !_bvnConflict || _externalBvnMatch;
+    if (widget.tier == 1 || widget.tier == 2) {
+      // Both tier 1 and tier 2 need the same fields + BVN verified
       isFormValid =
           _controller.text.isNotEmpty &&
           _bvnVerified == true &&
@@ -1056,56 +1167,52 @@ class _UpgradeTierState extends State<UpgradeTier> {
           selectedState != null &&
           selectedCity != null &&
           selectedGender != null &&
-          _isUnder18() != true &&
-          bvnAllowed;
+          _isUnder18() != true;
     } else {
+      // Tier 3: NIN + ID type + ID number (no expiry required yet)
       isFormValid =
-          ninController.text.isNotEmpty &&
-          selectedIdType != null &&
-          _idNumberController.text.isNotEmpty &&
-          _expiryController.text.isNotEmpty;
+          selectedIdType != null && _idNumberController.text.isNotEmpty;
     }
 
     return PopScope(
       canPop: !_isLoading,
       child: Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        bottom: true,
-        child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: 20),
-              Row(
-                children: [
-                  SizedBox(width: 10),
-                  InkWell(
-                    onTap: () => Navigator.of(context).pop(),
-                    child: Icon(
-                      Icons.arrow_back_ios,
-                      color: Colors.black54,
-                      size: 20,
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          bottom: true,
+          child: SingleChildScrollView(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: 20),
+                Row(
+                  children: [
+                    SizedBox(width: 10),
+                    InkWell(
+                      onTap: () => Navigator.of(context).pop(),
+                      child: Icon(
+                        Icons.arrow_back_ios,
+                        color: Colors.black54,
+                        size: 20,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 30),
-              Text(
-                _screenTitle,
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-              ),
-              SizedBox(height: 10),
-              Text(
-                _screenSubtitle,
-                style: TextStyle(color: Colors.grey.shade600),
-              ),
-              SizedBox(height: 20),
+                  ],
+                ),
+                SizedBox(height: 30),
+                Text(
+                  _screenTitle,
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                ),
+                SizedBox(height: 10),
+                Text(
+                  _screenSubtitle,
+                  style: TextStyle(color: Colors.grey.shade600),
+                ),
+                SizedBox(height: 20),
 
-              if (widget.tier == 2 || widget.tier == 1) ...[
-                // â”€â”€ Name fields for BVN verification â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-                if (widget.tier == 1 || widget.tier == 2) ...[
+                if (widget.tier == 1) ...[
+                  // Name fields for BVN verification
                   Text(
                     'First Name',
                     style: TextStyle(
@@ -1133,19 +1240,36 @@ class _UpgradeTierState extends State<UpgradeTier> {
                       hintStyle: TextStyle(color: Colors.grey.shade500),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: _bvnFieldMatches?['firstname'] == false ? Colors.red.shade400 : Colors.grey.shade200),
+                        borderSide: BorderSide(
+                          color: _bvnFieldMatches?['firstname'] == false
+                              ? Colors.red.shade400
+                              : Colors.grey.shade200,
+                        ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: _bvnFieldMatches?['firstname'] == false ? Colors.red.shade400 : Colors.grey.shade200),
+                        borderSide: BorderSide(
+                          color: _bvnFieldMatches?['firstname'] == false
+                              ? Colors.red.shade400
+                              : Colors.grey.shade200,
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: _bvnFieldMatches?['firstname'] == false ? Colors.red : primaryColor, width: 2),
+                        borderSide: BorderSide(
+                          color: _bvnFieldMatches?['firstname'] == false
+                              ? Colors.red
+                              : primaryColor,
+                          width: 2,
+                        ),
                       ),
                       disabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: _bvnFieldMatches?['firstname'] == false ? Colors.red.shade400 : Colors.grey.shade200),
+                        borderSide: BorderSide(
+                          color: _bvnFieldMatches?['firstname'] == false
+                              ? Colors.red.shade400
+                              : Colors.grey.shade200,
+                        ),
                       ),
                       contentPadding: EdgeInsets.symmetric(
                         horizontal: 16,
@@ -1158,9 +1282,19 @@ class _UpgradeTierState extends State<UpgradeTier> {
                       padding: const EdgeInsets.only(top: 4, left: 4),
                       child: Row(
                         children: [
-                          Icon(Icons.error_outline, size: 13, color: Colors.red.shade600),
+                          Icon(
+                            Icons.error_outline,
+                            size: 13,
+                            color: Colors.red.shade600,
+                          ),
                           SizedBox(width: 4),
-                          Text('First name does not match BVN records', style: TextStyle(fontSize: 11, color: Colors.red.shade600)),
+                          Text(
+                            'First name does not match BVN records',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.red.shade600,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -1192,19 +1326,36 @@ class _UpgradeTierState extends State<UpgradeTier> {
                       hintStyle: TextStyle(color: Colors.grey.shade500),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: _bvnFieldMatches?['lastname'] == false ? Colors.red.shade400 : Colors.grey.shade200),
+                        borderSide: BorderSide(
+                          color: _bvnFieldMatches?['lastname'] == false
+                              ? Colors.red.shade400
+                              : Colors.grey.shade200,
+                        ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: _bvnFieldMatches?['lastname'] == false ? Colors.red.shade400 : Colors.grey.shade200),
+                        borderSide: BorderSide(
+                          color: _bvnFieldMatches?['lastname'] == false
+                              ? Colors.red.shade400
+                              : Colors.grey.shade200,
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: _bvnFieldMatches?['lastname'] == false ? Colors.red : primaryColor, width: 2),
+                        borderSide: BorderSide(
+                          color: _bvnFieldMatches?['lastname'] == false
+                              ? Colors.red
+                              : primaryColor,
+                          width: 2,
+                        ),
                       ),
                       disabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: _bvnFieldMatches?['lastname'] == false ? Colors.red.shade400 : Colors.grey.shade200),
+                        borderSide: BorderSide(
+                          color: _bvnFieldMatches?['lastname'] == false
+                              ? Colors.red.shade400
+                              : Colors.grey.shade200,
+                        ),
                       ),
                       contentPadding: EdgeInsets.symmetric(
                         horizontal: 16,
@@ -1217,133 +1368,27 @@ class _UpgradeTierState extends State<UpgradeTier> {
                       padding: const EdgeInsets.only(top: 4, left: 4),
                       child: Row(
                         children: [
-                          Icon(Icons.error_outline, size: 13, color: Colors.red.shade600),
+                          Icon(
+                            Icons.error_outline,
+                            size: 13,
+                            color: Colors.red.shade600,
+                          ),
                           SizedBox(width: 4),
-                          Text('Last name does not match BVN records', style: TextStyle(fontSize: 11, color: Colors.red.shade600)),
+                          Text(
+                            'Last name does not match BVN records',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.red.shade600,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   SizedBox(height: 20),
-                ],
 
-                // â”€â”€ Everything below is UNCHANGED â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-                Text(
-                  'Date of Birth',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black54,
-                  ),
-                ),
-                SizedBox(height: 8),
-                TextField(
-                  controller: _dobController,
-                  keyboardType: TextInputType.datetime,
-                  style: TextStyle(color: Colors.black87),
-                  onChanged: (_) {
-                    setState(() {});
-                    _scheduleDraftAutosave();
-                  },
-                  decoration: InputDecoration(
-                    hintText: 'DD-MM-YYYY',
-                    hintStyle: TextStyle(color: Colors.grey.shade500),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey.shade200),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey.shade200),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: primaryColor, width: 2),
-                    ),
-                    suffixIcon: Icon(
-                      Icons.calendar_today,
-                      color: Colors.grey.shade500,
-                    ),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
-                  ),
-                  readOnly: true,
-                  onTap: () => _selectDob(context),
-                ),
-                if (_bvnFieldMatches?['birthdate'] == false)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4, left: 4),
-                    child: Row(
-                      children: [
-                        Icon(Icons.error_outline, size: 13, color: Colors.red.shade600),
-                        SizedBox(width: 4),
-                        Text('Date of birth does not match BVN records', style: TextStyle(fontSize: 11, color: Colors.red.shade600)),
-                      ],
-                    ),
-                  ),
-                if (_isUnder18() == true)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4, left: 4),
-                    child: Row(
-                      children: [
-                        Icon(Icons.error_outline, size: 13, color: Colors.red.shade600),
-                        SizedBox(width: 4),
-                        Text('You must be 18 or older to upgrade', style: TextStyle(fontSize: 11, color: Colors.red.shade600)),
-                      ],
-                    ),
-                  ),
-                SizedBox(height: 20),
-                Text(
-                  'Gender',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black54,
-                  ),
-                ),
-                SizedBox(height: 8),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: _bvnFieldMatches?['gender'] == false ? Colors.red.shade400 : Colors.grey.shade200),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: selectedGender,
-                      isExpanded: true,
-                      hint: Text(
-                        'Select Gender',
-                        style: TextStyle(color: Colors.grey.shade500),
-                      ),
-                      items: ['Male', 'Female', 'Others']
-                          .map(
-                            (g) => DropdownMenuItem(value: g, child: Text(g)),
-                          )
-                          .toList(),
-                      onChanged: (val) {
-                        setState(() => selectedGender = val);
-                        _scheduleDraftAutosave();
-                      },
-                    ),
-                  ),
-                ),
-                if (_bvnFieldMatches?['gender'] == false)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4, left: 4),
-                    child: Row(
-                      children: [
-                        Icon(Icons.error_outline, size: 13, color: Colors.red.shade600),
-                        SizedBox(width: 4),
-                        Text('Gender does not match BVN records', style: TextStyle(fontSize: 11, color: Colors.red.shade600)),
-                      ],
-                    ),
-                  ),
-                if (widget.tier == 1 || widget.tier == 2) ...[
-                  SizedBox(height: 20),
+                  //  Everything below is UNCHANGED
                   Text(
-                    'BVN',
+                    'Date of Birth',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -1352,511 +1397,639 @@ class _UpgradeTierState extends State<UpgradeTier> {
                   ),
                   SizedBox(height: 8),
                   TextField(
-                    maxLength: 11,
-                    controller: _controller,
-                    keyboardType: TextInputType.number,
+                    controller: _dobController,
+                    keyboardType: TextInputType.datetime,
                     style: TextStyle(color: Colors.black87),
-                    readOnly: widget.tier == 1
-                        ? (_bvnFromQore || _bvnVerified == true)
-                        : widget.tier == 2
-                        ? (_bvnVerified == true || !bvnPrereqsMet)
-                        : false,
-                    onChanged: _onBvnChanged,
+                    onChanged: (_) {
+                      setState(() {});
+                      _scheduleDraftAutosave();
+                    },
                     decoration: InputDecoration(
-                      counterText: "",
-                      hintText: widget.tier == 1 && _bvnFromQore
-                          ? 'BVN (verification provided)'
-                          : !bvnPrereqsMet && widget.tier == 2
-                          ? 'Fill in name, date of birth & gender first'
-                          : 'Enter BVN',
+                      hintText: 'DD-MM-YYYY',
                       hintStyle: TextStyle(color: Colors.grey.shade500),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: _bvnBorderColor()),
+                        borderSide: BorderSide(color: Colors.grey.shade200),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: _bvnBorderColor()),
+                        borderSide: BorderSide(color: Colors.grey.shade200),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(
-                          color: _bvnFocusedBorderColor(),
-                          width: 2,
-                        ),
+                        borderSide: BorderSide(color: primaryColor, width: 2),
                       ),
-                      disabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: _bvnBorderColor()),
+                      suffixIcon: Icon(
+                        Icons.calendar_today,
+                        color: Colors.grey.shade500,
                       ),
                       contentPadding: EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 16,
                       ),
-                      suffixIcon: (widget.tier == 1 || widget.tier == 2)
-                          ? _bvnVerifying
-                                ? Padding(
-                                    padding: const EdgeInsets.all(14.0),
-                                    child: SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(
-                                          primaryColor,
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                : _bvnVerified == true
-                                ? Icon(Icons.check_circle, color: Colors.green)
-                                : _bvnVerified == false
-                                ? Icon(Icons.cancel, color: Colors.red)
-                                : null
-                          : null,
                     ),
+                    readOnly: true,
+                    onTap: () => _selectDob(context),
                   ),
-                  if (widget.tier == 1 || widget.tier == 2) ...[
-                    SizedBox(height: 6),
-                    if (_bvnVerifying)
-                      Row(
-                        children: [
-                          SizedBox(width: 2),
-                          Text(
-                            'Verifying BVN, please wait...',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade500,
-                            ),
-                          ),
-                        ],
-                      )
-                    else if (_bvnVerified == true)
-                      Row(
+                  if (_bvnFieldMatches?['birthdate'] == false)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4, left: 4),
+                      child: Row(
                         children: [
                           Icon(
-                            Icons.check_circle_outline,
-                            size: 14,
-                            color: Colors.green.shade600,
+                            Icons.error_outline,
+                            size: 13,
+                            color: Colors.red.shade600,
                           ),
                           SizedBox(width: 4),
                           Text(
-                            _bvnVerifyStatus == 'EXACT_MATCH'
-                                ? 'BVN verified'
-                                : 'BVN verified  partial name match',
+                            'Date of birth does not match BVN records',
                             style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.green.shade700,
+                              fontSize: 11,
+                              color: Colors.red.shade600,
                             ),
                           ),
                         ],
-                      )
-                    else if (_bvnVerified == false)
+                      ),
+                    ),
+                  if (_isUnder18() == true)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4, left: 4),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            size: 13,
+                            color: Colors.red.shade600,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'You must be 18 or older to upgrade',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.red.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  SizedBox(height: 20),
+                  Text(
+                    'Gender',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black54,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: _bvnFieldMatches?['gender'] == false
+                            ? Colors.red.shade400
+                            : Colors.grey.shade200,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: selectedGender,
+                        isExpanded: true,
+                        hint: Text(
+                          'Select Gender',
+                          style: TextStyle(color: Colors.grey.shade500),
+                        ),
+                        items: ['Male', 'Female', 'Others']
+                            .map(
+                              (g) => DropdownMenuItem(value: g, child: Text(g)),
+                            )
+                            .toList(),
+                        onChanged: (val) {
+                          setState(() => selectedGender = val);
+                          _scheduleDraftAutosave();
+                        },
+                      ),
+                    ),
+                  ),
+                  if (_bvnFieldMatches?['gender'] == false)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4, left: 4),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            size: 13,
+                            color: Colors.red.shade600,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'Gender does not match BVN records',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.red.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (widget.tier == 1 || widget.tier == 2) ...[
+                    SizedBox(height: 20),
+                    Text(
+                      'BVN',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black54,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    TextField(
+                      maxLength: 11,
+                      controller: _controller,
+                      keyboardType: TextInputType.number,
+                      style: TextStyle(color: Colors.black87),
+                      readOnly: (widget.tier == 1 || widget.tier == 2)
+                          ? (_bvnVerified == true || (!bvnPrereqsMet))
+                          : false,
+                      onChanged: _onBvnChanged,
+                      decoration: InputDecoration(
+                        counterText: "",
+                        hintText: widget.tier == 1 && _bvnFromQore
+                            ? 'BVN (verification provided)'
+                            : !bvnPrereqsMet && widget.tier == 2
+                            ? 'Fill in name, date of birth & gender first'
+                            : 'Enter BVN',
+                        hintStyle: TextStyle(color: Colors.grey.shade500),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: _bvnBorderColor()),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: _bvnBorderColor()),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(
+                            color: _bvnFocusedBorderColor(),
+                            width: 2,
+                          ),
+                        ),
+                        disabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: _bvnBorderColor()),
+                        ),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
+                        suffixIcon: (widget.tier == 1 || widget.tier == 2)
+                            ? _bvnVerifying
+                                  ? Padding(
+                                      padding: const EdgeInsets.all(14.0),
+                                      child: SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                primaryColor,
+                                              ),
+                                        ),
+                                      ),
+                                    )
+                                  : _bvnVerified == true
+                                  ? Icon(
+                                      Icons.check_circle,
+                                      color: Colors.green,
+                                    )
+                                  : _bvnVerified == false
+                                  ? Icon(Icons.cancel, color: Colors.red)
+                                  : null
+                            : null,
+                      ),
+                    ),
+                    if (widget.tier == 1 || widget.tier == 2) ...[
+                      SizedBox(height: 6),
+                      if (_bvnVerifying)
+                        Row(
+                          children: [
+                            SizedBox(width: 2),
+                            Text(
+                              'Verifying BVN, please wait...',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade500,
+                              ),
+                            ),
+                          ],
+                        )
+                      else if (_bvnVerified == true)
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.check_circle_outline,
+                              size: 14,
+                              color: Colors.green.shade600,
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              _bvnVerifyStatus == 'EXACT_MATCH'
+                                  ? 'BVN verified'
+                                  : 'BVN verified  partial name match',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.green.shade700,
+                              ),
+                            ),
+                          ],
+                        )
+                      else if (_bvnVerified == false)
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.cancel_outlined,
+                              size: 14,
+                              color: Colors.red.shade600,
+                            ),
+                            SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                (_bvnVerifyStatus != null &&
+                                        _bvnVerifyStatus != 'NO_MATCH' &&
+                                        _bvnVerifyStatus != 'EXACT_MATCH' &&
+                                        _bvnVerifyStatus != 'PARTIAL_MATCH')
+                                    ? (_bvnVerifyStatus!.toLowerCase().contains(
+                                                'qoreid',
+                                              ) ||
+                                              _bvnVerifyStatus!.contains('404')
+                                          ? 'BVN not found'
+                                          : _bvnVerifyStatus!)
+                                    : 'Please fix unmatched fields above',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.red.shade700,
+                                ),
+                              ),
+                            ),
+                            if (bvnPrereqsMet && _controller.text.length == 11)
+                              GestureDetector(
+                                onTap: _verifyBvn,
+                                child: Text(
+                                  'Retry',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: primaryColor,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                    ],
+                    if (!bvnPrereqsMet && widget.tier == 2) ...[
+                      SizedBox(height: 6),
                       Row(
                         children: [
                           Icon(
-                            Icons.cancel_outlined,
-                            size: 14,
-                            color: Colors.red.shade600,
+                            Icons.info_outline,
+                            size: 13,
+                            color: Colors.orange.shade700,
                           ),
                           SizedBox(width: 4),
                           Expanded(
                             child: Text(
-                              (_bvnVerifyStatus != null && _bvnVerifyStatus != 'NO_MATCH' && _bvnVerifyStatus != 'EXACT_MATCH' && _bvnVerifyStatus != 'PARTIAL_MATCH')
-                                  ? (_bvnVerifyStatus!.toLowerCase().contains('qoreid') || _bvnVerifyStatus!.contains('404')
-                                      ? 'BVN not found'
-                                      : _bvnVerifyStatus!)
-                                  : 'Please fix unmatched fields above',
+                              _isUnder18() == true
+                                  ? 'You must be 18 or older to enter your BVN'
+                                  : 'Fill in your name, date of birth and gender above first',
                               style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.red.shade700,
+                                fontSize: 11,
+                                color: Colors.orange.shade700,
                               ),
                             ),
                           ),
-                          if (bvnPrereqsMet && _controller.text.length == 11)
-                            GestureDetector(
-                              onTap: _verifyBvn,
-                              child: Text(
-                                'Retry',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: primaryColor,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
                         ],
                       ),
+                    ],
                   ],
-                  if (!bvnPrereqsMet && widget.tier == 2) ...[
-                    SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Icon(Icons.info_outline, size: 13, color: Colors.orange.shade700),
-                        SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            _isUnder18() == true
-                                ? 'You must be 18 or older to enter your BVN'
-                                : 'Fill in your name, date of birth and gender above first',
-                            style: TextStyle(fontSize: 11, color: Colors.orange.shade700),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ],
-                SizedBox(height: 20),
-                Text(
-                  'Street Address',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black54,
-                  ),
-                ),
-                SizedBox(height: 8),
-                TextField(
-                  controller: _streetController,
-                  style: TextStyle(color: Colors.black87),
-                  onChanged: (_) {
-                    setState(() {});
-                    _scheduleDraftAutosave();
-                  },
-                  decoration: InputDecoration(
-                    hintText: 'Enter Street Address',
-                    hintStyle: TextStyle(color: Colors.grey.shade500),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey.shade200),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey.shade200),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: primaryColor, width: 2),
-                    ),
-                    suffixIcon: _buildLocationIcon(),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
-                  ),
-                ),
-                SizedBox(height: 20),
-                Text(
-                  'State',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black54,
-                  ),
-                ),
-                SizedBox(height: 8),
-                InkWell(
-                  borderRadius: BorderRadius.circular(8),
-                  onTap: _openStateSelector,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                    decoration:
-                        OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(
-                                color: Colors.grey.shade200,
-                              ),
-                            )
-                            .copyWith(borderRadius: BorderRadius.circular(8))
-                            .toBoxDecoration(),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            selectedState ?? 'Select State',
-                            style: TextStyle(
-                              color: selectedState == null
-                                  ? Colors.grey.shade500
-                                  : Colors.black87,
-                            ),
-                          ),
-                        ),
-                        Icon(
-                          Icons.keyboard_arrow_down,
-                          color: Colors.grey.shade500,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                SizedBox(height: 20),
-                Text(
-                  'City / LGA',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black54,
-                  ),
-                ),
-                SizedBox(height: 8),
-                InkWell(
-                  borderRadius: BorderRadius.circular(8),
-                  onTap: _openCitySelector,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                    decoration:
-                        OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(
-                                color: Colors.grey.shade200,
-                              ),
-                            )
-                            .copyWith(borderRadius: BorderRadius.circular(8))
-                            .toBoxDecoration(),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            selectedCity ?? 'Select City / LGA',
-                            style: TextStyle(
-                              color: selectedCity == null
-                                  ? Colors.grey.shade500
-                                  : Colors.black87,
-                            ),
-                          ),
-                        ),
-                        Icon(
-                          Icons.keyboard_arrow_down,
-                          color: Colors.grey.shade500,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ] else ...[
-                // â”€â”€ TIER 3: NIN + ID  completely unchanged â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-                Text(
-                  "NIN",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black54,
-                  ),
-                ),
-                SizedBox(height: 8),
-                TextField(
-                  maxLength: 11,
-                  controller: ninController,
-                  keyboardType: TextInputType.number,
-                  style: TextStyle(color: Colors.black87),
-                  onChanged: (_) {
-                    setState(() {});
-                    _scheduleDraftAutosave();
-                  },
-                  decoration: InputDecoration(
-                    counterText: "",
-                    hintText: 'Enter NIN (11 digits)',
-                    hintStyle: TextStyle(color: Colors.grey.shade500),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey.shade200),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey.shade200),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: primaryColor, width: 2),
-                    ),
-                    disabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey.shade200),
-                    ),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
-                  ),
-                ),
-                SizedBox(height: 20),
-                Text(
-                  'ID Type',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black54,
-                  ),
-                ),
-                SizedBox(height: 8),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                  decoration:
-                      OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.grey.shade200),
-                          )
-                          .copyWith(borderRadius: BorderRadius.circular(8))
-                          .toBoxDecoration(),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: selectedIdType,
-                      isExpanded: true,
-                      hint: Text(
-                        'Select ID Type',
-                        style: TextStyle(color: Colors.grey.shade500),
-                      ),
-                      items:
-                          [
-                                'PASSPORT',
-                                'DRIVERS_LICENSE',
-                                'VOTERS_CARD',
-                                'NATIONAL_ID',
-                              ]
-                              .map(
-                                (id) => DropdownMenuItem(
-                                  value: id,
-                                  child: Text(id),
-                                ),
-                              )
-                              .toList(),
-                      onChanged: (val) {
-                        setState(() => selectedIdType = val);
-                        _scheduleDraftAutosave();
-                      },
-                    ),
-                  ),
-                ),
-                SizedBox(height: 20),
-                Text(
-                  'ID Number',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black54,
-                  ),
-                ),
-                SizedBox(height: 8),
-                TextField(
-                  maxLength: selectedIdType == 'PASSPORT'
-                      ? 9
-                      : (selectedIdType == 'NATIONAL_ID' ? 11 : null),
-                  controller: _idNumberController,
-                  keyboardType: selectedIdType == 'PASSPORT'
-                      ? TextInputType.text
-                      : TextInputType.number,
-                  style: TextStyle(color: Colors.black87),
-                  onChanged: (_) {
-                    setState(() {});
-                    _scheduleDraftAutosave();
-                  },
-                  decoration: InputDecoration(
-                    counterText:
-                        (selectedIdType == 'PASSPORT' ||
-                            selectedIdType == 'NATIONAL_ID')
-                        ? ""
-                        : null,
-                    hintText: selectedIdType == 'PASSPORT'
-                        ? 'Enter Passport Number (9 characters)'
-                        : (selectedIdType == 'NATIONAL_ID'
-                              ? 'Enter National ID (11 digits)'
-                              : 'Enter ID Number'),
-                    hintStyle: TextStyle(color: Colors.grey.shade500),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey.shade200),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey.shade200),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: primaryColor, width: 2),
-                    ),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
-                  ),
-                ),
-                SizedBox(height: 20),
-                Text(
-                  'Expiry Date',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black54,
-                  ),
-                ),
-                SizedBox(height: 8),
-                TextField(
-                  controller: _expiryController,
-                  keyboardType: TextInputType.datetime,
-                  style: TextStyle(color: Colors.black87),
-                  onChanged: (_) {
-                    setState(() {});
-                    _scheduleDraftAutosave();
-                  },
-                  decoration: InputDecoration(
-                    hintText: 'DD-MM-YYYY',
-                    hintStyle: TextStyle(color: Colors.grey.shade500),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey.shade200),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey.shade200),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: primaryColor, width: 2),
-                    ),
-                    suffixIcon: Icon(
-                      Icons.calendar_today,
-                      color: Colors.grey.shade500,
-                    ),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
-                  ),
-                  readOnly: true,
-                  onTap: () => _selectExpiry(context),
-                ),
-              ],
-
-              SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: (isFormValid && !_isLoading) ? _submit : null,
-                  style: ElevatedButton.styleFrom(
-                    disabledBackgroundColor: primaryColor.withValues(
-                      alpha: 0.2,
-                    ),
-                    backgroundColor: primaryColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(
-                    _primaryButtonText,
+                  SizedBox(height: 20),
+                  Text(
+                    'Street Address',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: Colors.black54,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  TextField(
+                    controller: _streetController,
+                    style: TextStyle(color: Colors.black87),
+                    onChanged: (_) {
+                      setState(() {});
+                      _scheduleDraftAutosave();
+                    },
+                    decoration: InputDecoration(
+                      hintText: 'Enter Street Address',
+                      hintStyle: TextStyle(color: Colors.grey.shade500),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: Colors.grey.shade200),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: Colors.grey.shade200),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: primaryColor, width: 2),
+                      ),
+                      suffixIcon: _buildLocationIcon(),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  Text(
+                    'State',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black54,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: _openStateSelector,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 16,
+                      ),
+                      decoration:
+                          OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade200,
+                                ),
+                              )
+                              .copyWith(borderRadius: BorderRadius.circular(8))
+                              .toBoxDecoration(),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              selectedState ?? 'Select State',
+                              style: TextStyle(
+                                color: selectedState == null
+                                    ? Colors.grey.shade500
+                                    : Colors.black87,
+                              ),
+                            ),
+                          ),
+                          Icon(
+                            Icons.keyboard_arrow_down,
+                            color: Colors.grey.shade500,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  Text(
+                    'City / LGA',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black54,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: _openCitySelector,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 16,
+                      ),
+                      decoration:
+                          OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade200,
+                                ),
+                              )
+                              .copyWith(borderRadius: BorderRadius.circular(8))
+                              .toBoxDecoration(),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              selectedCity ?? 'Select City / LGA',
+                              style: TextStyle(
+                                color: selectedCity == null
+                                    ? Colors.grey.shade500
+                                    : Colors.black87,
+                              ),
+                            ),
+                          ),
+                          Icon(
+                            Icons.keyboard_arrow_down,
+                            color: Colors.grey.shade500,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ] else if (widget.tier == 2) ...[
+                  Text(
+                    'ID Type',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black54,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                    decoration:
+                        OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(
+                                color: Colors.grey.shade200,
+                              ),
+                            )
+                            .copyWith(borderRadius: BorderRadius.circular(8))
+                            .toBoxDecoration(),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: selectedIdType,
+                        isExpanded: true,
+                        hint: Text(
+                          'Select ID Type',
+                          style: TextStyle(color: Colors.grey.shade500),
+                        ),
+                        // In the else branch (Tier 3 section), replace the items list:
+                        items: [
+                          DropdownMenuItem(value: 'NIN', child: Text('NIN')),
+                          DropdownMenuItem(
+                            value: 'PASSPORT',
+                            child: Text('International Passport'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'DRIVERS_LICENSE',
+                            child: Text("Driver's License"),
+                          ),
+                        ].toList(),
+                        onChanged: (val) {
+                          setState(() => selectedIdType = val);
+                          _scheduleDraftAutosave();
+                        },
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  Text(
+                    'ID Number',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black54,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  TextField(
+                    maxLength: selectedIdType == 'PASSPORT'
+                        ? 9
+                        : (selectedIdType == 'NATIONAL_ID' ? 11 : null),
+                    controller: _idNumberController,
+                    keyboardType: selectedIdType == 'PASSPORT'
+                        ? TextInputType.text
+                        : TextInputType.number,
+                    style: TextStyle(color: Colors.black87),
+                    onChanged: (_) {
+                      setState(() {});
+                      _scheduleDraftAutosave();
+                    },
+                    decoration: InputDecoration(
+                      counterText:
+                          (selectedIdType == 'PASSPORT' ||
+                              selectedIdType == 'NATIONAL_ID')
+                          ? ""
+                          : null,
+                      hintText: selectedIdType == 'PASSPORT'
+                          ? 'Enter Passport Number (9 characters)'
+                          : (selectedIdType == 'NATIONAL_ID'
+                                ? 'Enter National ID (11 digits)'
+                                : 'Enter ID Number'),
+                      hintStyle: TextStyle(color: Colors.grey.shade500),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: Colors.grey.shade200),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: Colors.grey.shade200),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: primaryColor, width: 2),
+                      ),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  if (selectedIdType == 'PASSPORT' ||
+                      selectedIdType == 'DRIVERS_LICENSE') ...[
+                    SizedBox(height: 20),
+                    Text(
+                      'Expiry Date',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black54,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    TextField(
+                      controller: _expiryController,
+                      keyboardType: TextInputType.datetime,
+                      style: TextStyle(color: Colors.black87),
+                      onChanged: (_) {
+                        setState(() {});
+                        _scheduleDraftAutosave();
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'DD-MM-YYYY',
+                        hintStyle: TextStyle(color: Colors.grey.shade500),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade200),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade200),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: primaryColor, width: 2),
+                        ),
+                        suffixIcon: Icon(
+                          Icons.calendar_today,
+                          color: Colors.grey.shade500,
+                        ),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
+                      ),
+                      readOnly: true,
+                      onTap: () => _selectExpiry(context),
+                    ),
+                  ],
+                ],
+
+                SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: (isFormValid && !_isLoading) ? _submit : null,
+                    style: ElevatedButton.styleFrom(
+                      disabledBackgroundColor: primaryColor.withValues(
+                        alpha: 0.2,
+                      ),
+                      backgroundColor: primaryColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      _primaryButtonText,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              SizedBox(height: 40),
-            ],
+                SizedBox(height: 40),
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -2003,7 +2176,10 @@ class _UpgradeTierState extends State<UpgradeTier> {
                     const SizedBox(height: 8),
                     Text(
                       'An OTP has been sent to your BVN registered phone number. Enter it below to verify your BVN.',
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 14,
+                      ),
                     ),
                     const SizedBox(height: 20),
                     TextFormField(
@@ -2074,7 +2250,10 @@ class _UpgradeTierState extends State<UpgradeTier> {
     // immediately causes a "TextEditingController used after being disposed"
     // error because Flutter rebuilds the animated sheet during the close
     // animation after the route's Future has already resolved.
-    Future<void>.delayed(const Duration(milliseconds: 800), otpController.dispose);
+    Future<void>.delayed(
+      const Duration(milliseconds: 800),
+      otpController.dispose,
+    );
     return result;
   }
 
@@ -2095,26 +2274,22 @@ class _UpgradeTierState extends State<UpgradeTier> {
     // Step 1: initiate
     late dynamic initiateResult;
     try {
-      initiateResult = await initiateFunc.call({
-        'type': 'BVN',
-        'number': bvn,
-      });
+      initiateResult = await initiateFunc.call({'type': 'BVN', 'number': bvn});
     } on FirebaseFunctionsException catch (e) {
       print('safehavenInitiateIdentityVerification error: ${e.message}');
       rethrow;
     }
 
-    final String? identityId =
-        initiateResult.data?['data']?['identityId']?.toString();
+    final String? identityId = initiateResult.data?['data']?['identityId']
+        ?.toString();
     print('safehavenInitiateIdentityVerification identityId: $identityId');
 
     // Step 2: hide loading and ask user for OTP
-    _hideLoadingDialog();
+    // Step 2: hide loading and ask user for OTP
+    _hideLoadingDialogImmediate(); // <-- was _hideLoadingDialog()
     final String? otp = await _showIdentityOtpBottomSheet();
     if (otp == null || otp.isEmpty) {
-      throw Exception(
-        'Identity verification cancelled: OTP not provided',
-      );
+      throw Exception('Identity verification cancelled: OTP not provided');
     }
 
     // Re-show loading while we validate
@@ -2495,7 +2670,6 @@ class _UpgradeTierState extends State<UpgradeTier> {
         }
       }
     }
-
   }
 
   Future<dynamic> _callCloudFunction(
@@ -2792,7 +2966,10 @@ class _UpgradeTierState extends State<UpgradeTier> {
             ? _lastNameController.text.trim()
             : null;
         String? email = userData['email']?.toString();
-        String? phoneNumber = userData['phone']?.toString().replaceFirst('+234', '');
+        String? phoneNumber = userData['phone']?.toString().replaceFirst(
+          '+234',
+          '',
+        );
 
         if (firstName == null || firstName.trim().isEmpty) {
           print('Submit blocked: firstName missing');
@@ -2800,7 +2977,9 @@ class _UpgradeTierState extends State<UpgradeTier> {
             errorMessage: 'firstName is missing or empty in Firestore',
             errorType: 'UpgradeTier_MissingFirstName',
           );
-          setState(() { _isLoading = false; });
+          setState(() {
+            _isLoading = false;
+          });
           return;
         }
         if (lastName == null || lastName.trim().isEmpty) {
@@ -2809,7 +2988,9 @@ class _UpgradeTierState extends State<UpgradeTier> {
             errorMessage: 'lastName is missing or empty in Firestore',
             errorType: 'UpgradeTier_MissingLastName',
           );
-          setState(() { _isLoading = false; });
+          setState(() {
+            _isLoading = false;
+          });
           return;
         }
         if (email == null || email.trim().isEmpty) {
@@ -2818,7 +2999,9 @@ class _UpgradeTierState extends State<UpgradeTier> {
             errorMessage: 'email is missing or empty in Firestore',
             errorType: 'UpgradeTier_MissingEmail',
           );
-          setState(() { _isLoading = false; });
+          setState(() {
+            _isLoading = false;
+          });
           return;
         }
         if (phoneNumber == null || phoneNumber.trim().isEmpty) {
@@ -2827,7 +3010,9 @@ class _UpgradeTierState extends State<UpgradeTier> {
             errorMessage: 'phoneNumber is missing or empty in Firestore',
             errorType: 'UpgradeTier_MissingPhoneNumber',
           );
-          setState(() { _isLoading = false; });
+          setState(() {
+            _isLoading = false;
+          });
           return;
         }
 
@@ -3012,16 +3197,14 @@ class _UpgradeTierState extends State<UpgradeTier> {
                 functions: functions,
               );
             } on FirebaseFunctionsException catch (e) {
-              _hideLoadingDialog();
-              showGenericError(
+              await _forceHideAndShowError(
                 errorMessage: e.message ?? 'Identity verification failed',
                 errorType: 'UpgradeTier_IdentityVerification',
               );
               setState(() => _isLoading = false);
               return;
             } catch (e) {
-              _hideLoadingDialog();
-              showGenericError(
+              await _forceHideAndShowError(
                 errorMessage: e.toString(),
                 errorType: 'UpgradeTier_IdentityVerification',
               );
@@ -3077,7 +3260,9 @@ class _UpgradeTierState extends State<UpgradeTier> {
                 if (resolvedIdentityId != null && resolvedIdentityId.isNotEmpty)
                   'identityId': resolvedIdentityId,
               };
-              print('Sending safehavenCreateSubAccount payload: $accountPayload');
+              print(
+                'Sending safehavenCreateSubAccount payload: $accountPayload',
+              );
               dynamic createAccountResult;
               try {
                 createAccountResult = await createAccountFunc.call(
@@ -3093,7 +3278,7 @@ class _UpgradeTierState extends State<UpgradeTier> {
                 'safehavenData.virtualAccount': createAccountResult.data,
                 'safehavenData.tier': widget.tier,
               });
-              print('âœ… Electronic account created and tier saved successfully');
+              print('✅ Electronic account created and tier saved successfully');
               // Send virtual account details email
               try {
                 final dynamic vaRaw = createAccountResult.data;
@@ -3117,7 +3302,8 @@ class _UpgradeTierState extends State<UpgradeTier> {
                           resp['accountNumber']?.toString() ??
                           resp['data']?['attributes']?['accountNumber']
                               ?.toString();
-                      final dynamic bank = resp['bank'] ?? resp['data']?['attributes']?['bank'];
+                      final dynamic bank =
+                          resp['bank'] ?? resp['data']?['attributes']?['bank'];
                       final String? bn = bank is Map
                           ? bank['name']?.toString()
                           : bank?.toString();
@@ -3126,7 +3312,8 @@ class _UpgradeTierState extends State<UpgradeTier> {
                       // Persist resolved values to Firestore
                       final Map<String, dynamic> resolved = {};
                       if (an != null && an.isNotEmpty) {
-                        resolved['safehavenData.virtualAccount.data.attributes.accountNumber'] = an;
+                        resolved['safehavenData.virtualAccount.data.attributes.accountNumber'] =
+                            an;
                       }
                       if (bank != null) {
                         resolved['safehavenData.virtualAccount.data.attributes.bank'] =
@@ -3137,11 +3324,16 @@ class _UpgradeTierState extends State<UpgradeTier> {
                       }
                     }
                   } catch (fetchErr) {
-                    print('safehavenFetchAccountNumber error (will use masked value): $fetchErr');
+                    print(
+                      'safehavenFetchAccountNumber error (will use masked value): $fetchErr',
+                    );
                     // Fall back to raw response values
-                    final dynamic vaAttrs = vaData is Map ? vaData['attributes'] : null;
+                    final dynamic vaAttrs = vaData is Map
+                        ? vaData['attributes']
+                        : null;
                     if (vaAttrs is Map) {
-                      vaAccountNumber = vaAttrs['accountNumber']?.toString() ?? 'N/A';
+                      vaAccountNumber =
+                          vaAttrs['accountNumber']?.toString() ?? 'N/A';
                       final dynamic rawBank = vaAttrs['bank'];
                       vaBankName = rawBank is Map
                           ? rawBank['name']?.toString() ?? 'N/A'
@@ -3150,9 +3342,12 @@ class _UpgradeTierState extends State<UpgradeTier> {
                   }
                 } else {
                   // No accountId  fall back to raw response attrs
-                  final dynamic vaAttrs = vaData is Map ? vaData['attributes'] : null;
+                  final dynamic vaAttrs = vaData is Map
+                      ? vaData['attributes']
+                      : null;
                   if (vaAttrs is Map) {
-                    vaAccountNumber = vaAttrs['accountNumber']?.toString() ?? 'N/A';
+                    vaAccountNumber =
+                        vaAttrs['accountNumber']?.toString() ?? 'N/A';
                     final dynamic rawBank = vaAttrs['bank'];
                     vaBankName = rawBank is Map
                         ? rawBank['name']?.toString() ?? 'N/A'
@@ -3164,35 +3359,33 @@ class _UpgradeTierState extends State<UpgradeTier> {
                 final String userFirstName =
                     userData['firstName']?.toString() ?? 'User';
                 if (userEmailForVa.isNotEmpty) {
-                  final sendEmailResult = await FirebaseFunctions.instance
-                      .httpsCallable('sendEmail')
-                      .call({
-                        'to': userEmailForVa,
-                        'subject': 'Your PadiPay Virtual Account is Ready',
-                        'html':
-                            '<!DOCTYPE html><html><head><meta charset="UTF-8"/></head><body style="margin:0;padding:0;background:#f0f2f5;font-family:Helvetica,Arial,sans-serif;">'
-                            '<table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f2f5;padding:40px 0;"><tr><td align="center">'
-                            '<table width="520" cellpadding="0" cellspacing="0" style="max-width:520px;width:100%;">'
-                            '<tr><td align="center" style="padding-bottom:24px;"><span style="font-size:22px;font-weight:700;color:#1a1a2e;">Padi<span style="color:#4f46e5;">Pay</span></span></td></tr>'
-                            '<tr><td style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.07);">'
-                            '<table width="100%" cellpadding="0" cellspacing="0">'
-                            '<tr><td style="background:linear-gradient(135deg,#4f46e5,#7c3aed);height:5px;font-size:0;">&nbsp;</td></tr>'
-                            '<tr><td style="padding:40px 48px 36px;">'
-                            '<p style="margin:0 0 8px;font-size:13px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:#4f46e5;">Account Ready</p>'
-                            '<h1 style="margin:0 0 16px;font-size:26px;font-weight:700;color:#0f0f1a;">Your Virtual Account is Ready!</h1>'
-                            '<p style="margin:0 0 24px;font-size:15px;color:#6b7280;line-height:1.6;">Hi $userFirstName, your PadiPay virtual bank account has been created. Use the details below to receive payments.</p>'
-                            '<table width="100%" cellpadding="16" cellspacing="0" style="background:#f5f3ff;border:1.5px solid #e0d9ff;border-radius:12px;margin:0 0 24px;">'
-                            '<tr><td align="center">'
-                            '<p style="margin:0;font-size:13px;font-weight:600;color:#4f46e5;letter-spacing:1px;text-transform:uppercase;">Account Number</p>'
-                            '<p style="margin:8px 0;font-size:32px;font-weight:800;letter-spacing:6px;color:#1a1a2e;">$vaAccountNumber</p>'
-                            '<p style="margin:0;font-size:14px;color:#6b7280;"><strong>Bank:</strong> $vaBankName</p>'
-                            '</td></tr></table>'
-                            '<p style="margin:0;font-size:13px;color:#9ca3af;line-height:1.6;">Share these details with anyone who needs to send you money. Funds will reflect in your PadiPay wallet instantly.</p>'
-                            '</td></tr>'
-                            '<tr><td style="padding:0 48px;"><div style="border-top:1px solid #f3f4f6;"></div></td></tr>'
-                            '<tr><td style="padding:24px 48px;"><p style="margin:0;font-size:12px;color:#d1d5db;">&copy; 2026 PadiPay</p></td></tr>'
-                            '</table></td></tr></table></td></tr></table></body></html>',
-                      });
+                  final sendEmailResult = await FirebaseFunctions.instance.httpsCallable('sendEmail').call({
+                    'to': userEmailForVa,
+                    'subject': 'Your PadiPay Virtual Account is Ready',
+                    'html':
+                        '<!DOCTYPE html><html><head><meta charset="UTF-8"/></head><body style="margin:0;padding:0;background:#f0f2f5;font-family:Helvetica,Arial,sans-serif;">'
+                        '<table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f2f5;padding:40px 0;"><tr><td align="center">'
+                        '<table width="520" cellpadding="0" cellspacing="0" style="max-width:520px;width:100%;">'
+                        '<tr><td align="center" style="padding-bottom:24px;"><span style="font-size:22px;font-weight:700;color:#1a1a2e;">Padi<span style="color:#4f46e5;">Pay</span></span></td></tr>'
+                        '<tr><td style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.07);">'
+                        '<table width="100%" cellpadding="0" cellspacing="0">'
+                        '<tr><td style="background:linear-gradient(135deg,#4f46e5,#7c3aed);height:5px;font-size:0;">&nbsp;</td></tr>'
+                        '<tr><td style="padding:40px 48px 36px;">'
+                        '<p style="margin:0 0 8px;font-size:13px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:#4f46e5;">Account Ready</p>'
+                        '<h1 style="margin:0 0 16px;font-size:26px;font-weight:700;color:#0f0f1a;">Your Virtual Account is Ready!</h1>'
+                        '<p style="margin:0 0 24px;font-size:15px;color:#6b7280;line-height:1.6;">Hi $userFirstName, your PadiPay virtual bank account has been created. Use the details below to receive payments.</p>'
+                        '<table width="100%" cellpadding="16" cellspacing="0" style="background:#f5f3ff;border:1.5px solid #e0d9ff;border-radius:12px;margin:0 0 24px;">'
+                        '<tr><td align="center">'
+                        '<p style="margin:0;font-size:13px;font-weight:600;color:#4f46e5;letter-spacing:1px;text-transform:uppercase;">Account Number</p>'
+                        '<p style="margin:8px 0;font-size:32px;font-weight:800;letter-spacing:6px;color:#1a1a2e;">$vaAccountNumber</p>'
+                        '<p style="margin:0;font-size:14px;color:#6b7280;"><strong>Bank:</strong> $vaBankName</p>'
+                        '</td></tr></table>'
+                        '<p style="margin:0;font-size:13px;color:#9ca3af;line-height:1.6;">Share these details with anyone who needs to send you money. Funds will reflect in your PadiPay wallet instantly.</p>'
+                        '</td></tr>'
+                        '<tr><td style="padding:0 48px;"><div style="border-top:1px solid #f3f4f6;"></div></td></tr>'
+                        '<tr><td style="padding:24px 48px;"><p style="margin:0;font-size:12px;color:#d1d5db;">&copy; 2026 PadiPay</p></td></tr>'
+                        '</table></td></tr></table></td></tr></table></body></html>',
+                  });
                   print('sendEmail Response: ${sendEmailResult.data}');
                 }
               } catch (emailErr) {
@@ -3269,18 +3462,18 @@ class _UpgradeTierState extends State<UpgradeTier> {
         await docRef.update({'safehavenData.tier': widget.tier});
       }
 
-      print('âœ… Account upgraded successfully');
-      _hideLoadingDialog();
+      print('✅ Account upgraded successfully');
+      await _hideLoadingDialog(); // <-- add await
       await _showSuccessModal();
     } catch (e, st) {
       print('Error during submission: $e');
-      showGenericError(
+      await _forceHideAndShowError(
         errorMessage: e.toString(),
         errorType: 'UpgradeTier_SubmissionError',
         stackTrace: st,
       );
     } finally {
-      _hideLoadingDialog();
+      if (mounted) _forceHideLoadingDialog();
       setState(() {
         _isLoading = false;
       });
@@ -3301,6 +3494,9 @@ class _UpgradeTierState extends State<UpgradeTier> {
     _bvnVerifyTimer?.cancel();
     _draftSaveTimer?.cancel();
     _loadingStepNotifier.dispose();
+    _progressController?.dispose();
+    _progressController = null; // <-- set to null after dispose
+    _loadingStatusNotifier.dispose();
     super.dispose();
   }
 }
@@ -3313,4 +3509,3 @@ extension OutlineInputBorderToBoxDecoration on OutlineInputBorder {
     );
   }
 }
-

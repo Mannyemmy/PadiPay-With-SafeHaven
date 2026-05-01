@@ -140,26 +140,43 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
     }
   }
 
-  bool get _identityStepCompleted =>
-      widget.tier == "2" || widget.tier == "3";
-
-  bool get _profileStepCompleted => widget.tier == "3";
+// Tier levels: 1 = Tier 1, 2 = Tier 2, 3 = Tier 3
+  bool get _tier1Completed => widget.tier == "1" || widget.tier == "2" || widget.tier == "3";
+  bool get _tier2Completed => widget.tier == "2" || widget.tier == "3";
+  bool get _tier3Completed => widget.tier == "3";
 
   String get _verificationStatusLabel {
-    if (_profileStepCompleted) return 'Verification complete';
-    if (_identityStepCompleted) return 'Wallet active';
+    if (_tier3Completed) return 'Tier 3 Verified';
+    if (_tier2Completed) return 'Tier 2 Active';
+    if (_tier1Completed) return 'Tier 1 Active';
     return 'Verification pending';
   }
 
   String get _verificationStatusDescription {
-    if (_profileStepCompleted) {
-      return 'Your identity and profile details are complete.';
+    if (_tier3Completed) {
+      return 'You have full access with Tier 3 limits.';
     }
-    if (_identityStepCompleted) {
-      return 'Your wallet is active. You can add more identity details next.';
+    if (_tier2Completed) {
+      return 'Upgrade to Tier 3 for higher limits.';
     }
-    return 'Start identity verification to activate your wallet.';
+    if (_tier1Completed) {
+      return 'Upgrade to Tier 2 for higher limits.';
+    }
+    return 'Complete Tier 1 verification to activate your wallet.';
   }
+
+  // Tier limits
+  String get _tier1Limit => '₦10,000';
+  String get _tier1Daily => '₦50,000';
+  String get _tier1Max => '₦50,000';
+  
+  String get _tier2Limit => '₦100,000';
+  String get _tier2Daily => '₦500,000';
+  String get _tier2Max => '₦500,000';
+  
+  String get _tier3Limit => '₦5,000,000';
+  String get _tier3Daily => '₦10,000,000';
+  String get _tier3Max => '₦100,000,000';
 
   @override
   Widget build(BuildContext context) {
@@ -258,571 +275,49 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    Container(
-                      padding: EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: primaryColor.withValues(alpha: 0.2),
-                        ),
-                      ),
-                      child: Column(
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Column(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Text(
-                                        "Step 1",
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 15,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 15),
-                                      Container(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(
-                                            25,
-                                          ),
-                                          color: primaryColor.withValues(
-                                            alpha: 0.1,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          "Popular",
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            color: primaryColor,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  SizedBox(height: 8),
-                                  Text(
-                                    "Ideal for regular transactions",
-                                    style: TextStyle(
-                                      color: Colors.grey.shade700,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Spacer(),
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 15,
-                                  vertical: 10,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: primaryColor.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(18),
-                                ),
-                                child: Icon(
-                                  Icons.credit_card_outlined,
-                                  color: primaryColor,
-                                  size: 30,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 30),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.check_circle_outline,
-                                color: Colors.green,
-                                size: 20,
-                              ),
-                              SizedBox(width: 10),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Limit per transaction",
-                                    style: TextStyle(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.75,
-                                      ),
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text(
-                                    "₦5,000,000",
-                                    style: TextStyle(
-                                      color: Colors.black54,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 15),
-
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(
-                                Icons.check_circle_outline,
-                                color: Colors.green,
-                                size: 20,
-                              ),
-                              SizedBox(width: 10),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Daily Limit",
-                                    style: TextStyle(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.75,
-                                      ),
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  Text(
-                                    "₦10,000,000",
-                                    style: TextStyle(
-                                      color: Colors.black54,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 15),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(
-                                Icons.check_circle_outline,
-                                color: Colors.green,
-                                size: 20,
-                              ),
-                              SizedBox(width: 10),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Maximum Account Balance",
-                                    style: TextStyle(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.75,
-                                      ),
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  Text(
-                                    "₦100,000,000",
-                                    style: TextStyle(
-                                      color: Colors.black54,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-
-                          SizedBox(height: 20),
-                          Container(
-                            padding: EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: primaryColor.withValues(alpha: 0.05),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Icon(
-                                  Icons.shield_outlined,
-                                  color: primaryColor,
-                                ),
-                                SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "Required for verification",
-                                        style: TextStyle(
-                                          color: Colors.black87,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        "Name, date of birth, gender, BVN, address and OTP",
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey.shade600,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(height: 25),
-                          InkWell(
-                            onTap: () {
-                              if (_identityStepCompleted) {
-                                return;
-                              }
-                              navigateTo(context, UpgradeTier(tier: 2));
-                            },
-                            child: Container(
-                              alignment: Alignment.center,
-                              width: MediaQuery.of(context).size.width * 0.9,
-                              padding: EdgeInsets.symmetric(
-                                vertical: 12,
-                                horizontal: 16,
-                              ),
-                              decoration: BoxDecoration(
-                                color: _identityStepCompleted
-                                    ? Colors.grey
-                                    : primaryColor,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                _identityStepCompleted
-                                    ? "Completed"
-                                    : "Start Verification",
-                                style: GoogleFonts.inter(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                    // Tier 1 Card
+                    _buildTierCard(
+                      tierNumber: 1,
+                      title: "Tier 1",
+                      subtitle: "Basic transactions",
+                      limit: _tier1Limit,
+                      daily: _tier1Daily,
+                      maxBalance: _tier1Max,
+                      requirements: "Name, date of birth, gender, BVN, address",
+                      isCompleted: _tier1Completed,
+                      canStart: true,
+                      previousTierCompleted: true,
+                      primaryColor: primaryColor,
                     ),
                     SizedBox(height: 20),
-                    Container(
-                      padding: EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Color(0xFFFAF5FF), Color(0xFFEEF2FF)],
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Color(0xFFE9D4FF)),
-                      ),
-                      child: Column(
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Column(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Text(
-                                        "Step 2",
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Container(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 5,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(
-                                            25,
-                                          ),
-                                          gradient: LinearGradient(
-                                            begin: Alignment.centerLeft,
-                                            end: Alignment.centerRight,
-                                            colors: [
-                                              Color(0xFF9810FA),
-                                              Color(0xFF4F39F6),
-                                            ],
-                                          ),
-                                        ),
-                                        child: Text(
-                                          "Optional",
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  SizedBox(height: 8),
-                                  Text(
-                                    "Add more identity details",
-                                    style: TextStyle(
-                                      color: Colors.grey.shade600,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Spacer(),
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 12,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Color(0xFFF3E8FF),
-                                  borderRadius: BorderRadius.circular(18),
-                                ),
-                                child: Icon(
-                                  Icons.shield_outlined,
-                                  color: Color(0xFF9810FA),
-                                  size: 25,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 30),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(
-                                Icons.check_circle_outline,
-                                color: Colors.green,
-                                size: 20,
-                              ),
-                              SizedBox(width: 10),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Purpose",
-                                    style: TextStyle(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.75,
-                                      ),
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  Text(
-                                    "Store additional KYC details",
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Color(0xFF9810FA),
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 10),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(
-                                Icons.check_circle_outline,
-                                color: Colors.green,
-                                size: 20,
-                              ),
-                              SizedBox(width: 10),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "What you will add",
-                                    style: TextStyle(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.75,
-                                      ),
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  Text(
-                                    "NIN and a valid government ID",
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Color(0xFF9810FA),
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 20),
-                          Container(
-                            padding: EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Icon(Icons.newspaper, color: Color(0xFF9810FA)),
-                                SizedBox(width: 10),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      "Additional profile details",
-                                      style: GoogleFonts.inter(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                        color: Colors.black,
-                                      ),
-                                    ),
-                                    SizedBox(height: 5),
-                                    Text(
-                                      "You can save any of the following:",
-                                      style: TextStyle(
-                                        color: Colors.grey.shade600,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                    SizedBox(height: 15),
-                                    Row(
-                                      children: [
-                                        Container(
-                                          width: 7,
-                                          height: 7,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: Color(0xFF9810FA),
-                                          ),
-                                        ),
-                                        SizedBox(width: 10),
-                                        Text(
-                                          "International Passport",
-                                          style: TextStyle(
-                                            color: Colors.grey.shade600,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(height: 10),
-                                    Row(
-                                      children: [
-                                        Container(
-                                          width: 7,
-                                          height: 7,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: Color(0xFF9810FA),
-                                          ),
-                                        ),
-                                        SizedBox(width: 10),
-                                        Text(
-                                          "Driver's License",
-                                          style: TextStyle(
-                                            color: Colors.grey.shade600,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(height: 10),
-                                    Row(
-                                      children: [
-                                        Container(
-                                          width: 7,
-                                          height: 7,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: Color(0xFF9810FA),
-                                          ),
-                                        ),
-                                        SizedBox(width: 10),
-                                        Text(
-                                          "NIN",
-                                          style: TextStyle(
-                                            color: Colors.grey.shade600,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(height: 25),
-                          InkWell(
-                            onTap: () {
-                              if (!_identityStepCompleted) {
-                                showSnackBar(
-                                  context,
-                                  "Complete Step 1 first",
-                                  primaryColor,
-                                );
-                                return;
-                              }
-                              if (_profileStepCompleted) {
-                                return;
-                              }
-                              navigateTo(context, UpgradeTier(tier: 3));
-                            },
-                            child: Container(
-                              alignment: Alignment.center,
-                              width: MediaQuery.of(context).size.width * 0.9,
-                              padding: EdgeInsets.symmetric(
-                                vertical: 12,
-                                horizontal: 16,
-                              ),
-                              decoration: BoxDecoration(
-                                color: _identityStepCompleted && !_profileStepCompleted
-                                    ? Color(0xFF9810FA)
-                                    : Colors.grey,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                _identityStepCompleted && !_profileStepCompleted
-                                    ? "Add Profile Details"
-                                    : _profileStepCompleted
-                                    ? "Completed"
-                                    : "Complete Step 1 First",
-                                style: GoogleFonts.inter(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                    // Tier 2 Card
+                    _buildTierCard(
+                      tierNumber: 2,
+                      title: "Tier 2",
+                      subtitle: "Higher transaction limits",
+                      limit: _tier2Limit,
+                      daily: _tier2Daily,
+                      maxBalance: _tier2Max,
+                      requirements: "Government-issued ID (International Passport, Driver's License, or NIN)",
+                      isCompleted: _tier2Completed,
+                      canStart: _tier1Completed && !_tier2Completed,
+                      previousTierCompleted: _tier1Completed,
+                      primaryColor: Color(0xFF9810FA),
+                    ),
+                    SizedBox(height: 20),
+                    // Tier 3 Card
+                    _buildTierCard(
+                      tierNumber: 3,
+                      title: "Tier 3",
+                      subtitle: "Full access with highest limits",
+                      limit: _tier3Limit,
+                      daily: _tier3Daily,
+                      maxBalance: _tier3Max,
+                      requirements: "Additional KYC details completed",
+                      isCompleted: _tier3Completed,
+                      canStart: _tier2Completed && !_tier3Completed,
+                      previousTierCompleted: _tier2Completed,
+                      primaryColor: Color(0xFF4F39F6),
                     ),
                     SizedBox(height: 50),
                   ],
@@ -831,6 +326,281 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTierCard({
+    required int tierNumber,
+    required String title,
+    required String subtitle,
+    required String limit,
+    required String daily,
+    required String maxBalance,
+    required String requirements,
+    required bool isCompleted,
+    required bool canStart,
+    required bool previousTierCompleted,
+    required Color primaryColor,
+  }) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: primaryColor.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(width: 15),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(25),
+                          color: primaryColor.withValues(alpha: 0.1),
+                        ),
+                        child: Text(
+                          tierNumber == 1 ? "Popular" : "Tier $tierNumber",
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: primaryColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: Colors.grey.shade700,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+              Spacer(),
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 15,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Icon(
+                  tierNumber == 1 ? Icons.credit_card_outlined : Icons.shield_outlined,
+                  color: primaryColor,
+                  size: 30,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 30),
+          Row(
+            children: [
+              Icon(
+                Icons.check_circle_outline,
+                color: Colors.green,
+                size: 20,
+              ),
+              SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Limit per transaction",
+                    style: TextStyle(
+                      color: Colors.black.withValues(alpha: 0.75),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    limit,
+                    style: TextStyle(
+                      color: Colors.black54,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          SizedBox(height: 15),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.check_circle_outline,
+                color: Colors.green,
+                size: 20,
+              ),
+              SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Daily Limit",
+                    style: TextStyle(
+                      color: Colors.black.withValues(alpha: 0.75),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    daily,
+                    style: TextStyle(
+                      color: Colors.black54,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          SizedBox(height: 15),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.check_circle_outline,
+                color: Colors.green,
+                size: 20,
+              ),
+              SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Maximum Account Balance",
+                    style: TextStyle(
+                      color: Colors.black.withValues(alpha: 0.75),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    maxBalance,
+                    style: TextStyle(
+                      color: Colors.black54,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          SizedBox(height: 20),
+          Container(
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: primaryColor.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.shield_outlined,
+                  color: primaryColor,
+                ),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Required for verification",
+                        style: TextStyle(
+                          color: Colors.black87,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        requirements,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 25),
+          InkWell(
+            onTap: () {
+              if (isCompleted) {
+                return;
+              }
+              if (!previousTierCompleted) {
+                showSnackBar(
+                  context,
+                  "Complete Tier ${tierNumber - 1} first",
+                  primaryColor,
+                );
+                return;
+              }
+              navigateTo(context, UpgradeTier(tier: tierNumber));
+            },
+            child: Container(
+              alignment: Alignment.center,
+              width: MediaQuery.of(context).size.width * 0.9,
+              padding: EdgeInsets.symmetric(
+                vertical: 12,
+                horizontal: 16,
+              ),
+              decoration: BoxDecoration(
+                color: isCompleted
+                    ? Colors.grey
+                    : canStart
+                        ? primaryColor
+                        : Colors.grey.shade400,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                isCompleted
+                    ? "Completed"
+                    : canStart
+                        ? "Start $title"
+                        : "Complete Tier ${tierNumber - 1} First",
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
