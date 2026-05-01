@@ -39,6 +39,16 @@ class _ReceiptPageState extends State<ReceiptPage> {
   List<Map<String, String>> senderDetails = [];
   List<Map<String, String>> transactionInfo = [];
 
+  String _firstNonEmpty(List<dynamic> values, {String fallback = ''}) {
+    for (final value in values) {
+      final text = (value ?? '').toString().trim();
+      if (text.isNotEmpty && text.toLowerCase() != 'null') {
+        return text;
+      }
+    }
+    return fallback;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -63,23 +73,82 @@ class _ReceiptPageState extends State<ReceiptPage> {
         final data = transactionDoc.docs.first.data();
         final userId = data['userId'] as String?;
         final actualSender = data['actualSender'] as String?;
-        String transactionType = data['type'] as String? ?? '';
+        final txType = (data['type'] as String? ?? '').toLowerCase();
         
         // Check if this is an anonymous transfer and current user is the recipient
-        final isAnonymousTransfer = 
-            transactionType.toLowerCase() == 'ghost_transfer' ||
-            transactionType.toLowerCase() == 'anonymous_transfer';
+        final isAnonymousTransfer =
+            txType == 'ghost_transfer' || txType == 'anonymous_transfer';
         final isSent = userId == currentUserId || actualSender == currentUserId;
         final isReceivedAnonymously = isAnonymousTransfer && !isSent;
         
         final userIdForLookup = (actualSender != null && actualSender.isNotEmpty) ? actualSender : userId;
         final rawTs = data['createdAtFirestore'] ?? data['timestamp'];
 
+        String currentUserName = '';
+        String currentUserAccountNumber = '';
+        String currentUserBankName = '';
+        if (currentUserId != null && currentUserId.isNotEmpty) {
+          try {
+            final currentUserDoc = await FirebaseFirestore.instance
+                .collection('users')
+                .doc(currentUserId)
+                .get();
+            if (currentUserDoc.exists) {
+              final currentUserData = currentUserDoc.data()!;
+              currentUserName =
+                  '${currentUserData['firstName'] ?? ''} ${currentUserData['lastName'] ?? ''}'
+                      .trim();
+              if (currentUserName.isEmpty) {
+                currentUserName =
+                    (currentUserData['userName'] ?? currentUserData['email'] ?? '')
+                        .toString()
+                        .trim();
+              }
+              final safehavenData =
+                  currentUserData['safehavenData'] as Map<String, dynamic>?;
+              final virtualAccount =
+                  safehavenData?['virtualAccount'] as Map<String, dynamic>?;
+              currentUserAccountNumber =
+                  (virtualAccount?['data']?['attributes']?['accountNumber'] ?? '')
+                      .toString();
+              currentUserBankName =
+                  (virtualAccount?['data']?['attributes']?['bank']?['name'] ?? '')
+                      .toString();
+            }
+          } catch (e) {
+            debugPrint('Error fetching current user for receipt details: $e');
+          }
+        }
+
         // Fetch sender details only if NOT a received anonymous transfer
-        String fetchedSenderName = '';
-        String fetchedSenderAccountNumber = '';
-        String fetchedSenderBankName = '';
-        if (!isReceivedAnonymously && userIdForLookup != null && userIdForLookup.isNotEmpty) {
+        String fetchedSenderName = _firstNonEmpty([
+          data['senderName'],
+          data['debitAccountName'],
+          data['originatorAccountName'],
+          data['counterParty']?['accountName'],
+          data['api_response']?['data']?['attributes']?['senderName'],
+        ]);
+        String fetchedSenderAccountNumber = _firstNonEmpty([
+          data['senderAccountNumber'],
+          data['debitAccountNumber'],
+          data['originatorAccountNumber'],
+          data['counterParty']?['accountNumber'],
+        ]);
+        String fetchedSenderBankName = _firstNonEmpty([
+          data['senderBankName'],
+          data['debitBankName'],
+          data['originatorBankName'],
+          data['bankName'],
+        ]);
+
+        final shouldLookupSenderByUid =
+            !isReceivedAnonymously &&
+            fetchedSenderName.isEmpty &&
+            userIdForLookup != null &&
+            userIdForLookup.isNotEmpty &&
+            (txType == 'transfer' || txType == 'ghost_transfer');
+
+        if (shouldLookupSenderByUid) {
           try {
             final userDoc = await FirebaseFirestore.instance
                 .collection('users')
@@ -88,7 +157,9 @@ class _ReceiptPageState extends State<ReceiptPage> {
 
             if (userDoc.exists) {
               final userData = userDoc.data()!;
-              fetchedSenderName = "${userData['firstName'] ?? ''} ${userData['lastName'] ?? ''}".trim();
+              fetchedSenderName =
+                  "${userData['firstName'] ?? ''} ${userData['lastName'] ?? ''}"
+                      .trim();
               if (fetchedSenderName.isEmpty) {
                 fetchedSenderName = userData['userName'] ?? '';
               }
@@ -128,6 +199,29 @@ class _ReceiptPageState extends State<ReceiptPage> {
           }
         }
 
+        final isCreditLike =
+            txType == 'deposit' || txType == 'add_money' || txType == 'fund';
+        final recipientName = _firstNonEmpty([
+          data['recipientName'],
+          data['creditAccountName'],
+          data['beneficiaryAccountName'],
+          currentUserName,
+        ]);
+        final recipientAccountNumber = _firstNonEmpty([
+          data['creditAccountNumber'],
+          data['beneficiaryAccountNumber'],
+          data['account_number'],
+          data['accountNumber'],
+          currentUserAccountNumber,
+        ]);
+        final recipientBank = _firstNonEmpty([
+          data['recipientBankName'],
+          data['creditBankName'],
+          data['beneficiaryBankName'],
+          data['bankName'],
+          currentUserBankName,
+        ]);
+
         // Safely format timestamp
         DateTime? parsedTs;
         if (rawTs is Timestamp) {
@@ -152,39 +246,57 @@ class _ReceiptPageState extends State<ReceiptPage> {
               ? DateFormat("MMMM d, yyyy 'at' h:mm:ss a 'UTC+1'").format(parsedTs)
               : '';
 
-          if (transactionType == 'transfer'||transactionType == 'ghost_transfer') {
+          if (txType == 'transfer' || txType == 'ghost_transfer' || isCreditLike) {
             recipientDetails = [
-              {'label': 'Recipient Name', 'value': data['recipientName'] ?? ''},
-              {'label': 'Bank Name', 'value': data['bankName'] ?? ''},
-              {'label': 'Account Number', 'value': data['account_number'] ?? ''},
+              {'label': 'Recipient Name', 'value': recipientName},
+              {'label': 'Bank Name', 'value': recipientBank},
+              {
+                'label': 'Account Number',
+                'value': recipientAccountNumber.isNotEmpty
+                    ? _maskAccountNumber(recipientAccountNumber)
+                    : '',
+              },
             ];
-          } else if (transactionType == 'airtime') {
+          } else if (txType == 'airtime') {
             recipientDetails = [
               {'label': 'Phone Number', 'value': data['phoneNumber'] ?? ''},
               {'label': 'Network', 'value': data['network'] ?? ''},
             ];
-          } else if (transactionType == 'data') {
+          } else if (txType == 'data') {
             recipientDetails = [
               {'label': 'Phone Number', 'value': data['phoneNumber'] ?? ''},
               {'label': 'Network', 'value': data['network'] ?? ''},
               {'label': 'Bundle', 'value': data['bundle'] ?? ''},
             ];
-          } else if (transactionType == 'cable') {
+          } else if (txType == 'cable') {
             recipientDetails = [
               {'label': 'Smartcard Number', 'value': data['fullData']?['customerDetail']?['smartcardNumber'] ?? ''},
               {'label': 'Provider', 'value': data['network'] ?? ''},
               {'label': 'Plan', 'value': data['plan'] ?? ''},
             ];
-          } else if (transactionType == 'electricity') {
+          } else if (txType == 'electricity') {
             recipientDetails = [
               {'label': 'Meter Number', 'value': data['meterNumber'] ?? ''},
               {'label': 'Disco', 'value': data['disco'] ?? ''},
               {'label': 'Token', 'value': data['token'] ?? ''},
               {'label': 'Units', 'value': data['units'] ?? ''},
             ];
+          } else {
+            recipientDetails = [
+              {'label': 'Recipient Name', 'value': recipientName},
+              {'label': 'Bank Name', 'value': recipientBank},
+            ];
+            if (recipientAccountNumber.isNotEmpty) {
+              recipientDetails.add({
+                'label': 'Account Number',
+                'value': _maskAccountNumber(recipientAccountNumber),
+              });
+            }
           }
 
-          senderName = fetchedSenderName;
+          senderName = fetchedSenderName.isNotEmpty
+              ? fetchedSenderName
+              : (isSent ? currentUserName : 'Unknown');
           senderAccountNumber = fetchedSenderAccountNumber;
           senderBankName = fetchedSenderBankName;
 

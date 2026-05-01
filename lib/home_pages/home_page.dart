@@ -1725,7 +1725,11 @@ class _HomePageState extends State<HomePage> {
 
               final name = isCardTx
                   ? (data['merchant'] ?? 'Card Transaction')
-                  : data['recipientName'] ??
+                : data['senderName'] ??
+                  data['debitAccountName'] ??
+                  data['originatorAccountName'] ??
+                  data['counterParty']?['accountName'] ??
+                  data['recipientName'] ??
                         data['phoneNumber'] ??
                         data['meterNumber'] ??
                         data['smartcard_number'] ??

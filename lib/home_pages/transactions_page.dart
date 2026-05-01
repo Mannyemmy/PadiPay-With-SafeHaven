@@ -1658,7 +1658,11 @@ class _TransactionsPageState extends State<TransactionsPage> {
                                     type == 'card_refund';
                                 final initialName = isCardTx
                                     ? (data['merchant'] ?? 'Card Transaction')
-                                    : data['recipientName'] ??
+                                  : data['senderName'] ??
+                                    data['debitAccountName'] ??
+                                    data['originatorAccountName'] ??
+                                    data['counterParty']?['accountName'] ??
+                                    data['recipientName'] ??
                                           data['phoneNumber'] ??
                                           data['meterNumber'] ??
                                           data['smartcard_number'] ??
