@@ -2744,11 +2744,25 @@ class _CustomizeCardBottomSheetState extends State<CustomizeCardBottomSheet>
             height: 46,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: template.gradientColors.length >= 2
-                    ? [template.gradientColors.first, template.gradientColors.last]
-                    : [template.gradientColors.first, template.gradientColors.first],
-              ),
+              image: template.backgroundAsset == null
+                  ? null
+                  : DecorationImage(
+                      image: AssetImage(template.backgroundAsset!),
+                      fit: BoxFit.cover,
+                    ),
+              gradient: template.backgroundAsset != null
+                  ? null
+                  : LinearGradient(
+                      colors: template.gradientColors.length >= 2
+                          ? [
+                              template.gradientColors.first,
+                              template.gradientColors.last,
+                            ]
+                          : [
+                              template.gradientColors.first,
+                              template.gradientColors.first,
+                            ],
+                    ),
             ),
             child: isSelected
                 ? const Icon(FontAwesomeIcons.check, color: Colors.white, size: 16)

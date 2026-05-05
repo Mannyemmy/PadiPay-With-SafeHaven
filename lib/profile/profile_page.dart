@@ -371,7 +371,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                   ),
                                   SizedBox(width: 20),
                                   Text(
-                                    'Verification & Limits',
+                                    'Upgrade Account',
                                     style: TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w700,
