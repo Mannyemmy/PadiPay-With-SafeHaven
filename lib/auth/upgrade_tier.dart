@@ -2259,59 +2259,104 @@ class _UpgradeTierState extends State<UpgradeTier>
 
   /// Initiates identity verification (POST /identity/v2) and validates with OTP.
   /// Returns the identityId on success, or null if skipped (identityId already present).
-  /// Throws on unrecoverable error.
   Future<String?> _runIdentityVerificationFlow({
     required String bvn,
     required FirebaseFunctions functions,
   }) async {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+
+    // Step 1: Check if already verified from a previous webhook
+    final existingSetup = await FirebaseFirestore.instance
+        .collection('safehavenUserSetup')
+        .doc(uid)
+        .get();
+    final existingData = existingSetup.data();
+    final existingStatus = existingData?['identityCheckStatus']?.toString();
+    final existingId = existingData?['identityId']?.toString();
+    if (existingStatus == 'SUCCESS' &&
+        existingId != null &&
+        existingId.isNotEmpty) {
+      print('Identity already verified via webhook. identityId: $existingId');
+      return existingId;
+    }
+
+    // Step 2: Initiate — update status text while loading dialog is still showing
+    _loadingStatusNotifier.value = 'Sending OTP...';
     final HttpsCallable initiateFunc = functions.httpsCallable(
       'safehavenInitiateIdentityVerification',
     );
-    final HttpsCallable validateFunc = functions.httpsCallable(
-      'safehavenValidateIdentityVerification',
+    await initiateFunc.call({'type': 'BVN', 'number': bvn});
+
+    // Step 3: Transition: hide loading → show OTP sheet with NO gap.
+    // We call showModalBottomSheet BEFORE hiding the loading dialog so the
+    // bottom sheet starts its entrance animation while the loading dialog is
+    // still on screen. Then we hide the loading dialog immediately after
+    // scheduling the sheet — the two animations overlap and there is no bare screen.
+    if (!mounted) throw Exception('Widget unmounted after initiate');
+
+    // Schedule the OTP sheet on the next frame so it's queued before we pop the dialog
+    String? otp;
+    final otpFuture = Future<String?>.microtask(
+      () => _showIdentityOtpBottomSheet(),
     );
 
-    // Step 1: initiate
-    late dynamic initiateResult;
-    try {
-      initiateResult = await initiateFunc.call({'type': 'BVN', 'number': bvn});
-    } on FirebaseFunctionsException catch (e) {
-      print('safehavenInitiateIdentityVerification error: ${e.message}');
-      rethrow;
-    }
+    // Now hide the loading dialog — the sheet is already queued to appear
+    _hideLoadingDialogImmediate();
 
-    final String? identityId = initiateResult.data?['data']?['identityId']
-        ?.toString();
-    print('safehavenInitiateIdentityVerification identityId: $identityId');
+    otp = await otpFuture;
 
-    // Step 2: hide loading and ask user for OTP
-    // Step 2: hide loading and ask user for OTP
-    _hideLoadingDialogImmediate(); // <-- was _hideLoadingDialog()
-    final String? otp = await _showIdentityOtpBottomSheet();
     if (otp == null || otp.isEmpty) {
       throw Exception('Identity verification cancelled: OTP not provided');
     }
 
-    // Re-show loading while we validate
+    // Step 4: Show loading immediately — don't wait for anything.
+    // This fires synchronously before any async gap.
     if (mounted) {
       _showLoadingDialog();
+      _loadingStatusNotifier.value = 'Confirming your identity...';
       _setLoadingStep(3);
     }
 
-    // Step 3: validate OTP
-    try {
-      final validateResult = await validateFunc.call({
-        'identityId': identityId ?? '',
-        'type': 'BVN',
-        'otp': otp,
-      });
-      print(
-        'safehavenValidateIdentityVerification result: ${validateResult.data}',
-      );
-    } on FirebaseFunctionsException catch (e) {
-      print('safehavenValidateIdentityVerification error: ${e.message}');
-      rethrow;
+    // Step 5: Poll for webhook-confirmed SUCCESS
+    String? identityId;
+    for (int i = 0; i < 20; i++) {
+      await Future.delayed(const Duration(seconds: 1));
+      if (!mounted) break;
+      final doc = await FirebaseFirestore.instance
+          .collection('safehavenUserSetup')
+          .doc(uid)
+          .get();
+      final data = doc.data();
+      final status = data?['identityCheckStatus']?.toString();
+      final id = data?['identityId']?.toString();
+      print('Polling attempt $i: status=$status, identityId=$id');
+
+      if (status == 'SUCCESS' && id != null && id.isNotEmpty) {
+        identityId = id;
+        print('Webhook confirmed SUCCESS. identityId: $identityId');
+        break;
+      }
+
+      if (status == 'FAILED' || status == 'DECLINED') {
+        throw Exception('Identity verification failed: $status');
+      }
     }
+
+    if (identityId == null) {
+      throw Exception(
+        'Identity verification timed out. Please check your OTP and try again.',
+      );
+    }
+
+    // Belt-and-suspenders save to user doc
+    await FirebaseFirestore.instance.collection('users').doc(uid).set({
+      'safehavenData.identityVerification': {
+        'identityId': identityId,
+        'type': 'BVN',
+        'verified': true,
+        'timestamp': FieldValue.serverTimestamp(),
+      },
+    }, SetOptions(merge: true));
 
     return identityId;
   }
@@ -2927,7 +2972,6 @@ class _UpgradeTierState extends State<UpgradeTier>
         .doc(uid);
 
     try {
-      // Get user data
       DocumentSnapshot snap = await docRef.get();
       if (!snap.exists) {
         showGenericError(
@@ -2953,8 +2997,6 @@ class _UpgradeTierState extends State<UpgradeTier>
       }
 
       if (widget.tier == 1 || widget.tier == 2) {
-        // Validate required fields for Tier 2
-        // Fall back to controller values in case Firestore hasn't been updated yet
         String? firstName = (userData['firstName']?.toString() ?? '').isNotEmpty
             ? userData['firstName'].toString()
             : _firstNameController.text.trim().isNotEmpty
@@ -3016,13 +3058,11 @@ class _UpgradeTierState extends State<UpgradeTier>
           return;
         }
 
-        // Format phone number: Prepend '0' if 10 digits
         phoneNumber = phoneNumber.trim();
         if (phoneNumber.length == 10 &&
             RegExp(r'^\d{10}$').hasMatch(phoneNumber)) {
           phoneNumber = '0$phoneNumber';
         }
-        // Validate phone number: Must be 11 digits and start with '0'
         if (!RegExp(r'^0\d{10}$').hasMatch(phoneNumber)) {
           print('Submit blocked: invalid phone format: $phoneNumber');
           showGenericError(
@@ -3036,7 +3076,6 @@ class _UpgradeTierState extends State<UpgradeTier>
         }
         String phoneNumberForCreate = phoneNumber;
 
-        // Parse DOB and check age for Tier 2
         var parts = _dobController.text.split('-');
         int day = int.parse(parts[0]);
         int month = int.parse(parts[1]);
@@ -3059,8 +3098,6 @@ class _UpgradeTierState extends State<UpgradeTier>
           return;
         }
 
-        // If BVN conflicts with another app user, attempt to resolve by matching
-        // an existing Sudo customer by BVN/email before blocking submission.
         if (_bvnConflict && !_externalBvnMatch) {
           print(
             'BVN conflict detected; attempting existing customer match before blocking.',
@@ -3070,13 +3107,11 @@ class _UpgradeTierState extends State<UpgradeTier>
             docRef,
             uid,
           );
-
           resolvedCustomerId ??= await _tryMatchExistingCustomerByEmail(
             email,
             docRef,
             uid,
           );
-
           if (resolvedCustomerId != null && resolvedCustomerId.isNotEmpty) {
             if (mounted) setState(() => _externalBvnMatch = true);
             print(
@@ -3093,7 +3128,6 @@ class _UpgradeTierState extends State<UpgradeTier>
           );
         }
 
-        // Prepare Tier 2 data
         String formattedDateForApi = _formatDateForApi(_dobController.text);
         String gender = selectedGender!;
         String street = _streetController.text;
@@ -3101,7 +3135,6 @@ class _UpgradeTierState extends State<UpgradeTier>
         String state = selectedState!;
         int postalCode = Random().nextInt(900000) + 100000;
 
-        // Save Tier 2 data to Firestore
         Map<String, dynamic> updateData = {
           'bvn': _controller.text,
           'dateOfBirth': formattedDateForApi,
@@ -3116,7 +3149,6 @@ class _UpgradeTierState extends State<UpgradeTier>
         };
         await docRef.update(updateData);
 
-        // Create/Get existing GetSudo Customer
         _setLoadingStep(1);
         final functions = FirebaseFunctions.instance;
         String? customerId =
@@ -3135,13 +3167,13 @@ class _UpgradeTierState extends State<UpgradeTier>
           );
           customerId = null;
         }
+
         try {
           if (customerId != null && customerId.isNotEmpty) {
             print(
               'Using existing customer from safehavenData.customerCreation: $customerId',
             );
           }
-
           if (customerId == null || customerId.isEmpty) {
             customerId = uid;
             print(
@@ -3164,7 +3196,6 @@ class _UpgradeTierState extends State<UpgradeTier>
           return;
         }
 
-        // Create Electronic Account (if not already created)
         _setLoadingStep(2);
         final refreshedAfterKyc = await docRef.get();
         final Map<String, dynamic>? refreshedAfterMap =
@@ -3175,6 +3206,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                         as Map<String, dynamic>)['virtualAccount']
                   : null)
             : null;
+
         if (existingVa != null) {
           print('Electronic account already exists, skipping creation');
           final currentTier =
@@ -3187,8 +3219,6 @@ class _UpgradeTierState extends State<UpgradeTier>
             await docRef.update({'safehavenData.tier': widget.tier});
           }
         } else {
-          // Identity verification is required before creating a subaccount.
-          // Only run if we have a BVN (Tier 2 flow) and a customerId.
           String? resolvedIdentityId;
           if (customerId.isNotEmpty && _controller.text.trim().length == 11) {
             try {
@@ -3238,6 +3268,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                   }
                 }
               }
+
               HttpsCallable createAccountFunc = functions.httpsCallable(
                 'safehavenCreateSubAccount',
               );
@@ -3263,6 +3294,7 @@ class _UpgradeTierState extends State<UpgradeTier>
               print(
                 'Sending safehavenCreateSubAccount payload: $accountPayload',
               );
+
               dynamic createAccountResult;
               try {
                 createAccountResult = await createAccountFunc.call(
@@ -3274,11 +3306,14 @@ class _UpgradeTierState extends State<UpgradeTier>
               print(
                 'Create Electronic Account Response: ${createAccountResult.data}',
               );
+
+              // ✅ Only save tier AFTER confirmed successful VA creation
               await docRef.update({
                 'safehavenData.virtualAccount': createAccountResult.data,
                 'safehavenData.tier': widget.tier,
               });
               print('✅ Electronic account created and tier saved successfully');
+
               // Send virtual account details email
               try {
                 final dynamic vaRaw = createAccountResult.data;
@@ -3287,10 +3322,9 @@ class _UpgradeTierState extends State<UpgradeTier>
                     ? vaData['id']?.toString()
                     : null;
 
-                // Fetch real (non-masked) account number and bank name via
-                // safehavenFetchAccountNumber, the same way the home page does it.
                 String vaAccountNumber = 'N/A';
                 String vaBankName = 'N/A';
+
                 if (vaAccountId != null && vaAccountId.isNotEmpty) {
                   try {
                     final fetchRes = await FirebaseFunctions.instance
@@ -3309,7 +3343,6 @@ class _UpgradeTierState extends State<UpgradeTier>
                           : bank?.toString();
                       if (an != null && an.isNotEmpty) vaAccountNumber = an;
                       if (bn != null && bn.isNotEmpty) vaBankName = bn;
-                      // Persist resolved values to Firestore
                       final Map<String, dynamic> resolved = {};
                       if (an != null && an.isNotEmpty) {
                         resolved['safehavenData.virtualAccount.data.attributes.accountNumber'] =
@@ -3327,7 +3360,6 @@ class _UpgradeTierState extends State<UpgradeTier>
                     print(
                       'safehavenFetchAccountNumber error (will use masked value): $fetchErr',
                     );
-                    // Fall back to raw response values
                     final dynamic vaAttrs = vaData is Map
                         ? vaData['attributes']
                         : null;
@@ -3341,7 +3373,6 @@ class _UpgradeTierState extends State<UpgradeTier>
                     }
                   }
                 } else {
-                  // No accountId  fall back to raw response attrs
                   final dynamic vaAttrs = vaData is Map
                       ? vaData['attributes']
                       : null;
@@ -3354,6 +3385,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                         : rawBank?.toString() ?? 'N/A';
                   }
                 }
+
                 final String userEmailForVa =
                     userData['email']?.toString() ?? '';
                 final String userFirstName =
@@ -3393,49 +3425,47 @@ class _UpgradeTierState extends State<UpgradeTier>
               }
             } catch (e, st) {
               print('Error creating electronic account: $e');
-              // Still save tier even if VA creation failed, so user can retry
-              try {
-                await docRef.update({'safehavenData.tier': widget.tier});
-                print('Saved tier to document despite VA creation failure');
-              } catch (e2) {
-                print('Failed to save tier: $e2');
-              }
-              // Log the error
               await logErrorToFirestore(
                 e.toString(),
                 'UpgradeTier_ElectronicAccountCreation',
                 st,
               );
-              // Verify if virtualAccount was actually saved despite the error
+              // Check if VA was actually saved on SafeHaven's side despite the error
+              // (e.g. network timeout after a successful response)
               try {
                 final verify = await docRef.get();
                 final verifyData = verify.data() as Map<String, dynamic>?;
                 final verifyVa =
                     verifyData?['safehavenData']?['virtualAccount'];
                 if (verifyVa != null) {
+                  // VA exists — safe to save tier now
+                  await docRef.update({'safehavenData.tier': widget.tier});
                   print(
-                    'Virtual account was saved despite API error; showing success',
+                    '✅ VA confirmed in Firestore despite API error; tier saved, proceeding to success',
                   );
-                  showSimpleDialog(
-                    'Account upgraded successfully',
-                    Colors.green,
+                  // Fall through to success modal below
+                } else {
+                  // VA genuinely missing — don't save tier, surface the error
+                  await _forceHideAndShowError(
+                    errorMessage: 'Account setup failed. Please try again.',
+                    errorType: 'UpgradeTier_ElectronicAccountCreation',
+                    stackTrace: st,
                   );
-                  navigateTo(context, HomePage());
                   return;
                 }
-              } catch (_) {}
-              // Only show error if virtualAccount is missing
-              showSimpleDialog(
-                'Account updated but virtual account setup incomplete. You can still use basic features.',
-                Colors.orange,
-              );
-              return;
+              } catch (_) {
+                await _forceHideAndShowError(
+                  errorMessage: 'Account setup failed. Please try again.',
+                  errorType: 'UpgradeTier_ElectronicAccountCreation',
+                  stackTrace: st,
+                );
+                return;
+              }
             }
           }
         }
       } else {
-        // Tier 3: Only call upgradeCustomerKyc and update Firestore
-        // Get customerId
+        // Tier 3
         String? customerId =
             userData['safehavenData']?['customerCreation']?['data']?['id'];
         if (customerId == null) {
@@ -3449,7 +3479,6 @@ class _UpgradeTierState extends State<UpgradeTier>
           return;
         }
 
-        // Save Tier 3 data to Firestore
         Map<String, dynamic> updateData = {
           'nin': ninController.text,
           'idType': selectedIdType,
@@ -3457,13 +3486,11 @@ class _UpgradeTierState extends State<UpgradeTier>
           'expiryDate': _formatDateForApi(_expiryController.text),
         };
         await docRef.update(updateData);
-
-        // Save tier
         await docRef.update({'safehavenData.tier': widget.tier});
       }
 
       print('✅ Account upgraded successfully');
-      await _hideLoadingDialog(); // <-- add await
+      await _hideLoadingDialog();
       await _showSuccessModal();
     } catch (e, st) {
       print('Error during submission: $e');
