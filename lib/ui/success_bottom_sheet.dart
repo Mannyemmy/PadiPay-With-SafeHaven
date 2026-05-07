@@ -1,6 +1,7 @@
 import 'package:card_app/home_pages/home_page.dart';
 import 'package:card_app/utils.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 class SuccessBottomSheet extends StatefulWidget {
@@ -96,7 +97,7 @@ class _SuccessBottomSheetState extends State<SuccessBottomSheet>
                               padding: const EdgeInsets.all(8.0),
                               child: Text(
                                 "Done",
-                                style: TextStyle(
+                                style: GoogleFonts.inter(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
@@ -150,7 +151,7 @@ class _SuccessBottomSheetState extends State<SuccessBottomSheet>
                       const SizedBox(height: 20),
                       Text(
                         widget.title,
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           color: Colors.white,
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -160,7 +161,7 @@ class _SuccessBottomSheetState extends State<SuccessBottomSheet>
                       const SizedBox(height: 10),
                       Text(
                         widget.description,
-                        style: TextStyle(color: Colors.white70),
+                        style: GoogleFonts.inter(color: Colors.white70),
                         textAlign: TextAlign.center,
                       ),
                       if ((widget.cashbackAmount ?? 0) > 0) ...[
@@ -187,7 +188,7 @@ class _SuccessBottomSheetState extends State<SuccessBottomSheet>
                               Expanded(
                                 child: Text(
                                   'Cashback earned: NGN ${NumberFormat('#,##0.00').format(widget.cashbackAmount)}',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w600,
                                   ),

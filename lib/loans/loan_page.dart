@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:card_app/ui/success_bottom_sheet.dart';
 import 'package:card_app/utils.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class LoanPage extends StatefulWidget {
   const LoanPage({super.key});
@@ -26,9 +27,9 @@ class _LoanPageState extends State<LoanPage> {
           onPressed: () => Navigator.pop(context),
         ),
         centerTitle: true,
-        title: const Text(
+        title: Text(
           "Loan",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600),
         ),
         elevation: 0,
         backgroundColor: Colors.white,
@@ -56,37 +57,37 @@ class _LoanPageState extends State<LoanPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         "Current Loan Balance",
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           color: Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const Text(
+                      Text(
                         "₦",
-                        style: TextStyle(color: Colors.white70, fontSize: 24),
+                        style: GoogleFonts.inter(color: Colors.white70, fontSize: 24),
                       ),
                     ],
                   ),
-                  const Text(
+                  Text(
                     "₦3,299.00",
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: Colors.white,
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   SizedBox(height: 10),
-                  const Text(
+                  Text(
                     "Of ₦5000 total",
-                    style: TextStyle(color: Colors.white, fontSize: 14),
+                    style: GoogleFonts.inter(color: Colors.white, fontSize: 14),
                   ),
                   const SizedBox(height: 30),
-                  const Text(
+                  Text(
                     "50% repaid",
-                    style: TextStyle(color: Colors.white, fontSize: 16),
+                    style: GoogleFonts.inter(color: Colors.white, fontSize: 16),
                   ),
                 ],
               ),
@@ -102,19 +103,19 @@ class _LoanPageState extends State<LoanPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Column(
+                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "Next Payment",
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           color: Colors.black38,
                           fontWeight: FontWeight.w300,
                         ),
                       ),
                       Text(
                         "₦300",
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: Colors.black54,
@@ -122,7 +123,7 @@ class _LoanPageState extends State<LoanPage> {
                       ),
                       Text(
                         "Due on Oct 15, 2025",
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           color: Colors.black38,
                           fontWeight: FontWeight.w300,
                         ),
@@ -141,9 +142,9 @@ class _LoanPageState extends State<LoanPage> {
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
+            Text(
               "Quick Actions",
-              style: TextStyle(
+              style: GoogleFonts.inter(
                 fontSize: 16,
                 color: Colors.black54,
                 fontWeight: FontWeight.w600,
@@ -188,7 +189,7 @@ class _LoanPageState extends State<LoanPage> {
                           SizedBox(height: 8),
                           Text(
                             "Make Payment",
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               color: Colors.black45,
                               fontWeight: FontWeight.w700,
                               fontSize: 15,
@@ -232,7 +233,7 @@ class _LoanPageState extends State<LoanPage> {
                           SizedBox(height: 8),
                           Text(
                             "New Loan",
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               color: Colors.black45,
                               fontWeight: FontWeight.w700,
                               fontSize: 15,
@@ -290,9 +291,9 @@ class _ApplyLoanPageState extends State<ApplyLoanPage> {
           onPressed: () => Navigator.pop(context),
         ),
         centerTitle: true,
-        title: const Text(
+        title: Text(
           "Apply for a Loan",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600),
         ),
         elevation: 0,
         backgroundColor: Colors.white,
@@ -314,9 +315,9 @@ class _ApplyLoanPageState extends State<ApplyLoanPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Loan Amount',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: Colors.black45,
                       fontWeight: FontWeight.w600,
                     ),
@@ -324,7 +325,7 @@ class _ApplyLoanPageState extends State<ApplyLoanPage> {
                   SizedBox(height: 5),
                   Text(
                     '₦${loanAmount.toStringAsFixed(0)}.00',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w800,
                       color: Colors.black87,
@@ -361,7 +362,7 @@ class _ApplyLoanPageState extends State<ApplyLoanPage> {
                     children: [
                       Text(
                         'Repayment Duration',
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           color: Colors.black54,
                           fontWeight: FontWeight.w700,
                         ),
@@ -388,7 +389,7 @@ class _ApplyLoanPageState extends State<ApplyLoanPage> {
                               .map(
                                 (int value) => DropdownMenuItem<int>(
                                   value: value,
-                                  child: Text('$value months',style: TextStyle(color: Colors.grey),),
+                                  child: Text('$value months',style: GoogleFonts.inter(color: Colors.grey),),
                                 ),
                               )
                               .toList(),
@@ -416,11 +417,11 @@ class _ApplyLoanPageState extends State<ApplyLoanPage> {
                 color: Colors.white,
                border: Border.all(color: Colors.grey.shade200)
               ),
-              child: const Row(
+              child:  Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Interest Rate', style: TextStyle(color: Colors.grey)),
-                  Text('8.5%',style: TextStyle(color: Colors.black45,fontWeight: FontWeight.bold,fontSize: 16)),
+                  Text('Interest Rate', style: GoogleFonts.inter(color: Colors.grey)),
+                  Text('8.5%',style: GoogleFonts.inter(color: Colors.black45,fontWeight: FontWeight.bold,fontSize: 16)),
                 ],
               ),
             ),
@@ -434,32 +435,32 @@ class _ApplyLoanPageState extends State<ApplyLoanPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Repayment Summary',
-                    style: TextStyle(fontWeight: FontWeight.bold,fontSize: 16),
+                    style: GoogleFonts.inter(fontWeight: FontWeight.bold,fontSize: 16),
                   ),
                   const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Monthly Payment',style: TextStyle(color: Colors.black45,fontWeight: FontWeight.w500),),
-                      Text('₦${monthlyPayment.toStringAsFixed(2)}',style: TextStyle(color: Colors.black54,fontWeight: FontWeight.w700,fontSize: 16)),
+                      Text('Monthly Payment',style: GoogleFonts.inter(color: Colors.black45,fontWeight: FontWeight.w500),),
+                      Text('₦${monthlyPayment.toStringAsFixed(2)}',style: GoogleFonts.inter(color: Colors.black54,fontWeight: FontWeight.w700,fontSize: 16)),
                     ],
                   ),
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Total Interest',style: TextStyle(color: Colors.black45,fontWeight: FontWeight.w500)),
-                      Text('₦${totalInterest.toStringAsFixed(2)}',style: TextStyle(color: Colors.black54,fontWeight: FontWeight.w700,fontSize: 16)),
+                      Text('Total Interest',style: GoogleFonts.inter(color: Colors.black45,fontWeight: FontWeight.w500)),
+                      Text('₦${totalInterest.toStringAsFixed(2)}',style: GoogleFonts.inter(color: Colors.black54,fontWeight: FontWeight.w700,fontSize: 16)),
                     ],
                   ),
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Total Repayment',style: TextStyle(color: Colors.black45,fontWeight: FontWeight.w500)),
-                      Text('₦${totalRepayment.toStringAsFixed(2)}',style: TextStyle(color: Colors.black54,fontWeight: FontWeight.w700,fontSize: 16)),
+                      Text('Total Repayment',style: GoogleFonts.inter(color: Colors.black45,fontWeight: FontWeight.w500)),
+                      Text('₦${totalRepayment.toStringAsFixed(2)}',style: GoogleFonts.inter(color: Colors.black54,fontWeight: FontWeight.w700,fontSize: 16)),
                     ],
                   ),
                 ],
@@ -486,19 +487,19 @@ class _ApplyLoanPageState extends State<ApplyLoanPage> {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              child: const Text(
+              child: Text(
                 'Apply Now',
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,fontSize: 15
                 ),
               ),
             ),
             const SizedBox(height: 20),
-            const Center(
+             Center(
               child: Text(
                 'By applying, you agree to our terms and conditions. Your application will be reviewed within 24 hours.',
-                style: TextStyle(color: Colors.grey, fontSize: 12,fontWeight: FontWeight.w600),
+                style: GoogleFonts.inter(color: Colors.grey, fontSize: 12,fontWeight: FontWeight.w600),
                 textAlign: TextAlign.center,
               ),
             ),

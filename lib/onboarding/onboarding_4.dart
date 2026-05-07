@@ -1,6 +1,7 @@
 import 'package:card_app/auth/sign-in.dart';
 import 'package:card_app/utils.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class Onboarding4 extends StatelessWidget {
   const Onboarding4({super.key});
@@ -62,7 +63,7 @@ class Onboarding4 extends StatelessWidget {
             const SizedBox(height: 30),
             Text(
               "Full Control",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30),
+              style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 30),
             ),
             const SizedBox(height: 10),
             Padding(
@@ -70,7 +71,7 @@ class Onboarding4 extends StatelessWidget {
               child: Text(
                 "Freeze, change limits, or terminate cards anytime, right from your phone.",
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   fontWeight: FontWeight.w300,
                   color: Colors.black,
                   fontSize: 15,

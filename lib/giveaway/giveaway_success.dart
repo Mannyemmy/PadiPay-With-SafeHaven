@@ -95,7 +95,7 @@ class _GiveAwaySuccessBottomSheetState extends State<GiveAwaySuccessBottomSheet>
                               padding: const EdgeInsets.all(8.0),
                               child: Text(
                                 "Done",
-                                style: TextStyle(
+                                style: GoogleFonts.inter(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
@@ -147,7 +147,7 @@ class _GiveAwaySuccessBottomSheetState extends State<GiveAwaySuccessBottomSheet>
                       const SizedBox(height: 20),
                       Text(
                         widget.title,
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           color: Colors.white,
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -157,7 +157,7 @@ class _GiveAwaySuccessBottomSheetState extends State<GiveAwaySuccessBottomSheet>
                       const SizedBox(height: 10),
                       Text(
                         widget.description,
-                        style: TextStyle(color: Colors.white70),
+                        style: GoogleFonts.inter(color: Colors.white70),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 40),

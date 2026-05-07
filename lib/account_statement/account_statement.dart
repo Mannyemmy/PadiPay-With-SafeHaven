@@ -1,6 +1,7 @@
 import 'package:card_app/utils.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 class AccountStatementPage extends StatefulWidget {
@@ -110,9 +111,9 @@ class _AccountStatementPageState extends State<AccountStatementPage> {
                   child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
                 ),
                 const SizedBox(height: 60),
-                const Text(
+                Text(
                   'Account Statement',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
                 const SizedBox(height: 8),
               ],
@@ -124,7 +125,7 @@ class _AccountStatementPageState extends State<AccountStatementPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Start Date', style: TextStyle(fontWeight: FontWeight.w600)),
+                  Text('Start Date', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 8),
                   GestureDetector(
                     onTap: () => _selectDate(true),
@@ -134,7 +135,7 @@ class _AccountStatementPageState extends State<AccountStatementPage> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text('End Date', style: TextStyle(fontWeight: FontWeight.w600)),
+                  Text('End Date', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 8),
                   GestureDetector(
                     onTap: () => _selectDate(false),
@@ -145,7 +146,7 @@ class _AccountStatementPageState extends State<AccountStatementPage> {
                   ),
                   if (_error != null) ...[
                     const SizedBox(height: 12),
-                    Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 13)),
+                    Text(_error!, style: TextStyle(color: Colors.red, fontSize: 13)),
                   ],
                   const SizedBox(height: 20),
                   ElevatedButton(
@@ -161,7 +162,7 @@ class _AccountStatementPageState extends State<AccountStatementPage> {
                             height: 22,
                             child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                           )
-                        : const Text('Generate Statement', style: TextStyle(color: Colors.white)),
+                        : Text('Generate Statement', style: GoogleFonts.inter(color: Colors.white)),
                   ),
                   if (_transactions != null) ...[
                     const SizedBox(height: 24),
@@ -169,24 +170,24 @@ class _AccountStatementPageState extends State<AccountStatementPage> {
                       children: [
                         Text(
                           '${_transactions!.length} transaction${_transactions!.length == 1 ? '' : 's'}',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                         ),
                         const Spacer(),
                         if (_startDate != null && _endDate != null)
                           Text(
                             '${fmt.format(_startDate!)} – ${fmt.format(_endDate!)}',
-                            style: const TextStyle(color: Colors.grey, fontSize: 12),
+                            style: TextStyle(color: Colors.grey, fontSize: 12),
                           ),
                       ],
                     ),
                     const SizedBox(height: 8),
                     if (_transactions!.isEmpty)
-                      const Padding(
+                       Padding(
                         padding: EdgeInsets.symmetric(vertical: 24),
                         child: Center(
                           child: Text(
                             'No transactions found for this period.',
-                            style: TextStyle(color: Colors.grey),
+                            style: GoogleFonts.inter(color: Colors.grey),
                           ),
                         ),
                       )
@@ -225,12 +226,12 @@ class _AccountStatementPageState extends State<AccountStatementPage> {
                                 size: 18,
                               ),
                             ),
-                            title: Text(merchantName, style: const TextStyle(fontSize: 14)),
+                            title: Text(merchantName, style: TextStyle(fontSize: 14)),
                             subtitle: Text(dateLabel,
-                                style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                style: TextStyle(fontSize: 12, color: Colors.grey)),
                             trailing: Text(
                               '${isCredit ? '+' : '-'}${_formatAmount(amount, _currency)}',
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 fontWeight: FontWeight.bold,
                                 color: isCredit ? Colors.green : Colors.red,
                                 fontSize: 14,
@@ -266,7 +267,7 @@ class _DatePickerField extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(color: hasValue ? Colors.black : Colors.grey)),
+          Text(label, style: GoogleFonts.inter(color: hasValue ? Colors.black : Colors.grey)),
           const Icon(Icons.calendar_today, color: Colors.grey),
         ],
       ),

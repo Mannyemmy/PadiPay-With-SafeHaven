@@ -770,7 +770,7 @@ Future<void> _ghostTransfer() async {
                         Spacer(),
                         Text(
                           "Send Money via Tag",
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: Colors.black,
@@ -782,12 +782,12 @@ Future<void> _ghostTransfer() async {
                     SizedBox(height: 30),
                     // PAGE 1: Username selection
                     if (_currentPage == 0) ...[
-                      const Text('Recipient Tag'),
+                      Text('Recipient Tag'),
                       const SizedBox(height: 8),
                       TextField(
                         textInputAction: TextInputAction.next,
                         textCapitalization: TextCapitalization.none,
-                        style: TextStyle(fontSize: 14),
+                        style: GoogleFonts.inter(fontSize: 14),
                         controller: usernameController,
                         keyboardType: TextInputType.name,
                         decoration: InputDecoration(
@@ -796,7 +796,7 @@ Future<void> _ghostTransfer() async {
                             borderSide: BorderSide(color: Colors.grey.shade300),
                           ),
                           hintText: "username",
-                          hintStyle: TextStyle(color: Colors.grey.shade600),
+                          hintStyle: GoogleFonts.inter(color: Colors.grey.shade600),
                           prefixIcon: Icon(
                             Icons.alternate_email,
                             color: Colors.grey.shade600,
@@ -828,7 +828,7 @@ Future<void> _ghostTransfer() async {
                               isUsernameValid
                                   ? 'Username found'
                                   : 'Username not found',
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 color: isUsernameValid
                                     ? Colors.green
                                     : Colors.red,
@@ -849,9 +849,9 @@ Future<void> _ghostTransfer() async {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Next',
-                          style: TextStyle(color: Colors.white),
+                          style: GoogleFonts.inter(color: Colors.white),
                         ),
                       ),
                     ]
@@ -871,7 +871,7 @@ Future<void> _ghostTransfer() async {
                               ),
                               child: Text(
                                 usernameController.text[0].toUpperCase(),
-                                style: TextStyle(
+                                style: GoogleFonts.inter(
                                   color: primaryColor,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -884,14 +884,14 @@ Future<void> _ghostTransfer() async {
                                 children: [
                                   Text(
                                     usernameController.text,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontWeight: FontWeight.w600,
                                       fontSize: 14,
                                     ),
                                   ),
                                   Text(
                                     '@${usernameController.text}',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       color: Colors.grey.shade600,
                                       fontSize: 12,
                                     ),
@@ -903,7 +903,7 @@ Future<void> _ghostTransfer() async {
                         ),
                       ),
                       const SizedBox(height: 24),
-                      const Text('Amount to Send'),
+                      Text('Amount to Send'),
                       const SizedBox(height: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -920,7 +920,7 @@ Future<void> _ghostTransfer() async {
                               padding: const EdgeInsets.only(right: 8.0),
                               child: Text(
                                 '₦',
-                                style: TextStyle(
+                                style: GoogleFonts.inter(
                                   fontSize: 16,
                                   color: Colors.grey.shade600,
                                 ),
@@ -935,7 +935,7 @@ Future<void> _ghostTransfer() async {
                                   enabledBorder: InputBorder.none,
                                   focusedBorder: InputBorder.none,
                                   contentPadding: EdgeInsets.zero,
-                                  hintStyle: TextStyle(
+                                  hintStyle: GoogleFonts.inter(
                                     color: Colors.grey.shade600,
                                   ),
                                   hintText: '0.00',
@@ -944,7 +944,7 @@ Future<void> _ghostTransfer() async {
                             ),
                             Text(
                               feeText,
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 color: primaryColor,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -981,7 +981,7 @@ Future<void> _ghostTransfer() async {
                               alignment: Alignment.center,
                               child: Text(
                                 '₦$fmtAmt',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.w600,
                                   fontSize: 13,
                                 ),
@@ -991,12 +991,12 @@ Future<void> _ghostTransfer() async {
                         }).toList(),
                       ),
                       const SizedBox(height: 16),
-                      const Text('Remark'),
+                      Text('Remark'),
                       const SizedBox(height: 8),
                       TextField(
                         controller: remarkController,
                         decoration: InputDecoration(
-                          hintStyle: TextStyle(
+                          hintStyle: GoogleFonts.inter(
                             color: Colors.grey.shade600,
                             fontSize: 14,
                           ),
@@ -1083,9 +1083,9 @@ Future<void> _ghostTransfer() async {
                         ),
                         child: isLoading
                             ? CircularProgressIndicator(color: Colors.white)
-                            : const Text(
+                            : Text(
                                 'Confirm',
-                                style: TextStyle(color: Colors.white),
+                                style: GoogleFonts.inter(color: Colors.white),
                               ),
                       ),
                     ],
@@ -1115,7 +1115,7 @@ Future<void> _ghostTransfer() async {
                             padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
                             child: Text(
                               'Recents',
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 15,
                                 color: Colors.black87,
@@ -1159,7 +1159,7 @@ Future<void> _ghostTransfer() async {
                                   child: profileImage.isEmpty
                                       ? Text(
                                           initials,
-                                          style: TextStyle(
+                                          style: GoogleFonts.inter(
                                             color: primaryColor,
                                             fontWeight: FontWeight.bold,
                                             fontSize: 14,
@@ -1169,7 +1169,7 @@ Future<void> _ghostTransfer() async {
                                 ),
                                 title: Text(
                                   '@$username',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontWeight: FontWeight.w600,
                                     fontSize: 14,
                                   ),

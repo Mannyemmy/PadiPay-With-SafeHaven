@@ -4,6 +4,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AddViaBankTransfer extends StatefulWidget {
   const AddViaBankTransfer({super.key});
@@ -144,9 +145,9 @@ class _AddViaBankTransferState extends State<AddViaBankTransfer> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Add Via Bank Transfer',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                  style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 20),
                 Container(
@@ -166,7 +167,7 @@ class _AddViaBankTransferState extends State<AddViaBankTransfer> {
                             children: [
                               Text(
                                 "Bank Name",
-                                style: TextStyle(
+                                style: GoogleFonts.inter(
                                   color: Colors.grey,
                                   fontWeight: FontWeight.w300,
                                 ),
@@ -174,7 +175,7 @@ class _AddViaBankTransferState extends State<AddViaBankTransfer> {
                               const SizedBox(height: 5),
                               Text(
                                 bankName,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: Colors.black54,
                                   fontWeight: FontWeight.w700,
                                   fontSize: 15,
@@ -204,7 +205,7 @@ class _AddViaBankTransferState extends State<AddViaBankTransfer> {
                             children: [
                               Text(
                                 "Account Number",
-                                style: TextStyle(
+                                style: GoogleFonts.inter(
                                   color: Colors.grey,
                                   fontWeight: FontWeight.w300,
                                 ),
@@ -212,7 +213,7 @@ class _AddViaBankTransferState extends State<AddViaBankTransfer> {
                               const SizedBox(height: 5),
                               Text(
                                 accountNumber,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: Colors.black54,
                                   fontWeight: FontWeight.w700,
                                   fontSize: 15,
@@ -244,7 +245,7 @@ class _AddViaBankTransferState extends State<AddViaBankTransfer> {
                             children: [
                               Text(
                                 "Account Name",
-                                style: TextStyle(
+                                style: GoogleFonts.inter(
                                   color: Colors.grey,
                                   fontWeight: FontWeight.w300,
                                 ),
@@ -252,7 +253,7 @@ class _AddViaBankTransferState extends State<AddViaBankTransfer> {
                               const SizedBox(height: 5),
                               Text(
                                 accountName,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: Colors.black54,
                                   fontWeight: FontWeight.w700,
                                   fontSize: 15,
@@ -290,7 +291,7 @@ class _AddViaBankTransferState extends State<AddViaBankTransfer> {
                   ),
                   child: Text(
                     "Transfer funds from your bank app to this account.\nYour wallet will be credited automatically.",
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: primaryColor,
                       fontWeight: FontWeight.w500,
                       fontSize: 12,

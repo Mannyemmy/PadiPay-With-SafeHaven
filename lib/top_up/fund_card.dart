@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 
@@ -409,9 +410,9 @@ class _FundCardState extends State<FundCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Fund Card',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                    style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w700),
                   ),
                   SizedBox(height: 20),
                   Container(
@@ -425,7 +426,7 @@ class _FundCardState extends State<FundCard> {
                       children: [
                         Text(
                           "Amount",
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                             fontWeight: FontWeight.w600,
                             color: Colors.black45,
                           ),
@@ -444,7 +445,7 @@ class _FundCardState extends State<FundCard> {
                               ),
                               child: Text(
                                 currencySymbol,
-                                style: TextStyle(
+                                style: GoogleFonts.inter(
                                   fontSize: 16,
                                   color: Colors.grey.shade700,
                                 ),
@@ -469,7 +470,7 @@ class _FundCardState extends State<FundCard> {
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
-                          keyboardType: const TextInputType.numberWithOptions(
+                          keyboardType: TextInputType.numberWithOptions(
                             decimal: true,
                           ),
                         ),
@@ -479,7 +480,7 @@ class _FundCardState extends State<FundCard> {
                               ? _shimmerPlaceholder(width: 200, height: 20)
                               : Text(
                                   "Rate = \$1 = ₦${_formatCurrency(_usdToNairaRate)}",
-                                  style: TextStyle(
+                                  style: GoogleFonts.inter(
                                     fontWeight: FontWeight.w700,
                                     color: Colors.black87,
                                   ),
@@ -491,7 +492,7 @@ class _FundCardState extends State<FundCard> {
                           children: [
                             Text(
                               "Amount",
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 fontSize: 10,
                                 color: Colors.grey,
                               ),
@@ -500,7 +501,7 @@ class _FundCardState extends State<FundCard> {
                               isUSD
                                   ? "\$${displayAmount.toStringAsFixed(2)} (₦${_formatCurrency(nairaAmount)})"
                                   : "$currencySymbol${_formatCurrency(displayAmount)}",
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12,
                               ),
@@ -513,14 +514,14 @@ class _FundCardState extends State<FundCard> {
                           children: [
                             Text(
                               "Fee",
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 fontSize: 10,
                                 color: Colors.grey,
                               ),
                             ),
                             Text(
                               "₦${_formatCurrency(fee)}",
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12,
                               ),
@@ -533,14 +534,14 @@ class _FundCardState extends State<FundCard> {
                           children: [
                             Text(
                               "Total Amount",
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 fontSize: 10,
                                 color: Colors.grey,
                               ),
                             ),
                             Text(
                               "₦${_formatCurrency(totalAmount)}",
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12,
                               ),
@@ -550,7 +551,7 @@ class _FundCardState extends State<FundCard> {
                         SizedBox(height: 30),
                         Text(
                           "Fund From",
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                             fontWeight: FontWeight.w600,
                             color: Colors.black45,
                           ),
@@ -571,7 +572,7 @@ class _FundCardState extends State<FundCard> {
                                 children: [
                                   Text(
                                     "Default Wallet",
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       color: Colors.grey,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -584,7 +585,7 @@ class _FundCardState extends State<FundCard> {
                                         )
                                       : Text(
                                           _maskedAccountNumber,
-                                          style: TextStyle(
+                                          style: GoogleFonts.inter(
                                             color: Colors.grey,
                                             fontWeight: FontWeight.w800,
                                           ),
@@ -596,7 +597,7 @@ class _FundCardState extends State<FundCard> {
                                 children: [
                                   Text(
                                     "Available",
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       color: Colors.grey,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -609,7 +610,7 @@ class _FundCardState extends State<FundCard> {
                                         )
                                       : Text(
                                           "₦${balanceFormatter.format(_availableBalance)}",
-                                          style: TextStyle(
+                                          style: GoogleFonts.inter(
                                             color: Colors.grey,
                                             fontWeight: FontWeight.w800,
                                           ),
@@ -635,7 +636,7 @@ class _FundCardState extends State<FundCard> {
                       ),
                       child: Text(
                         "Fund Now",
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           color: Colors.white,
                           fontWeight: FontWeight.w800,
                         ),

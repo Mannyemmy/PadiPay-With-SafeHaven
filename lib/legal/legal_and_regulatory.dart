@@ -1,5 +1,6 @@
 import 'package:card_app/utils.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class LegalAndRegulatory extends StatefulWidget {
   const LegalAndRegulatory({super.key});
@@ -34,7 +35,7 @@ class _LegalAndRegulatoryState extends State<LegalAndRegulatory> {
                 SizedBox(width: 20),
                 Text(
                   "Legal & Regulatory",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                  style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 20),
                 ),
               ],
             ),
@@ -66,7 +67,7 @@ class _LegalAndRegulatoryState extends State<LegalAndRegulatory> {
                         children: [
                           Text(
                             "Terms of Service",
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               color: Colors.black,
                               fontWeight: FontWeight.bold,
                             ),
@@ -79,7 +80,7 @@ class _LegalAndRegulatoryState extends State<LegalAndRegulatory> {
                                 Expanded(
                                   child: Text(
                                     "Our terms and conditions for using PadiPay services",
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       color: Colors.grey.shade500,
                                     ),
                                   ),
@@ -97,7 +98,7 @@ class _LegalAndRegulatoryState extends State<LegalAndRegulatory> {
                     children: [
                       Text(
                         "Updated Jan 15, 2024",
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           color: Colors.grey.shade500,
                           fontWeight: FontWeight.w600,
                         ),
@@ -123,7 +124,7 @@ class _LegalAndRegulatoryState extends State<LegalAndRegulatory> {
                             SizedBox(width: 10),
                             Text(
                               "Download",
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -152,7 +153,7 @@ class _LegalAndRegulatoryState extends State<LegalAndRegulatory> {
                             SizedBox(width: 10),
                             Text(
                               "Share",
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 color: Colors.black54,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -193,7 +194,7 @@ class _LegalAndRegulatoryState extends State<LegalAndRegulatory> {
                         children: [
                           Text(
                             "Privacy Policy",
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               color: Colors.black,
                               fontWeight: FontWeight.bold,
                             ),
@@ -206,7 +207,7 @@ class _LegalAndRegulatoryState extends State<LegalAndRegulatory> {
                                 Expanded(
                                   child: Text(
                                     "How we collect, use and protect your personal information",
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       color: Colors.grey.shade500,
                                     ),
                                   ),
@@ -224,7 +225,7 @@ class _LegalAndRegulatoryState extends State<LegalAndRegulatory> {
                     children: [
                       Text(
                         "Updated Jan 15, 2024",
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           color: Colors.grey.shade500,
                           fontWeight: FontWeight.w600,
                         ),
@@ -250,7 +251,7 @@ class _LegalAndRegulatoryState extends State<LegalAndRegulatory> {
                             SizedBox(width: 10),
                             Text(
                               "Download",
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -279,7 +280,7 @@ class _LegalAndRegulatoryState extends State<LegalAndRegulatory> {
                             SizedBox(width: 10),
                             Text(
                               "Share",
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 color: Colors.black54,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -320,7 +321,7 @@ class _LegalAndRegulatoryState extends State<LegalAndRegulatory> {
                         children: [
                           Text(
                             "Investment Disclaimer",
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               color: Colors.black,
                               fontWeight: FontWeight.bold,
                             ),
@@ -333,7 +334,7 @@ class _LegalAndRegulatoryState extends State<LegalAndRegulatory> {
                                 Expanded(
                                   child: Text(
                                     "Important information about investment risks and disclaimers",
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       color: Colors.grey.shade500,
                                     ),
                                   ),
@@ -351,7 +352,7 @@ class _LegalAndRegulatoryState extends State<LegalAndRegulatory> {
                     children: [
                       Text(
                         "Updated Jan 15, 2024",
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           color: Colors.grey.shade500,
                           fontWeight: FontWeight.w600,
                         ),
@@ -377,7 +378,7 @@ class _LegalAndRegulatoryState extends State<LegalAndRegulatory> {
                             SizedBox(width: 10),
                             Text(
                               "Download",
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -406,7 +407,7 @@ class _LegalAndRegulatoryState extends State<LegalAndRegulatory> {
                             SizedBox(width: 10),
                             Text(
                               "Share",
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 color: Colors.black54,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -447,7 +448,7 @@ class _LegalAndRegulatoryState extends State<LegalAndRegulatory> {
                         children: [
                           Text(
                             "Fee Schedule",
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               color: Colors.black,
                               fontWeight: FontWeight.bold,
                             ),
@@ -460,7 +461,7 @@ class _LegalAndRegulatoryState extends State<LegalAndRegulatory> {
                                 Expanded(
                                   child: Text(
                                     "Complete breakdown of all fees and charges",
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       color: Colors.grey.shade500,
                                     ),
                                   ),
@@ -478,7 +479,7 @@ class _LegalAndRegulatoryState extends State<LegalAndRegulatory> {
                     children: [
                       Text(
                         "Updated Jan 15, 2024",
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           color: Colors.grey.shade500,
                           fontWeight: FontWeight.w600,
                         ),
@@ -504,7 +505,7 @@ class _LegalAndRegulatoryState extends State<LegalAndRegulatory> {
                             SizedBox(width: 10),
                             Text(
                               "Download",
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -533,7 +534,7 @@ class _LegalAndRegulatoryState extends State<LegalAndRegulatory> {
                             SizedBox(width: 10),
                             Text(
                               "Share",
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 color: Colors.black54,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -552,7 +553,7 @@ class _LegalAndRegulatoryState extends State<LegalAndRegulatory> {
                 SizedBox(width: 20),
                 Text(
                   "Regulatory Compliance",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
               ],
             ),
@@ -574,7 +575,7 @@ class _LegalAndRegulatoryState extends State<LegalAndRegulatory> {
                     children: [
                       Text(
                         "SEC Registration",
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           color: Colors.black,
                           fontWeight: FontWeight.bold,
                         ),
@@ -587,7 +588,7 @@ class _LegalAndRegulatoryState extends State<LegalAndRegulatory> {
                             Expanded(
                               child: Text(
                                 "Securities and exchange Commission compliance information",
-                                style: TextStyle(
+                                style: GoogleFonts.inter(
                                   fontSize: 12,
                                   color: Colors.grey.shade500,
                                 ),
@@ -601,7 +602,7 @@ class _LegalAndRegulatoryState extends State<LegalAndRegulatory> {
                   ),
                   Text(
                     "Compliant",
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: Colors.green,
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
@@ -628,7 +629,7 @@ class _LegalAndRegulatoryState extends State<LegalAndRegulatory> {
                     children: [
                       Text(
                         "NDIC Insurance",
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           color: Colors.black,
                           fontWeight: FontWeight.bold,
                         ),
@@ -641,7 +642,7 @@ class _LegalAndRegulatoryState extends State<LegalAndRegulatory> {
                             Expanded(
                               child: Text(
                                 "Nigeria Deposit Insurance Corporation coverage details",
-                                style: TextStyle(
+                                style: GoogleFonts.inter(
                                   fontSize: 12,
                                   color: Colors.grey.shade500,
                                 ),
@@ -655,7 +656,7 @@ class _LegalAndRegulatoryState extends State<LegalAndRegulatory> {
                   ),
                   Text(
                     "Active",
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: Colors.green,
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
@@ -681,7 +682,7 @@ class _LegalAndRegulatoryState extends State<LegalAndRegulatory> {
                     children: [
                       Text(
                         "CBN Regulations",
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           color: Colors.black,
                           fontWeight: FontWeight.bold,
                         ),
@@ -694,7 +695,7 @@ class _LegalAndRegulatoryState extends State<LegalAndRegulatory> {
                             Expanded(
                               child: Text(
                                 "Central Bank of Nigeria regulatory compliance",
-                                style: TextStyle(
+                                style: GoogleFonts.inter(
                                   fontSize: 12,
                                   color: Colors.grey.shade500,
                                 ),
@@ -708,7 +709,7 @@ class _LegalAndRegulatoryState extends State<LegalAndRegulatory> {
                   ),
                   Text(
                     "Compliant",
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: Colors.green,
                       fontSize: 10,
                       fontWeight: FontWeight.bold,

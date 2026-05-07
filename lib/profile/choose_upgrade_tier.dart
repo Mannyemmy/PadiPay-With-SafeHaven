@@ -255,7 +255,7 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
                               children: [
                                 Text(
                                   _verificationStatusLabel,
-                                  style: TextStyle(
+                                  style: GoogleFonts.inter(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
                                   ),
@@ -263,7 +263,7 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
                                 SizedBox(height: 4),
                                 Text(
                                   _verificationStatusDescription,
-                                  style: TextStyle(
+                                  style: GoogleFonts.inter(
                                     color: Colors.grey.shade600,
                                     fontSize: 12,
                                   ),
@@ -364,7 +364,7 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
                     children: [
                       Text(
                         title,
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
                         ),
@@ -381,7 +381,7 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
                         ),
                         child: Text(
                           tierNumber == 1 ? "Popular" : "Tier $tierNumber",
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                             fontSize: 10,
                             color: primaryColor,
                             fontWeight: FontWeight.w600,
@@ -393,7 +393,7 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
                   SizedBox(height: 8),
                   Text(
                     subtitle,
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: Colors.grey.shade700,
                       fontSize: 12,
                     ),
@@ -432,7 +432,7 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
                 children: [
                   Text(
                     "Limit per transaction",
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: Colors.black.withValues(alpha: 0.75),
                       fontWeight: FontWeight.w600,
                     ),
@@ -440,7 +440,7 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
                   SizedBox(height: 4),
                   Text(
                     limit,
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: Colors.black54,
                       fontSize: 12,
                       fontWeight: FontWeight.w800,
@@ -465,14 +465,14 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
                 children: [
                   Text(
                     "Daily Limit",
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: Colors.black.withValues(alpha: 0.75),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   Text(
                     daily,
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: Colors.black54,
                       fontSize: 12,
                       fontWeight: FontWeight.w800,
@@ -497,14 +497,14 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
                 children: [
                   Text(
                     "Maximum Account Balance",
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: Colors.black.withValues(alpha: 0.75),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   Text(
                     maxBalance,
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: Colors.black54,
                       fontSize: 12,
                       fontWeight: FontWeight.w800,
@@ -535,7 +535,7 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
                     children: [
                       Text(
                         "Required for verification",
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           color: Colors.black87,
                           fontWeight: FontWeight.bold,
                         ),
@@ -543,7 +543,7 @@ class _ChooseUpgradeTierState extends State<ChooseUpgradeTier> {
                       const SizedBox(height: 8),
                       Text(
                         requirements,
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           fontSize: 12,
                           color: Colors.grey.shade600,
                           fontWeight: FontWeight.w700,

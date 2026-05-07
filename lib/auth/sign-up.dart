@@ -16,6 +16,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class SignUp extends StatefulWidget {
   const SignUp({super.key});
@@ -232,17 +233,17 @@ class _SignUpState extends State<SignUp> with WidgetsBindingObserver {
               const SizedBox(height: 16),
               Text(
                 'Verify your email',
-              style: TextStyle(
+              style: GoogleFonts.inter(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: Colors.blue[800],
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'We sent a verification link to your email. Please check your inbox and click the link to verify your account.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16, height: 1.4),
+              style: GoogleFonts.inter(fontSize: 16, height: 1.4),
             ),
             const SizedBox(height: 24),
             ElevatedButton(
@@ -257,9 +258,9 @@ class _SignUpState extends State<SignUp> with WidgetsBindingObserver {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text(
+              child: Text(
                 'Continue',
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
@@ -533,7 +534,7 @@ class _SignUpState extends State<SignUp> with WidgetsBindingObserver {
           SizedBox(width: 8),
           Text(
             text,
-            style: TextStyle(
+            style: GoogleFonts.inter(
               color: isValid ? Colors.green : Colors.grey,
               fontSize: 12,
             ),
@@ -572,7 +573,7 @@ class _SignUpState extends State<SignUp> with WidgetsBindingObserver {
                     const SizedBox(height: 50),
                     Text(
                       "Create Account",
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 25,
                         fontWeight: FontWeight.bold,
                       ),
@@ -580,7 +581,7 @@ class _SignUpState extends State<SignUp> with WidgetsBindingObserver {
                     SizedBox(height: 10),
                     Text(
                       "Enter your information just as it's shown on your identity document.",
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w300,
                         color: Colors.black.withValues(alpha: 0.7),
@@ -591,7 +592,7 @@ class _SignUpState extends State<SignUp> with WidgetsBindingObserver {
                     // First Name
                     Text(
                       "First Name",
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
                       ),
@@ -599,7 +600,7 @@ class _SignUpState extends State<SignUp> with WidgetsBindingObserver {
                     const SizedBox(height: 5),
                     TextField(
                       textInputAction: TextInputAction.next,
-                      style: TextStyle(fontSize: 14),
+                      style: GoogleFonts.inter(fontSize: 14),
                       controller: firstNameController,
                       keyboardType: TextInputType.name,
                       textCapitalization: TextCapitalization.words,
@@ -616,7 +617,7 @@ class _SignUpState extends State<SignUp> with WidgetsBindingObserver {
                     // Last Name
                     Text(
                       "Last Name",
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
                       ),
@@ -624,7 +625,7 @@ class _SignUpState extends State<SignUp> with WidgetsBindingObserver {
                     const SizedBox(height: 5),
                     TextField(
                       textInputAction: TextInputAction.next,
-                      style: TextStyle(fontSize: 14),
+                      style: GoogleFonts.inter(fontSize: 14),
                       controller: lastNameController,
                       keyboardType: TextInputType.name,
                       textCapitalization: TextCapitalization.words,
@@ -641,7 +642,7 @@ class _SignUpState extends State<SignUp> with WidgetsBindingObserver {
                     // Username
                     Text(
                       "Username",
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
                       ),
@@ -650,7 +651,7 @@ class _SignUpState extends State<SignUp> with WidgetsBindingObserver {
                     TextField(
                       textInputAction: TextInputAction.next,
                       textCapitalization: TextCapitalization.none,
-                      style: TextStyle(fontSize: 14),
+                      style: GoogleFonts.inter(fontSize: 14),
                       controller: usernameController,
                       keyboardType: TextInputType.name,
                       decoration: InputDecoration(
@@ -685,7 +686,7 @@ class _SignUpState extends State<SignUp> with WidgetsBindingObserver {
                                           const SizedBox(width: 8),
                                           Text(
                                             "Checking...",
-                                            style: TextStyle(
+                                            style: GoogleFonts.inter(
                                               fontSize: 12,
                                               color: primaryColor,
                                               fontWeight: FontWeight.w600,
@@ -700,9 +701,9 @@ class _SignUpState extends State<SignUp> with WidgetsBindingObserver {
                                               Icon(Icons.check_circle,
                                                   color: Colors.green, size: 18),
                                               const SizedBox(width: 6),
-                                              const Text(
+                                              Text(
                                                 "Available",
-                                                style: TextStyle(
+                                                style: GoogleFonts.inter(
                                                   fontSize: 12,
                                                   color: Colors.green,
                                                   fontWeight: FontWeight.w600,
@@ -716,9 +717,9 @@ class _SignUpState extends State<SignUp> with WidgetsBindingObserver {
                                               Icon(Icons.close,
                                                   color: Colors.red, size: 18),
                                               const SizedBox(width: 6),
-                                              const Text(
+                                              Text(
                                                 "Taken",
-                                                style: TextStyle(
+                                                style: GoogleFonts.inter(
                                                   fontSize: 12,
                                                   color: Colors.red,
                                                   fontWeight: FontWeight.w600,
@@ -736,7 +737,7 @@ class _SignUpState extends State<SignUp> with WidgetsBindingObserver {
                       const SizedBox(height: 8),
                       Text(
                         "Suggestions:",
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           fontSize: 12,
                           color: Colors.grey.shade700,
                         ),
@@ -765,7 +766,7 @@ class _SignUpState extends State<SignUp> with WidgetsBindingObserver {
                     // Email
                     Text(
                       "Email Address",
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
                       ),
@@ -773,7 +774,7 @@ class _SignUpState extends State<SignUp> with WidgetsBindingObserver {
                     SizedBox(height: 5),
                     TextField(
                       textInputAction: TextInputAction.next,
-                      style: TextStyle(fontSize: 14),
+                      style: GoogleFonts.inter(fontSize: 14),
                       controller: emailController,
                       keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(
@@ -790,7 +791,7 @@ class _SignUpState extends State<SignUp> with WidgetsBindingObserver {
                     // Phone
                     Text(
                       "Phone Number",
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
                       ),
@@ -816,7 +817,7 @@ class _SignUpState extends State<SignUp> with WidgetsBindingObserver {
                           Expanded(
                             child: TextField(
                               textInputAction: TextInputAction.next,
-                              style: TextStyle(fontSize: 14),
+                              style: GoogleFonts.inter(fontSize: 14),
                               controller: phoneController,
                               keyboardType: TextInputType.phone,
                               decoration: InputDecoration(
@@ -840,7 +841,7 @@ class _SignUpState extends State<SignUp> with WidgetsBindingObserver {
                     const SizedBox(height: 15),
                     Text(
                       "Referral Code (Optional)",
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
                       ),
@@ -849,7 +850,7 @@ class _SignUpState extends State<SignUp> with WidgetsBindingObserver {
                     TextField(
                       textInputAction: TextInputAction.next,
                       textCapitalization: TextCapitalization.none,
-                      style: TextStyle(fontSize: 14),
+                      style: GoogleFonts.inter(fontSize: 14),
                       controller: referralCodeController,
                       decoration: InputDecoration(
                         border: OutlineInputBorder(
@@ -874,7 +875,7 @@ class _SignUpState extends State<SignUp> with WidgetsBindingObserver {
                                     SizedBox(width: 8),
                                     Text(
                                       "Checking...",
-                                      style: TextStyle(fontSize: 12, color: primaryColor),
+                                      style: GoogleFonts.inter(fontSize: 12, color: primaryColor),
                                     ),
                                   ],
                                 )
@@ -882,7 +883,7 @@ class _SignUpState extends State<SignUp> with WidgetsBindingObserver {
                                   referralCodeController.text.isEmpty
                                       ? ""
                                       : (_isReferralValid ? "Valid" : "Invalid"),
-                                  style: TextStyle(
+                                  style: GoogleFonts.inter(
                                     fontSize: 12,
                                     color: _isReferralValid ? Colors.green : Colors.red,
                                     fontWeight: FontWeight.w600,
@@ -899,7 +900,7 @@ class _SignUpState extends State<SignUp> with WidgetsBindingObserver {
                     // Password
                     Text(
                       "Password",
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
                       ),
@@ -907,7 +908,7 @@ class _SignUpState extends State<SignUp> with WidgetsBindingObserver {
                     const SizedBox(height: 5),
                     TextField(
                       textInputAction: TextInputAction.next,
-                      style: TextStyle(fontSize: 14),
+                      style: GoogleFonts.inter(fontSize: 14),
                       controller: passwordController,
                       obscureText: _obscurePassword,
                       decoration: InputDecoration(
@@ -934,7 +935,7 @@ class _SignUpState extends State<SignUp> with WidgetsBindingObserver {
                     // Confirm Password
                     Text(
                       "Confirm Password",
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
                       ),
@@ -942,7 +943,7 @@ class _SignUpState extends State<SignUp> with WidgetsBindingObserver {
                     const SizedBox(height: 10),
                     TextField(
                       textInputAction: TextInputAction.done,
-                      style: TextStyle(fontSize: 14),
+                      style: GoogleFonts.inter(fontSize: 14),
                       controller: confirmPasswordController,
                       obscureText: _obscureConfirmPassword,
                       decoration: InputDecoration(
@@ -995,7 +996,7 @@ class _SignUpState extends State<SignUp> with WidgetsBindingObserver {
                                 )
                               : Text(
                                   "Continue",
-                                  style: TextStyle(
+                                  style: GoogleFonts.inter(
                                     color: Colors.white,
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -1013,14 +1014,14 @@ class _SignUpState extends State<SignUp> with WidgetsBindingObserver {
                         child: RichText(
                           text: TextSpan(
                             text: "Already have an account? ",
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               color: Colors.black54,
                               fontWeight: FontWeight.w400,
                             ),
                             children: [
                               TextSpan(
                                 text: "Login",
-                                style: TextStyle(
+                                style: GoogleFonts.inter(
                                   color: Colors.blue,
                                   fontWeight: FontWeight.w700,
                                 ),

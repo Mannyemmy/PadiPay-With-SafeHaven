@@ -9,6 +9,7 @@ import 'package:card_app/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_nfc_hce/flutter_nfc_hce.dart';
@@ -341,7 +342,7 @@ class _NFCPromptBottomSheetState extends State<NFCPromptBottomSheet>
                 widget.isReader
                     ? 'Place Your Phone\nNear the POS'
                     : 'Place the Reader\nNear Your Phone',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
@@ -349,9 +350,9 @@ class _NFCPromptBottomSheetState extends State<NFCPromptBottomSheet>
               ),
               const SizedBox(height: 20),
               if (!isNfcAvailable) ...[
-                const Text(
+                 Text(
                   'NFC is not enabled. Please enable it to proceed.',
-                  style: TextStyle(fontSize: 14, color: Colors.red),
+                  style: GoogleFonts.inter(fontSize: 14, color: Colors.red),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 20),
@@ -363,14 +364,14 @@ class _NFCPromptBottomSheetState extends State<NFCPromptBottomSheet>
                       _checkNfcAvailability,
                     );
                   },
-                  child: const Text('Enable NFC'),
+                  child: Text('Enable NFC'),
                 ),
               ] else ...[
                 Text(
                   widget.isReader
                       ? 'Hold the back of your phone to the merchant device'
                       : 'Hold the back of your phone to the back of the customer device',
-                  style: const TextStyle(fontSize: 14, color: Colors.grey),
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 40),
@@ -653,7 +654,7 @@ class _TransferPageState extends State<TransferPage> {
                     receiverName == null
                         ? 'Bank Transfer'
                         : 'Send to $receiverName',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
@@ -720,9 +721,9 @@ class _TransferPageState extends State<TransferPage> {
                     borderRadius: BorderRadius.circular(8.0),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'Continue',
-                  style: TextStyle(color: Colors.white),
+                  style: GoogleFonts.inter(color: Colors.white),
                 ),
               ),
             ),

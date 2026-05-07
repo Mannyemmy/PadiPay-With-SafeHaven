@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:local_auth/local_auth.dart';
 
 class ChangePinPage extends StatefulWidget {
@@ -257,19 +258,19 @@ class _ChangePinPageState extends State<ChangePinPage> {
             children: [
               const Icon(Icons.check_circle, color: Colors.green, size: 60),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'PIN Changed Successfully',
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 10),
-              const Text(
+              Text(
                 'Your PIN has been updated.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: Colors.black54),
+                style: GoogleFonts.inter(fontSize: 14, color: Colors.black54),
               ),
               const SizedBox(height: 24),
               SizedBox(
@@ -286,9 +287,9 @@ class _ChangePinPageState extends State<ChangePinPage> {
                     ),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Done',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
@@ -316,25 +317,25 @@ class _ChangePinPageState extends State<ChangePinPage> {
       children: [
         const Icon(Icons.lock_outline, size: 56, color: primaryColor),
         const SizedBox(height: 20),
-        const Text(
+        Text(
           'Verify Your Identity',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 10),
-        const Text(
+        Text(
           'To change your PIN, please authenticate using your password or biometric.',
-          style: TextStyle(fontSize: 15, color: Colors.black54, height: 1.5),
+          style: GoogleFonts.inter(fontSize: 15, color: Colors.black54, height: 1.5),
         ),
         const SizedBox(height: 28),
-        const Text(
+        Text(
           'Password',
-          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 8),
         TextField(
           controller: _passwordController,
           obscureText: _obscurePassword,
-          style: const TextStyle(fontSize: 15),
+          style: TextStyle(fontSize: 15),
           decoration: InputDecoration(
             hintText: 'Enter your password',
             border: OutlineInputBorder(
@@ -373,9 +374,9 @@ class _ChangePinPageState extends State<ChangePinPage> {
                       strokeWidth: 2.5,
                     ),
                   )
-                : const Text(
+                : Text(
                     'Verify Password',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -385,9 +386,9 @@ class _ChangePinPageState extends State<ChangePinPage> {
         ),
         if (_usesBiometric) ...[
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Or use your biometric:',
-            style: TextStyle(fontSize: 14, color: Colors.black54),
+            style: GoogleFonts.inter(fontSize: 14, color: Colors.black54),
           ),
           const SizedBox(height: 12),
           SizedBox(
@@ -396,7 +397,7 @@ class _ChangePinPageState extends State<ChangePinPage> {
             child: ElevatedButton.icon(
               onPressed: _isLoading ? null : _authenticateWithBiometric,
               icon: const Icon(Icons.fingerprint),
-              label: const Text('Use Biometric'),
+              label: Text('Use Biometric'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.grey.shade700,
                 disabledBackgroundColor: Colors.grey,
@@ -417,15 +418,15 @@ class _ChangePinPageState extends State<ChangePinPage> {
       children: [
         const Icon(Icons.mail_outline, size: 56, color: primaryColor),
         const SizedBox(height: 20),
-        const Text(
+        Text(
           'Verify Your Email',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 10),
         Text.rich(
           TextSpan(
             text: 'We sent a 6-digit code to ',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               color: Colors.black54,
               height: 1.5,
@@ -433,12 +434,12 @@ class _ChangePinPageState extends State<ChangePinPage> {
             children: [
               TextSpan(
                 text: _userEmail,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
                 ),
               ),
-              const TextSpan(text: '. It expires in 10 minutes.'),
+              TextSpan(text: '. It expires in 10 minutes.'),
             ],
           ),
         ),
@@ -461,7 +462,7 @@ class _ChangePinPageState extends State<ChangePinPage> {
                   keyboardType: TextInputType.number,
                   maxLength: 1,
                   cursorColor: primaryColor,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
                   ),
@@ -508,9 +509,9 @@ class _ChangePinPageState extends State<ChangePinPage> {
                       strokeWidth: 2.5,
                     ),
                   )
-                : const Text(
+                : Text(
                     'Verify Code',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -522,15 +523,15 @@ class _ChangePinPageState extends State<ChangePinPage> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text(
+            Text(
               "Didn't receive the code? ",
-              style: TextStyle(fontSize: 14, color: Colors.black54),
+              style: GoogleFonts.inter(fontSize: 14, color: Colors.black54),
             ),
             GestureDetector(
               onTap: _isLoading ? null : _resendOtp,
               child: Text(
                 'Resend',
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                   color: _isLoading ? Colors.grey : primaryColor,
@@ -549,26 +550,26 @@ class _ChangePinPageState extends State<ChangePinPage> {
       children: [
         const Icon(Icons.pin, size: 56, color: primaryColor),
         const SizedBox(height: 20),
-        const Text(
+        Text(
           'Set Your New PIN',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 10),
-        const Text(
+        Text(
           'Enter the new PIN you want to set. It must be at least 4 digits.',
-          style: TextStyle(fontSize: 15, color: Colors.black54, height: 1.5),
+          style: GoogleFonts.inter(fontSize: 15, color: Colors.black54, height: 1.5),
         ),
         const SizedBox(height: 24),
-        const Text(
+        Text(
           'New PIN',
-          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 8),
         TextField(
           controller: _newPinController,
           obscureText: _obscureNewPin,
           keyboardType: TextInputType.number,
-          style: const TextStyle(fontSize: 15),
+          style: TextStyle(fontSize: 15),
           decoration: InputDecoration(
             hintText: 'Enter new PIN (at least 4 digits)',
             border: OutlineInputBorder(
@@ -586,16 +587,16 @@ class _ChangePinPageState extends State<ChangePinPage> {
           ),
         ),
         const SizedBox(height: 16),
-        const Text(
+        Text(
           'Confirm New PIN',
-          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 8),
         TextField(
           controller: _confirmPinController,
           obscureText: _obscureConfirmPin,
           keyboardType: TextInputType.number,
-          style: const TextStyle(fontSize: 15),
+          style: TextStyle(fontSize: 15),
           decoration: InputDecoration(
             hintText: 'Re-enter new PIN',
             border: OutlineInputBorder(
@@ -634,9 +635,9 @@ class _ChangePinPageState extends State<ChangePinPage> {
                       strokeWidth: 2.5,
                     ),
                   )
-                : const Text(
+                : Text(
                     'Change PIN',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,

@@ -12,6 +12,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -791,7 +792,7 @@ class _SignInState extends State<SignIn> {
               const SizedBox(height: 16),
               Text(
                 'Warning',
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: Colors.orange[900],
@@ -801,7 +802,7 @@ class _SignInState extends State<SignIn> {
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 16, height: 1.4),
+                style: TextStyle(fontSize: 16, height: 1.4),
               ),
               const SizedBox(height: 24),
               ElevatedButton(
@@ -813,9 +814,9 @@ class _SignInState extends State<SignIn> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'OK',
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
@@ -866,7 +867,7 @@ class _SignInState extends State<SignIn> {
               const SizedBox(height: 16),
               Text(
                 'Account Blocked',
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: Colors.red,
@@ -876,7 +877,7 @@ class _SignInState extends State<SignIn> {
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+                style: GoogleFonts.inter(fontSize: 16, color: Colors.grey[700]),
               ),
               const SizedBox(height: 24),
               ElevatedButton(
@@ -890,9 +891,9 @@ class _SignInState extends State<SignIn> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'OK',
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
@@ -925,17 +926,17 @@ class _SignInState extends State<SignIn> {
               const SizedBox(height: 16),
               Text(
                 'Verify your email',
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: Colors.blue[800],
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'We sent a verification link to your email. Please check your inbox and click the link to continue.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, height: 1.4),
+                style: GoogleFonts.inter(fontSize: 16, height: 1.4),
               ),
               const SizedBox(height: 24),
               ElevatedButton(
@@ -947,9 +948,9 @@ class _SignInState extends State<SignIn> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'OK',
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
@@ -1243,7 +1244,7 @@ class _SignInState extends State<SignIn> {
                     const SizedBox(height: 50),
                     Text(
                       "Welcome Back",
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 25,
                         fontWeight: FontWeight.bold,
                       ),
@@ -1251,7 +1252,7 @@ class _SignInState extends State<SignIn> {
                     SizedBox(height: 10),
                     Text(
                       "Welcome back, enter your credentials to access your account",
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w300,
                       ),
@@ -1259,7 +1260,7 @@ class _SignInState extends State<SignIn> {
                     const SizedBox(height: 20),
                     Text(
                       "Email Address",
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                       ),
@@ -1267,7 +1268,7 @@ class _SignInState extends State<SignIn> {
                     const SizedBox(height: 10),
                     TextField(
                       controller: emailController,
-                      style: TextStyle(fontSize: 15),
+                      style: GoogleFonts.inter(fontSize: 15),
                       decoration: InputDecoration(
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
@@ -1279,14 +1280,14 @@ class _SignInState extends State<SignIn> {
                     const SizedBox(height: 20),
                     Text(
                       "Password",
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 10),
                     TextField(
-                      style: TextStyle(fontSize: 15),
+                      style: GoogleFonts.inter(fontSize: 15),
                       controller: passwordController,
                       obscureText: _obscurePassword,
                       decoration: InputDecoration(
@@ -1319,7 +1320,7 @@ class _SignInState extends State<SignIn> {
                               navigateTo(context, const ForgotPasswordPage()),
                           child: Text(
                             "Forgot Password?",
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               color: Colors.green,
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -1349,7 +1350,7 @@ class _SignInState extends State<SignIn> {
                                 )
                               : Text(
                                   "Log In",
-                                  style: TextStyle(
+                                  style: GoogleFonts.inter(
                                     color: Colors.white,
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
@@ -1367,7 +1368,7 @@ class _SignInState extends State<SignIn> {
                         child: RichText(
                           text: TextSpan(
                             text: "Don't have an account? ",
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               fontSize: 15,
                               color: Colors.black,
                               fontWeight: FontWeight.w400,
@@ -1375,7 +1376,7 @@ class _SignInState extends State<SignIn> {
                             children: [
                               TextSpan(
                                 text: "Create Account",
-                                style: TextStyle(
+                                style: GoogleFonts.inter(
                                   fontSize: 15,
                                   color: Colors.blue,
                                   fontWeight: FontWeight.w400,

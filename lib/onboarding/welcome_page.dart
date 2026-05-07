@@ -2,6 +2,7 @@ import 'package:card_app/auth/sign-in.dart';
 import 'package:card_app/onboarding/onboarding_1.dart';
 import 'package:card_app/utils.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key});
@@ -21,8 +22,8 @@ class WelcomePage extends StatelessWidget {
             children: [
               Image.asset('assets/welcome_graphic.png', width: screenWidth),
               RichText(
-                text: const TextSpan(
-                  style: TextStyle(
+                text: TextSpan(
+                  style: GoogleFonts.inter(
                     fontWeight: FontWeight.bold,
                     fontSize: 35,
                     color: Colors.black,
@@ -31,16 +32,16 @@ class WelcomePage extends StatelessWidget {
                     TextSpan(text: "Next-Gen Spending\nStarts "),
                     TextSpan(
                       text: "Here!",
-                      style: TextStyle(color: Color(0xFF007AFF)),
+                      style: GoogleFonts.inter(color: Color(0xFF007AFF)),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 10),
-              const Text(
+              Text(
                 "Manage physical, virtual, and anonymous cards — "
                 "fund your wallet, pay with NFC, and stay in control of your finances.",
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   fontWeight: FontWeight.w300,
                   color: Colors.black,
                   fontSize: 15,
@@ -61,13 +62,13 @@ class WelcomePage extends StatelessWidget {
                     color: const Color(0xFF007AFF),
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: const Center(
+                  child:  Center(
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           "Get Started",
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,
                           ),
@@ -100,13 +101,13 @@ class WelcomePage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(6),
                     color: Colors.white,
                   ),
-                  child: const Center(
+                  child:  Center(
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           "Already have an account?",
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                             color: Colors.black,
                             fontWeight: FontWeight.w400,
                           ),
@@ -114,7 +115,7 @@ class WelcomePage extends StatelessWidget {
                         SizedBox(width: 10),
                         Text(
                           "Login",
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                             color: Color(0xFF007AFF),
                             fontWeight: FontWeight.w700,
                           ),

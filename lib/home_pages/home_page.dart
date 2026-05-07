@@ -915,7 +915,7 @@ class _HomePageState extends State<HomePage> {
                                 _unreadNotifCount > 99
                                     ? '99+'
                                     : '$_unreadNotifCount',
-                                style: TextStyle(fontSize: 10),
+                                style: GoogleFonts.inter(fontSize: 10),
                               ),
                               child: IconButton(
                                 color: Colors.white30,
@@ -1001,13 +1001,13 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 90),
             Text(
               "Welcome, ${ _userName ?? 'PadiPay User'}",
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
+              style: GoogleFonts.inter(fontSize: 14, color: Colors.grey.shade700),
             ),
             Padding(
               padding: const EdgeInsets.only(right: 0.0, top: 10),
               child: Text(
                 "Ready to manage\nyour finances?",
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   fontSize: 21,
                   color: Colors.black.withAlpha(220),
                   fontWeight: FontWeight.w500,
@@ -1047,14 +1047,14 @@ class _HomePageState extends State<HomePage> {
                             children: [
                               TextSpan(
                                 text: "Account Number    ",
-                                style: TextStyle(
+                                style: GoogleFonts.inter(
                                   fontWeight: FontWeight.w700,
                                   color: Colors.white,
                                 ),
                               ),
                               TextSpan(
                                 text: "|    $_displayAccountNumber",
-                                style: TextStyle(color: Colors.white),
+                                style: GoogleFonts.inter(color: Colors.white),
                               ),
                             ],
                           ),
@@ -1096,14 +1096,14 @@ class _HomePageState extends State<HomePage> {
                             children: [
                               TextSpan(
                                 text: "Padi-Tag  |  ",
-                                style: TextStyle(
+                                style: GoogleFonts.inter(
                                   fontWeight: FontWeight.w700,
                                   color: Colors.white,
                                 ),
                               ),
                               TextSpan(
                                 text: "@$tag",
-                                style: TextStyle(color: Colors.white),
+                                style: GoogleFonts.inter(color: Colors.white),
                               ),
                             ],
                           ),
@@ -1130,7 +1130,7 @@ class _HomePageState extends State<HomePage> {
 
                   Text(
                     "Account Balance",
-                    style: TextStyle(color: Colors.white, fontSize: 12),
+                    style: GoogleFonts.inter(color: Colors.white, fontSize: 12),
                   ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1145,7 +1145,7 @@ class _HomePageState extends State<HomePage> {
                             )
                           : Text(
                               _showBalance ? _balance : "****",
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 fontWeight: FontWeight.bold,
                                 fontSize: _isLoadingBalance ? 15 : 24,
                                 color: Colors.white,
@@ -1208,7 +1208,7 @@ class _HomePageState extends State<HomePage> {
                               _showBalance
                                   ? 'Cashback Balance: ₦${NumberFormat('#,##0.00').format(_cashbackBalance)}'
                                   : 'Cashback Balance: ****',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w600,
                                 fontSize: 12,
@@ -1247,7 +1247,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                       child: Text(
                         "Add Money",
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           color: primaryColor,
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
@@ -1341,7 +1341,7 @@ class _HomePageState extends State<HomePage> {
                             SizedBox(height: 5),
                             Text(
                               _kycBannerBody,
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 color: Colors.grey.shade700,
                                 fontSize: 12,
                               ),
@@ -1437,7 +1437,7 @@ class _HomePageState extends State<HomePage> {
                                 Expanded(
                                   child: Text(
                                     "Activate your wallet and complete your identity verification.",
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       color: Colors.grey.shade600,
                                       fontSize: 12,
                                     ),
@@ -1529,7 +1529,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             Text(
               'Transaction History',
-              style: TextStyle(
+              style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: Colors.black87,
@@ -1543,7 +1543,7 @@ class _HomePageState extends State<HomePage> {
               ),
               child: Text(
                 'See All',
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: primaryColor,
@@ -1588,7 +1588,7 @@ class _HomePageState extends State<HomePage> {
                           backgroundColor: primaryColor.withValues(alpha: 0.15),
                           child: Text(
                             initials,
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               color: primaryColor,
                               fontWeight: FontWeight.bold,
                               fontSize: 13,
@@ -1602,7 +1602,7 @@ class _HomePageState extends State<HomePage> {
                             name.split(' ').first,
                             textAlign: TextAlign.center,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11,
                               color: Colors.black54,
                             ),
@@ -1639,7 +1639,7 @@ class _HomePageState extends State<HomePage> {
                 const SizedBox(height: 8),
                 Text(
                   'No transactions yet',
-                  style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+                  style: GoogleFonts.inter(color: Colors.grey.shade500, fontSize: 13),
                 ),
               ],
             ),
@@ -1962,7 +1962,7 @@ class ActionGrid extends StatelessWidget {
                       children: [
                         Text(
                           item['title'],
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
                             color: Colors.black54,
                             fontWeight: FontWeight.bold,
@@ -1970,7 +1970,7 @@ class ActionGrid extends StatelessWidget {
                         ),
                         Text(
                           item['subtitle'],
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
                             color: Colors.black38,
                             fontWeight: FontWeight.w300,

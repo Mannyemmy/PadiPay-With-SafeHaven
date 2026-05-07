@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:card_app/ui/keypad.dart';
@@ -123,7 +124,7 @@ void showSimpleDialog(String msg, Color color) {
                 msg,
                 maxLines: 10,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   color: color,
                   fontSize: 16.0,
                   fontWeight: FontWeight.w500,
@@ -144,9 +145,9 @@ void showSimpleDialog(String msg, Color color) {
                       borderRadius: BorderRadius.circular(12.0),
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'OK',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: Colors.white,
                       fontSize: 16.0,
                       fontWeight: FontWeight.w600,
@@ -624,15 +625,15 @@ class _MissingDataBottomSheetState extends State<MissingDataBottomSheet> {
         child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Center(
+           Center(
             child: Text(
               'Complete Your Profile',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold),
             ),
           ),
           const SizedBox(height: 30),
           if (widget.missingFields.containsKey('nin')) ...[
-            const Text('NIN (National Identification Number):'),
+            Text('NIN (National Identification Number):'),
             const SizedBox(height: 10),
             TextField(
               maxLength: 11,
@@ -646,7 +647,7 @@ class _MissingDataBottomSheetState extends State<MissingDataBottomSheet> {
             const SizedBox(height: 16),
           ],
           if (widget.missingFields.containsKey('dob')) ...[
-            const Text('Date of Birth (YYYY/MM/DD):'),
+            Text('Date of Birth (YYYY/MM/DD):'),
             const SizedBox(height: 10),
             TextField(
               controller: dobController,
@@ -657,7 +658,7 @@ class _MissingDataBottomSheetState extends State<MissingDataBottomSheet> {
             const SizedBox(height: 16),
           ],
           if (widget.missingFields.containsKey('line1')) ...[
-            const Text('Street Address:'),
+            Text('Street Address:'),
             const SizedBox(height: 10),
             TextField(
               controller: line1Controller,
@@ -668,7 +669,7 @@ class _MissingDataBottomSheetState extends State<MissingDataBottomSheet> {
             const SizedBox(height: 16),
           ],
           if (widget.missingFields.containsKey('city')) ...[
-            const Text('City:'),
+            Text('City:'),
             const SizedBox(height: 10),
             TextField(
               controller: cityController,
@@ -677,7 +678,7 @@ class _MissingDataBottomSheetState extends State<MissingDataBottomSheet> {
             const SizedBox(height: 16),
           ],
           if (widget.missingFields.containsKey('state')) ...[
-            const Text('State:'),
+            Text('State:'),
             const SizedBox(height: 10),
             TextField(
               controller: stateController,
@@ -716,9 +717,9 @@ class _MissingDataBottomSheetState extends State<MissingDataBottomSheet> {
                     }
                     Navigator.pop(context);
                   },
-                  child: const Text(
+                  child: Text(
                     'Save',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                 ),
               ),
@@ -905,16 +906,16 @@ class _EnterPasscodeSheetForTransactionState
                       color: primaryColor, size: 40),
                 ),
                 const SizedBox(height: 24),
-                const Text(
+                Text(
                   'Authenticating',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Use your fingerprint or face to verify',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+                  style: GoogleFonts.inter(fontSize: 13, color: Colors.grey.shade500),
                 ),
                 const SizedBox(height: 32),
                 const CircularProgressIndicator(color: primaryColor),
@@ -923,7 +924,7 @@ class _EnterPasscodeSheetForTransactionState
                   onTap: _switchToPin,
                   child: Text(
                     'Use PIN instead',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       fontSize: 13,
                       color: primaryColor,
                       fontWeight: FontWeight.w600,
@@ -983,15 +984,15 @@ class _EnterPasscodeSheetForTransactionState
                 child: Icon(Icons.lock_outline_rounded, color: primaryColor, size: 28),
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Enter Passcode',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text(
                 'Enter your 4-digit passcode to continue',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+                style: GoogleFonts.inter(fontSize: 13, color: Colors.grey.shade500),
               ),
               const SizedBox(height: 32),
               // PIN dots
@@ -1078,7 +1079,7 @@ class _EnterPasscodeSheetForTransactionState
                         const SizedBox(width: 8),
                         Text(
                           'Use Biometric',
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                             fontSize: 13,
                             color: primaryColor,
                             fontWeight: FontWeight.w600,
@@ -1220,7 +1221,7 @@ class _CreatePasscodeSheetForTransactionState
                 child: Text(
                   title,
                   key: ValueKey(title),
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
               ),
               const SizedBox(height: 8),
@@ -1230,7 +1231,7 @@ class _CreatePasscodeSheetForTransactionState
                   subtitle,
                   key: ValueKey(subtitle),
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+                  style: GoogleFonts.inter(fontSize: 13, color: Colors.grey.shade500),
                 ),
               ),
               const SizedBox(height: 32),

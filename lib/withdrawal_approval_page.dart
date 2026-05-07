@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:uuid/uuid.dart';
 
 class WithdrawalApprovalPage extends StatefulWidget {
@@ -339,7 +340,7 @@ class _WithdrawalApprovalPageState extends State<WithdrawalApprovalPage> {
               ),
               child: Text(
                 item.toString(),
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
             ),
           ),
@@ -369,9 +370,9 @@ class _WithdrawalApprovalPageState extends State<WithdrawalApprovalPage> {
                 shape: const StadiumBorder(),
                 padding: const EdgeInsets.symmetric(vertical: 20),
               ),
-              child: const Text(
+              child: Text(
                 'Enter',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
               ),
             ),
           ),
@@ -406,19 +407,19 @@ class _WithdrawalApprovalPageState extends State<WithdrawalApprovalPage> {
               children: [
                 Text(
                   'Amount: ₦${amount!.toStringAsFixed(2)}',
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 if (createdAt != null) ...[
                   const SizedBox(height: 8),
                   Text(
                     'Initiated: ${createdAt!.day}/${createdAt!.month}/${createdAt!.year} at ${createdAt!.hour.toString().padLeft(2, '0')}:${createdAt!.minute.toString().padLeft(2, '0')}',
-                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                    style: GoogleFonts.inter(fontSize: 14, color: Colors.grey.shade600),
                   ),
                 ],
                 const SizedBox(height: 40),
-                const Text(
+                Text(
                   'Enter PIN to Confirm',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 20),
                 Row(
@@ -456,9 +457,9 @@ class _WithdrawalApprovalPageState extends State<WithdrawalApprovalPage> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red,
                         ),
-                        child: const Text(
+                        child: Text(
                           'Decline',
-                          style: TextStyle(color: Colors.white),
+                          style: GoogleFonts.inter(color: Colors.white),
                         ),
                       ),
                     ),

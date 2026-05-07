@@ -1,6 +1,7 @@
 import 'package:card_app/onboarding/onboarding_2.dart';
 import 'package:card_app/utils.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class Onboarding1 extends StatelessWidget {
   const Onboarding1({super.key});
@@ -63,7 +64,7 @@ class Onboarding1 extends StatelessWidget {
             const SizedBox(height: 30),
             Text(
               "Easy Deposits",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30),
+              style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 30),
             ),
             const SizedBox(height: 10),
             Padding(
@@ -71,7 +72,7 @@ class Onboarding1 extends StatelessWidget {
               child: Text(
                 "Fund your wallet via bank transfer or stable coin deposits.",
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   fontWeight: FontWeight.w300,
                   color: Colors.black,
                   fontSize: 15,

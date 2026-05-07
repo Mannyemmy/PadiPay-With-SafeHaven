@@ -2,6 +2,7 @@ import 'package:card_app/transfer/bank_transfer_page.dart';
 import 'package:card_app/ui/success_bottom_sheet.dart';
 import 'package:card_app/utils.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class SendFundsPage extends StatelessWidget {
   const SendFundsPage({super.key});
@@ -24,9 +25,9 @@ class SendFundsPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Send Funds',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+              style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 20),
             ListTile(
@@ -34,13 +35,13 @@ class SendFundsPage extends StatelessWidget {
                 backgroundColor: Colors.grey.shade200,
                 child: Icon(Icons.account_balance, color: Colors.grey),
               ),
-              title: const Text(
+              title: Text(
                 'Send via a bank transfer',
-                style: TextStyle(fontWeight: FontWeight.w500),
+                style: GoogleFonts.inter(fontWeight: FontWeight.w500),
               ),
-              subtitle: const Text(
+              subtitle: Text(
                 'Use bank transfer to send money to a previous or new recipient',
-                style: TextStyle(fontWeight: FontWeight.w300),
+                style: GoogleFonts.inter(fontWeight: FontWeight.w300),
               ),
               onTap: () {
                 Navigator.push(
@@ -57,13 +58,13 @@ class SendFundsPage extends StatelessWidget {
                 backgroundColor: Colors.grey.shade200,
                 child: Icon(Icons.currency_bitcoin, color: Colors.grey),
               ),
-              title: const Text(
+              title: Text(
                 'Send via Crypto',
-                style: TextStyle(fontWeight: FontWeight.w500),
+                style: GoogleFonts.inter(fontWeight: FontWeight.w500),
               ),
-              subtitle: const Text(
+              subtitle: Text(
                 'Send crypto through different networks to any wallet',
-                style: TextStyle(fontWeight: FontWeight.w300),
+                style: GoogleFonts.inter(fontWeight: FontWeight.w300),
               ),
               onTap: () {
                 Navigator.push(
@@ -113,14 +114,14 @@ class CryptoTransferPage extends StatelessWidget {
                 SizedBox(height: 60),
                 Text(
                   'Withdraw Funds',
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text('Bal: ₦30,000.00', style: TextStyle(color: Colors.white)),
+                Text('Bal: ₦30,000.00', style: GoogleFonts.inter(color: Colors.white)),
                 const SizedBox(height: 8),
               ],
             ),
@@ -130,7 +131,7 @@ class CryptoTransferPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Wallet Address'),
+                Text('Wallet Address'),
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -153,7 +154,7 @@ class CryptoTransferPage extends StatelessWidget {
                       ),
                       Text(
                         "Paste",
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           color: primaryColor,
                           fontWeight: FontWeight.bold,
                         ),
@@ -162,7 +163,7 @@ class CryptoTransferPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text('Crypto'),
+                Text('Crypto'),
                 const SizedBox(height: 8),
                 TextField(
                   decoration: InputDecoration(
@@ -174,7 +175,7 @@ class CryptoTransferPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text('Network'),
+                Text('Network'),
                 const SizedBox(height: 8),
                 TextField(
                   decoration: InputDecoration(
@@ -206,9 +207,9 @@ class CryptoTransferPage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Send',
-                    style: TextStyle(color: Colors.white),
+                    style: GoogleFonts.inter(color: Colors.white),
                   ),
                 ),
               ],

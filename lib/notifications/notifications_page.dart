@@ -7,6 +7,7 @@ import 'package:card_app/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 class NotificationsPage extends StatefulWidget {
@@ -144,7 +145,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 Expanded(
                   child: Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.bold,
                     ),
@@ -156,7 +157,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
             if (body.isNotEmpty) ...[
               Text(
                 body,
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   fontSize: 14,
                   color: Colors.grey.shade700,
                   height: 1.5,
@@ -182,12 +183,12 @@ class _NotificationsPageState extends State<NotificationsPage> {
         children: [
           Text(
             label,
-            style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+            style: GoogleFonts.inter(color: Colors.grey.shade500, fontSize: 13),
           ),
           Flexible(
             child: Text(
               value,
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
               textAlign: TextAlign.end,
             ),
           ),
@@ -225,7 +226,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     const SizedBox(height: 10),
                     Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
                         fontSize: 16,
@@ -236,7 +237,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     const SizedBox(height: 5),
                     Text(
                       body,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w300,
                         color: Colors.white,
                         fontSize: 12,
@@ -247,7 +248,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     const SizedBox(height: 8),
                     Text(
                       _relativeTime(ts),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w300,
                         color: Colors.white,
                         fontSize: 12,
@@ -271,7 +272,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                             padding: const EdgeInsets.only(right: 5),
                             child: Text(
                               amountStr,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
                                 fontSize: 14,
@@ -316,13 +317,13 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       bottom: Radius.circular(20),
                     ),
                   ),
-                  child: const Column(
+                  child:  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       SizedBox(height: 100),
                       Text(
                         'Notifications',
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
@@ -354,13 +355,13 @@ class _NotificationsPageState extends State<NotificationsPage> {
                             final docs = snapshot.data?.docs ?? [];
 
                             if (docs.isEmpty) {
-                              return const Center(
+                              return  Center(
                                 child: Padding(
                                   padding: EdgeInsets.all(32.0),
                                   child: Text(
                                     'No notifications yet.\nYour activity will appear here.',
                                     textAlign: TextAlign.center,
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       color: Colors.black54,
                                       fontSize: 15,
                                     ),
@@ -392,7 +393,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                       unreadCount > 0
                                           ? '$unreadCount Unread'
                                           : 'All caught up',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontWeight: FontWeight.w600,
                                         color: Colors.black87,
                                         fontSize: 16,

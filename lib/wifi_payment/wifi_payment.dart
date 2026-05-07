@@ -10,6 +10,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter/material.dart';
 import 'package:location/location.dart' hide PermissionStatus;
@@ -183,7 +184,7 @@ class _DevicesListScreenState extends State<DevicesListScreen>
                     Spacer(),
                     Text(
                       "Wifi Transfer",
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         color: Colors.black87,
                         fontWeight: FontWeight.w800,
                         fontSize: 16,
@@ -202,13 +203,13 @@ class _DevicesListScreenState extends State<DevicesListScreen>
                     Text(
                       errorMessage!,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 16),
+                      style: TextStyle(fontSize: 16),
                     ),
                     const SizedBox(height: 20),
                     if (errorMessage!.toLowerCase().contains('permission'))
                       ElevatedButton(
                         onPressed: () => AppSettings.openAppSettings(),
-                        child: const Text('Open App Settings'),
+                        child: Text('Open App Settings'),
                       ),
                     Row(
                       children: [
@@ -276,7 +277,7 @@ class _DevicesListScreenState extends State<DevicesListScreen>
                             SizedBox(width: 5),
                             Text(
                               'Reconnect',
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -317,7 +318,7 @@ class _DevicesListScreenState extends State<DevicesListScreen>
                     Spacer(),
                     Text(
                       "Wifi Transfer",
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         color: Colors.black87,
                         fontWeight: FontWeight.w800,
                         fontSize: 16,
@@ -358,7 +359,7 @@ class _DevicesListScreenState extends State<DevicesListScreen>
                   Spacer(),
                   Text(
                     "Wifi Transfer",
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: Colors.black87,
                       fontWeight: FontWeight.w800,
                       fontSize: 16,
@@ -558,19 +559,19 @@ class _DevicesListScreenState extends State<DevicesListScreen>
           Text(
             searchText,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               color: Colors.blueGrey,
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 10),
-          const Padding(
+           Padding(
             padding: EdgeInsets.symmetric(horizontal: 50),
             child: Text(
               "Tip: Take charge of your money, or risk letting others do it poorly on your behalf.",
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.blueGrey, fontSize: 14),
+              style: GoogleFonts.inter(color: Colors.blueGrey, fontSize: 14),
             ),
           ),
         ],
@@ -602,7 +603,7 @@ class _DevicesListScreenState extends State<DevicesListScreen>
                   color: Colors.blue.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text('Connected to ${device.fullName}', style: const TextStyle(color: Colors.blue)),
+                child: Text('Connected to ${device.fullName}', style: TextStyle(color: Colors.blue)),
               ),
             ),
             const SizedBox(height: 20),
@@ -618,11 +619,11 @@ class _DevicesListScreenState extends State<DevicesListScreen>
             const SizedBox(height: 8),
             Text(
               device.fullName,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
             Text(
               '@${device.username}',
-              style: const TextStyle(color: Colors.grey),
+              style: TextStyle(color: Colors.grey),
             ),
             const SizedBox(height: 20),
             Padding(
@@ -652,7 +653,7 @@ class _DevicesListScreenState extends State<DevicesListScreen>
                 controller: _purposeController,
                 decoration: InputDecoration(
                   hintText: 'Payment Purpose (Optional)',
-                  hintStyle: TextStyle(color: Colors.grey.shade600),
+                  hintStyle: GoogleFonts.inter(color: Colors.grey.shade600),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8.0),
                     borderSide: BorderSide.none,
@@ -676,16 +677,16 @@ class _DevicesListScreenState extends State<DevicesListScreen>
                 ),
                 child: _isWaiting
                     ? const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.white))
-                    : const Text(
+                    : Text(
                         'Send',
-                        style: TextStyle(color: Colors.white),
+                        style: GoogleFonts.inter(color: Colors.white),
                       ),
               ),
             ),
             const SizedBox(height: 10),
             TextButton(
               onPressed: () => _onButtonClicked(device),
-              child: const Text('Disconnect',style: TextStyle(color: Colors.red),),
+              child: Text('Disconnect',style: GoogleFonts.inter(color: Colors.red),),
             ),
           ],
         ),
@@ -702,7 +703,7 @@ class _DevicesListScreenState extends State<DevicesListScreen>
               color: Colors.blue.withOpacity(0.2),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Text(countText, style: const TextStyle(color: Colors.blue)),
+            child: Text(countText, style: TextStyle(color: Colors.blue)),
           ),
         ),
         const SizedBox(height: 20),
@@ -851,18 +852,18 @@ class _DevicesListScreenState extends State<DevicesListScreen>
                           child: device.profileImage.isEmpty
                               ? Text(
                                   _getInitials(device.fullName),
-                                  style: const TextStyle(fontSize: 20),
+                                  style: TextStyle(fontSize: 20),
                                 )
                               : null,
                         ),
                         const SizedBox(height: 8),
                         Text(
                           device.fullName,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                         Text(
                           '@${device.username}',
-                          style: const TextStyle(color: Colors.grey),
+                          style: TextStyle(color: Colors.grey),
                         ),
                         const SizedBox(height: 20),
                         ElevatedButton(
@@ -1062,16 +1063,16 @@ class _DevicesListScreenState extends State<DevicesListScreen>
           showDialog<bool>(
             context: context,
             builder: (ctx) => AlertDialog(
-              title: const Text('Payment Confirmation'),
+              title: Text('Payment Confirmation'),
               content: Text('Do you want to accept ₦$amount from $senderName?'),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx, false),
-                  child: const Text('Reject'),
+                  child: Text('Reject'),
                 ),
                 TextButton(
                   onPressed: () => Navigator.pop(ctx, true),
-                  child: const Text('Accept'),
+                  child: Text('Accept'),
                 ),
               ],
             ),

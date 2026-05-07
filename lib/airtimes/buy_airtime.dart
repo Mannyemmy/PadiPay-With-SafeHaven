@@ -8,6 +8,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:uuid/uuid.dart';
 
 class BuyAirtimePage extends StatefulWidget {
@@ -171,9 +172,9 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         'Select Provider',
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
                         ),
@@ -277,7 +278,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                               Expanded(
                                 child: Text(
                                   name,
-                                  style: TextStyle(
+                                  style: GoogleFonts.inter(
                                     fontSize: 15,
                                     fontWeight: isSelected
                                         ? FontWeight.w600
@@ -526,7 +527,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
         centerTitle: true,
         title: Text(
           "Buy Airtime",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600),
         ),
       ),
       body: SafeArea(
@@ -540,7 +541,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                   children: [
                     Text(
                       "Select Provider",
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         color: Colors.black54,
                         fontWeight: FontWeight.w700,
                         fontSize: 15,
@@ -558,7 +559,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                         child: InputDecorator(
                           decoration: InputDecoration(
                             hintText: "Select provider",
-                            hintStyle: TextStyle(
+                            hintStyle: GoogleFonts.inter(
                               color: Colors.grey.shade500,
                               fontSize: 15,
                             ),
@@ -617,7 +618,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                   children: [
                     Text(
                       "Recipient Mobile Number",
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         color: Colors.black54,
                         fontWeight: FontWeight.w700,
                         fontSize: 15,
@@ -629,13 +630,13 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                 TextField(
                   controller: numberController,
                   maxLength: 11,
-                  style: TextStyle(fontSize: 15),
+                  style: GoogleFonts.inter(fontSize: 15),
                   keyboardType: TextInputType.phone,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: InputDecoration(
                     counterText: "",
                     hintText: "Enter recipient mobile number",
-                    hintStyle: TextStyle(
+                    hintStyle: GoogleFonts.inter(
                       color: Colors.grey.shade500,
                       fontSize: 15,
                     ),
@@ -658,7 +659,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                   children: [
                     Text(
                       "Amount To Pay",
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         color: Colors.black54,
                         fontWeight: FontWeight.w700,
                         fontSize: 15,
@@ -686,12 +687,12 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                 SizedBox(height: 20),
                 TextField(
                   controller: amountController,
-                  style: TextStyle(fontSize: 15),
+                  style: GoogleFonts.inter(fontSize: 15),
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: InputDecoration(
                     hintText: "0",
-                    hintStyle: TextStyle(
+                    hintStyle: GoogleFonts.inter(
                       color: Colors.grey.shade500,
                       fontSize: 15,
                     ),
@@ -715,7 +716,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                   children: [
                     Text(
                       "NOTE:",
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         color: Colors.red,
                         fontWeight: FontWeight.bold,
                       ),
@@ -723,7 +724,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                     SizedBox(width: 10),
                     Text(
                       "Minimum Airtime purchase is ₦10",
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         color: Colors.black54,
                         fontWeight: FontWeight.bold,
                       ),
@@ -744,7 +745,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                         children: [
                           Text(
                             "Mobile Number",
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               color: Colors.black54,
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
@@ -752,7 +753,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                           ),
                           Text(
                             numberController.text,
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               color: Colors.black38,
                               fontSize: 14,
                             ),
@@ -765,7 +766,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                         children: [
                           Text(
                             "Airtime Purchase",
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               color: Colors.black54,
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
@@ -773,7 +774,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                           ),
                           Text(
                             '₦${amountController.text}',
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               color: Colors.black38,
                               fontSize: 14,
                             ),
@@ -803,7 +804,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                           const SizedBox(width: 6),
                           Text(
                             'Available Cashback',
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               color: Colors.green.shade800,
                               fontWeight: FontWeight.w700,
                               fontSize: 12,
@@ -823,7 +824,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                           Expanded(
                             child: Text(
                               'Cashback balance: NGN ${cashbackBalance.toStringAsFixed(2)}',
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 color: Colors.green.shade800,
                                 fontWeight: FontWeight.w700,
                                 fontSize: 13,
@@ -845,7 +846,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                           const SizedBox(width: 6),
                           Text(
                             'Reward From This Payment',
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               color: Colors.green.shade900,
                               fontWeight: FontWeight.w700,
                               fontSize: 12,
@@ -865,7 +866,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                           Expanded(
                             child: Text(
                               'Cashback to earn: NGN ${_cashbackPreview.toStringAsFixed(2)}',
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 color: Colors.green.shade900,
                                 fontWeight: FontWeight.w700,
                                 fontSize: 13,
@@ -879,16 +880,16 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                       const SizedBox(height: 8),
                       SwitchListTile.adaptive(
                         contentPadding: EdgeInsets.zero,
-                        title: const Text(
+                        title: Text(
                           'Use available cashback for this payment',
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                             fontWeight: FontWeight.w600,
                             fontSize: 13,
                           ),
                         ),
-                        subtitle: const Text(
+                        subtitle: Text(
                           'You will still earn 10% cashback after payment.',
-                          style: TextStyle(fontSize: 12),
+                          style: GoogleFonts.inter(fontSize: 12),
                         ),
                         value: useCashback,
                         onChanged: cashbackBalance > 0
@@ -923,7 +924,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                           )
                         : Text(
                             'Pay Now',
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
@@ -964,7 +965,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
           children: [
             Text(
               "₦$amount",
-              style: TextStyle(
+              style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
                 color: isSelected ? Colors.white : primaryColor,
@@ -973,7 +974,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
             SizedBox(height: 5),
             Text(
               "(Pay ₦$amount)",
-              style: TextStyle(
+              style: GoogleFonts.inter(
                 fontWeight: FontWeight.w100,
                 fontSize: 11,
                 color: isSelected

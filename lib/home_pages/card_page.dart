@@ -21,6 +21,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 // ignore_for_file: unused_element, unused_field, dead_code, unnecessary_cast, unused_import
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 
@@ -606,7 +607,7 @@ class _CardsPageState extends State<CardsPage> {
                             SizedBox(width: 15),
                             Text(
                               "My Cards",
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 fontSize: 22,
                                 color: Colors.black,
                                 fontWeight: FontWeight.w700,
@@ -710,7 +711,7 @@ class _CardsPageState extends State<CardsPage> {
           children: [
             Text(
               category,
-              style: TextStyle(color: isSelected ? Colors.white : Colors.black),
+              style: GoogleFonts.inter(color: isSelected ? Colors.white : Colors.black),
             ),
             if (count > 0) ...[
               const SizedBox(width: 5),
@@ -724,7 +725,7 @@ class _CardsPageState extends State<CardsPage> {
                 ),
                 child: Text(
                   count.toString(),
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     color: isSelected ? Colors.black : Colors.white,
                   ),
                 ),
@@ -790,7 +791,7 @@ class _CardsPageState extends State<CardsPage> {
             const SizedBox(height: 20),
             Text(
               '$prefix$displayAmount',
-              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 4),
             Container(
@@ -801,7 +802,7 @@ class _CardsPageState extends State<CardsPage> {
               ),
               child: Text(
                 statusLabel,
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   color: statusColor,
                   fontWeight: FontWeight.w600,
                   fontSize: 12,
@@ -832,12 +833,12 @@ class _CardsPageState extends State<CardsPage> {
         children: [
           Text(
             label,
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+            style: GoogleFonts.inter(color: Colors.grey.shade600, fontSize: 13),
           ),
           Flexible(
             child: Text(
               value,
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
               textAlign: TextAlign.end,
             ),
           ),
@@ -874,9 +875,9 @@ class _CardsPageState extends State<CardsPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Card Transactions',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 8),
               ...docs.map((doc) {
@@ -956,7 +957,7 @@ class _CardsPageState extends State<CardsPage> {
                             children: [
                               Text(
                                 merchant,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 15,
                                   color: Colors.black87,
@@ -976,7 +977,7 @@ class _CardsPageState extends State<CardsPage> {
                                     const SizedBox(width: 4),
                                     Text(
                                       date,
-                                      style: TextStyle(
+                                      style: GoogleFonts.inter(
                                         color: Colors.grey.shade600,
                                         fontSize: 12,
                                       ),
@@ -992,7 +993,7 @@ class _CardsPageState extends State<CardsPage> {
                           children: [
                             Text(
                               '$prefix$displayAmount',
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 14,
                                 color: amountColor,
@@ -1005,7 +1006,7 @@ class _CardsPageState extends State<CardsPage> {
                                   : isRefund
                                   ? 'Refunded'
                                   : 'Successful',
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 color: iconColor,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
@@ -1041,7 +1042,7 @@ class _CardsPageState extends State<CardsPage> {
               const SizedBox(height: 50),
               Text(
                 "No Cards Yet.",
-                style: TextStyle(fontWeight: FontWeight.bold),
+                style: GoogleFonts.inter(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
               Text("Create your first card to get started."),
@@ -1185,7 +1186,7 @@ class _CardsPageState extends State<CardsPage> {
                             ? _shimmerPlaceholder(width: 180, height: 18)
                             : Text(
                                 cardTypeStr,
-                                style: TextStyle(
+                                style: GoogleFonts.inter(
                                   color: Colors.grey.shade600,
                                   fontWeight: FontWeight.w400,
                                 ),
@@ -1233,7 +1234,7 @@ class _CardsPageState extends State<CardsPage> {
                               const SizedBox(width: 4),
                               Text(
                                 formFactorLabel,
-                                style: TextStyle(
+                                style: GoogleFonts.inter(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
                                   color:
@@ -1299,18 +1300,18 @@ class _CardsPageState extends State<CardsPage> {
                                             color: Colors.white,
                                           ),
                                           const SizedBox(height: 12),
-                                          const Text(
+                                          Text(
                                             'Creating your card...',
-                                            style: TextStyle(
+                                            style: GoogleFonts.inter(
                                               color: Colors.white,
                                               fontWeight: FontWeight.bold,
                                               fontSize: 16,
                                             ),
                                           ),
                                           const SizedBox(height: 6),
-                                          const Text(
+                                          Text(
                                             "We'll notify you when it's ready",
-                                            style: TextStyle(
+                                            style: GoogleFonts.inter(
                                               color: Colors.white70,
                                               fontSize: 13,
                                             ),
@@ -1323,18 +1324,18 @@ class _CardsPageState extends State<CardsPage> {
                                             size: 40,
                                           ),
                                           const SizedBox(height: 12),
-                                          const Text(
+                                          Text(
                                             'Card Terminated',
-                                            style: TextStyle(
+                                            style: GoogleFonts.inter(
                                               color: Colors.white,
                                               fontWeight: FontWeight.bold,
                                               fontSize: 16,
                                             ),
                                           ),
                                           const SizedBox(height: 6),
-                                          const Text(
+                                          Text(
                                             'This card has been terminated',
-                                            style: TextStyle(
+                                            style: GoogleFonts.inter(
                                               color: Colors.white70,
                                               fontSize: 13,
                                             ),
@@ -1346,18 +1347,18 @@ class _CardsPageState extends State<CardsPage> {
                                             size: 40,
                                           ),
                                           const SizedBox(height: 12),
-                                          const Text(
+                                          Text(
                                             'Card creation failed',
-                                            style: TextStyle(
+                                            style: GoogleFonts.inter(
                                               color: Colors.white,
                                               fontWeight: FontWeight.bold,
                                               fontSize: 16,
                                             ),
                                           ),
                                           const SizedBox(height: 6),
-                                          const Text(
+                                          Text(
                                             'Please try again',
-                                            style: TextStyle(
+                                            style: GoogleFonts.inter(
                                               color: Colors.white70,
                                               fontSize: 13,
                                             ),
@@ -1515,14 +1516,14 @@ class _CardsPageState extends State<CardsPage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Map Physical Card',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Enter your existing Sudo card ID to digitalize it.',
-              style: TextStyle(color: Colors.black54),
+              style: GoogleFonts.inter(color: Colors.black54),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -1540,7 +1541,7 @@ class _CardsPageState extends State<CardsPage> {
                 onPressed: () {
                   Navigator.pop(context, cardIdController.text.trim());
                 },
-                child: const Text('Map Card'),
+                child: Text('Map Card'),
               ),
             ),
           ],
@@ -2019,13 +2020,13 @@ class _EnterPinBottomSheetState extends State<EnterPinBottomSheet> {
               const SizedBox(height: 20),
               Text(
                 widget.title,
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
               Text(
                 widget.description,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14),
+                style: GoogleFonts.inter(fontSize: 14),
               ),
               const SizedBox(height: 40),
               Row(
@@ -2048,7 +2049,7 @@ class _EnterPinBottomSheetState extends State<EnterPinBottomSheet> {
                       child: isEntered
                           ? Text(
                               pin[index],
-                              style: const TextStyle(fontSize: 20),
+                              style: TextStyle(fontSize: 20),
                             )
                           : null,
                     ),

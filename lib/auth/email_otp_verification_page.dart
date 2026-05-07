@@ -1,6 +1,7 @@
 import 'package:card_app/utils.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// A full-screen page that handles email OTP verification.
 ///
@@ -160,9 +161,9 @@ class _EmailOtpVerificationPageState extends State<EmailOtpVerificationPage> {
               const SizedBox(height: 16),
               const Icon(Icons.mail_outline, size: 56, color: primaryColor),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'Check your email',
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: Colors.black,
@@ -172,7 +173,7 @@ class _EmailOtpVerificationPageState extends State<EmailOtpVerificationPage> {
               Text.rich(
                 TextSpan(
                   text: 'We sent a 6-digit verification code to ',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     color: Colors.black54,
                     height: 1.5,
@@ -180,23 +181,23 @@ class _EmailOtpVerificationPageState extends State<EmailOtpVerificationPage> {
                   children: [
                     TextSpan(
                       text: widget.email,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.black87,
                       ),
                     ),
-                    const TextSpan(text: '. Enter it below.'),
+                    TextSpan(text: '. Enter it below.'),
                   ],
                 ),
               ),
               const SizedBox(height: 32),
               if (_isSending)
-                const Center(
+                 Center(
                   child: Column(
                     children: [
                       CircularProgressIndicator(color: primaryColor),
                       SizedBox(height: 12),
-                      Text('Sending code...', style: TextStyle(color: Colors.black54)),
+                      Text('Sending code...', style: GoogleFonts.inter(color: Colors.black54)),
                     ],
                   ),
                 )
@@ -220,7 +221,7 @@ class _EmailOtpVerificationPageState extends State<EmailOtpVerificationPage> {
                         keyboardType: TextInputType.number,
                         maxLength: 1,
                         cursorColor: primaryColor,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
                         ),
@@ -270,9 +271,9 @@ class _EmailOtpVerificationPageState extends State<EmailOtpVerificationPage> {
                             strokeWidth: 2.5,
                           ),
                         )
-                      : const Text(
+                      : Text(
                           'Verify Email',
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
@@ -285,15 +286,15 @@ class _EmailOtpVerificationPageState extends State<EmailOtpVerificationPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
+                  Text(
                     "Didn't receive the code? ",
-                    style: TextStyle(fontSize: 14, color: Colors.black54),
+                    style: GoogleFonts.inter(fontSize: 14, color: Colors.black54),
                   ),
                   GestureDetector(
                     onTap: _isLoading ? null : _resend,
                     child: Text(
                       'Resend',
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: _isLoading ? Colors.grey : primaryColor,

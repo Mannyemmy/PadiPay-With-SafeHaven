@@ -56,7 +56,7 @@ class Keypad extends StatelessWidget {
         onPressed: () => onPressed(text),
         child: Text(
           text!,
-          style: const TextStyle(fontSize: 32, color: Colors.black),
+          style: TextStyle(fontSize: 32, color: Colors.black),
         ),
       ),
     );

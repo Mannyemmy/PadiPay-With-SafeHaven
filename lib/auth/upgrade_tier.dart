@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 import 'package:nigerian_states_and_lga/nigerian_states_and_lga.dart';
@@ -127,9 +128,9 @@ class _UpgradeTierState extends State<UpgradeTier>
                       ),
                     ),
                     const SizedBox(width: 12),
-                    const Text(
+                    Text(
                       'Verifying your account',
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 17,
                         fontWeight: FontWeight.w700,
                         color: Colors.black87,
@@ -164,7 +165,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                               valueListenable: _loadingStatusNotifier,
                               builder: (_, status, __) => Text(
                                 status,
-                                style: TextStyle(
+                                style: GoogleFonts.inter(
                                   fontSize: 12,
                                   color: Colors.grey.shade600,
                                 ),
@@ -172,7 +173,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                             ),
                             Text(
                               '$pct%',
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 fontSize: 12,
                                 color: primaryColor,
                                 fontWeight: FontWeight.w600,
@@ -396,9 +397,9 @@ class _UpgradeTierState extends State<UpgradeTier>
                   ),
                 ),
                 const SizedBox(height: 20),
-                const Text(
+                Text(
                   'Account Upgraded!',
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
                     color: Colors.black87,
@@ -408,7 +409,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                 const SizedBox(height: 10),
                 Text(
                   'You can now fully enjoy all Padi Pay features including higher transfer limits, bill payments, and much more.',
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     fontSize: 14,
                     color: Colors.grey.shade600,
                     height: 1.5,
@@ -430,9 +431,9 @@ class _UpgradeTierState extends State<UpgradeTier>
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Go to Dashboard',
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: Colors.white,
@@ -931,7 +932,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                         children: [
                           Text(
                             title,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
                             ),
@@ -991,7 +992,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                           ? Center(
                               child: Text(
                                 'No results found',
-                                style: TextStyle(color: Colors.grey.shade500),
+                                style: GoogleFonts.inter(color: Colors.grey.shade500),
                               ),
                             )
                           : ListView.builder(
@@ -1027,7 +1028,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                                         Expanded(
                                           child: Text(
                                             item,
-                                            style: TextStyle(
+                                            style: GoogleFonts.inter(
                                               fontSize: 15,
                                               fontWeight: isSelected
                                                   ? FontWeight.w600
@@ -1202,12 +1203,12 @@ class _UpgradeTierState extends State<UpgradeTier>
                 SizedBox(height: 30),
                 Text(
                   _screenTitle,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600),
                 ),
                 SizedBox(height: 10),
                 Text(
                   _screenSubtitle,
-                  style: TextStyle(color: Colors.grey.shade600),
+                  style: GoogleFonts.inter(color: Colors.grey.shade600),
                 ),
                 SizedBox(height: 20),
 
@@ -1215,7 +1216,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                   // Name fields for BVN verification
                   Text(
                     'First Name',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: Colors.black54,
@@ -1237,7 +1238,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                     },
                     decoration: InputDecoration(
                       hintText: 'First name',
-                      hintStyle: TextStyle(color: Colors.grey.shade500),
+                      hintStyle: GoogleFonts.inter(color: Colors.grey.shade500),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: BorderSide(
@@ -1290,7 +1291,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                           SizedBox(width: 4),
                           Text(
                             'First name does not match BVN records',
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               fontSize: 11,
                               color: Colors.red.shade600,
                             ),
@@ -1301,7 +1302,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                   SizedBox(height: 16),
                   Text(
                     'Last Name',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: Colors.black54,
@@ -1323,7 +1324,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                     },
                     decoration: InputDecoration(
                       hintText: 'Last name',
-                      hintStyle: TextStyle(color: Colors.grey.shade500),
+                      hintStyle: GoogleFonts.inter(color: Colors.grey.shade500),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: BorderSide(
@@ -1376,7 +1377,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                           SizedBox(width: 4),
                           Text(
                             'Last name does not match BVN records',
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               fontSize: 11,
                               color: Colors.red.shade600,
                             ),
@@ -1389,7 +1390,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                   //  Everything below is UNCHANGED
                   Text(
                     'Date of Birth',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: Colors.black54,
@@ -1399,14 +1400,14 @@ class _UpgradeTierState extends State<UpgradeTier>
                   TextField(
                     controller: _dobController,
                     keyboardType: TextInputType.datetime,
-                    style: TextStyle(color: Colors.black87),
+                    style: GoogleFonts.inter(color: Colors.black87),
                     onChanged: (_) {
                       setState(() {});
                       _scheduleDraftAutosave();
                     },
                     decoration: InputDecoration(
                       hintText: 'DD-MM-YYYY',
-                      hintStyle: TextStyle(color: Colors.grey.shade500),
+                      hintStyle: GoogleFonts.inter(color: Colors.grey.shade500),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: BorderSide(color: Colors.grey.shade200),
@@ -1444,7 +1445,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                           SizedBox(width: 4),
                           Text(
                             'Date of birth does not match BVN records',
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               fontSize: 11,
                               color: Colors.red.shade600,
                             ),
@@ -1465,7 +1466,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                           SizedBox(width: 4),
                           Text(
                             'You must be 18 or older to upgrade',
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               fontSize: 11,
                               color: Colors.red.shade600,
                             ),
@@ -1476,7 +1477,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                   SizedBox(height: 20),
                   Text(
                     'Gender',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: Colors.black54,
@@ -1499,7 +1500,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                         isExpanded: true,
                         hint: Text(
                           'Select Gender',
-                          style: TextStyle(color: Colors.grey.shade500),
+                          style: GoogleFonts.inter(color: Colors.grey.shade500),
                         ),
                         items: ['Male', 'Female', 'Others']
                             .map(
@@ -1526,7 +1527,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                           SizedBox(width: 4),
                           Text(
                             'Gender does not match BVN records',
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               fontSize: 11,
                               color: Colors.red.shade600,
                             ),
@@ -1538,7 +1539,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                     SizedBox(height: 20),
                     Text(
                       'BVN',
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: Colors.black54,
@@ -1549,7 +1550,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                       maxLength: 11,
                       controller: _controller,
                       keyboardType: TextInputType.number,
-                      style: TextStyle(color: Colors.black87),
+                      style: GoogleFonts.inter(color: Colors.black87),
                       readOnly: (widget.tier == 1 || widget.tier == 2)
                           ? (_bvnVerified == true || (!bvnPrereqsMet))
                           : false,
@@ -1561,7 +1562,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                             : !bvnPrereqsMet && widget.tier == 2
                             ? 'Fill in name, date of birth & gender first'
                             : 'Enter BVN',
-                        hintStyle: TextStyle(color: Colors.grey.shade500),
+                        hintStyle: GoogleFonts.inter(color: Colors.grey.shade500),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: BorderSide(color: _bvnBorderColor()),
@@ -1620,7 +1621,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                             SizedBox(width: 2),
                             Text(
                               'Verifying BVN, please wait...',
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 fontSize: 12,
                                 color: Colors.grey.shade500,
                               ),
@@ -1640,7 +1641,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                               _bvnVerifyStatus == 'EXACT_MATCH'
                                   ? 'BVN verified'
                                   : 'BVN verified  partial name match',
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 fontSize: 12,
                                 color: Colors.green.shade700,
                               ),
@@ -1669,7 +1670,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                                           ? 'BVN not found'
                                           : _bvnVerifyStatus!)
                                     : 'Please fix unmatched fields above',
-                                style: TextStyle(
+                                style: GoogleFonts.inter(
                                   fontSize: 12,
                                   color: Colors.red.shade700,
                                 ),
@@ -1680,7 +1681,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                                 onTap: _verifyBvn,
                                 child: Text(
                                   'Retry',
-                                  style: TextStyle(
+                                  style: GoogleFonts.inter(
                                     fontSize: 12,
                                     color: primaryColor,
                                     fontWeight: FontWeight.w600,
@@ -1705,7 +1706,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                               _isUnder18() == true
                                   ? 'You must be 18 or older to enter your BVN'
                                   : 'Fill in your name, date of birth and gender above first',
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 fontSize: 11,
                                 color: Colors.orange.shade700,
                               ),
@@ -1718,7 +1719,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                   SizedBox(height: 20),
                   Text(
                     'Street Address',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: Colors.black54,
@@ -1727,14 +1728,14 @@ class _UpgradeTierState extends State<UpgradeTier>
                   SizedBox(height: 8),
                   TextField(
                     controller: _streetController,
-                    style: TextStyle(color: Colors.black87),
+                    style: GoogleFonts.inter(color: Colors.black87),
                     onChanged: (_) {
                       setState(() {});
                       _scheduleDraftAutosave();
                     },
                     decoration: InputDecoration(
                       hintText: 'Enter Street Address',
-                      hintStyle: TextStyle(color: Colors.grey.shade500),
+                      hintStyle: GoogleFonts.inter(color: Colors.grey.shade500),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: BorderSide(color: Colors.grey.shade200),
@@ -1757,7 +1758,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                   SizedBox(height: 20),
                   Text(
                     'State',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: Colors.black54,
@@ -1786,7 +1787,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                           Expanded(
                             child: Text(
                               selectedState ?? 'Select State',
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 color: selectedState == null
                                     ? Colors.grey.shade500
                                     : Colors.black87,
@@ -1804,7 +1805,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                   SizedBox(height: 20),
                   Text(
                     'City / LGA',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: Colors.black54,
@@ -1833,7 +1834,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                           Expanded(
                             child: Text(
                               selectedCity ?? 'Select City / LGA',
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 color: selectedCity == null
                                     ? Colors.grey.shade500
                                     : Colors.black87,
@@ -1851,7 +1852,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                 ] else if (widget.tier == 2) ...[
                   Text(
                     'ID Type',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: Colors.black54,
@@ -1875,7 +1876,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                         isExpanded: true,
                         hint: Text(
                           'Select ID Type',
-                          style: TextStyle(color: Colors.grey.shade500),
+                          style: GoogleFonts.inter(color: Colors.grey.shade500),
                         ),
                         // In the else branch (Tier 3 section), replace the items list:
                         items: [
@@ -1899,7 +1900,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                   SizedBox(height: 20),
                   Text(
                     'ID Number',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: Colors.black54,
@@ -1914,7 +1915,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                     keyboardType: selectedIdType == 'PASSPORT'
                         ? TextInputType.text
                         : TextInputType.number,
-                    style: TextStyle(color: Colors.black87),
+                    style: GoogleFonts.inter(color: Colors.black87),
                     onChanged: (_) {
                       setState(() {});
                       _scheduleDraftAutosave();
@@ -1930,7 +1931,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                           : (selectedIdType == 'NATIONAL_ID'
                                 ? 'Enter National ID (11 digits)'
                                 : 'Enter ID Number'),
-                      hintStyle: TextStyle(color: Colors.grey.shade500),
+                      hintStyle: GoogleFonts.inter(color: Colors.grey.shade500),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: BorderSide(color: Colors.grey.shade200),
@@ -1955,7 +1956,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                     SizedBox(height: 20),
                     Text(
                       'Expiry Date',
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: Colors.black54,
@@ -1965,14 +1966,14 @@ class _UpgradeTierState extends State<UpgradeTier>
                     TextField(
                       controller: _expiryController,
                       keyboardType: TextInputType.datetime,
-                      style: TextStyle(color: Colors.black87),
+                      style: GoogleFonts.inter(color: Colors.black87),
                       onChanged: (_) {
                         setState(() {});
                         _scheduleDraftAutosave();
                       },
                       decoration: InputDecoration(
                         hintText: 'DD-MM-YYYY',
-                        hintStyle: TextStyle(color: Colors.grey.shade500),
+                        hintStyle: GoogleFonts.inter(color: Colors.grey.shade500),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: BorderSide(color: Colors.grey.shade200),
@@ -2017,7 +2018,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                     ),
                     child: Text(
                       _primaryButtonText,
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: Colors.white,
@@ -2165,9 +2166,9 @@ class _UpgradeTierState extends State<UpgradeTier>
                         ),
                       ),
                     ),
-                    const Text(
+                    Text(
                       'Verify Your Identity',
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
                         color: Colors.black87,
@@ -2176,7 +2177,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                     const SizedBox(height: 8),
                     Text(
                       'An OTP has been sent to your BVN registered phone number. Enter it below to verify your BVN.',
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         color: Colors.grey.shade600,
                         fontSize: 14,
                       ),
@@ -2227,9 +2228,9 @@ class _UpgradeTierState extends State<UpgradeTier>
                           }
                           Navigator.pop(ctx, otp);
                         },
-                        child: const Text(
+                        child: Text(
                           'Verify',
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,
                             fontSize: 16,
@@ -2389,7 +2390,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                   children: [
                     Text(
                       'Phone Number Already Registered',
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
                         color: Colors.black87,
@@ -2398,7 +2399,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                     SizedBox(height: 8),
                     Text(
                       'This phone number has already been registered to an account. Would you like to change it?',
-                      style: TextStyle(color: Colors.grey.shade600),
+                      style: GoogleFonts.inter(color: Colors.grey.shade600),
                     ),
                     SizedBox(height: 16),
                     TextFormField(
@@ -2460,7 +2461,7 @@ class _UpgradeTierState extends State<UpgradeTier>
                             },
                             child: Text(
                               'Change Number',
-                              style: TextStyle(color: Colors.white),
+                              style: GoogleFonts.inter(color: Colors.white),
                             ),
                           ),
                         ),

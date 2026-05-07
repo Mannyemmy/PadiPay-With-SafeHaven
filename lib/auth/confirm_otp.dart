@@ -4,6 +4,7 @@ import 'package:card_app/utils.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class ConfirmOtpBottomSheet extends StatefulWidget {
   final String verificationId;
@@ -65,7 +66,7 @@ class _ConfirmOtpBottomSheetState extends State<ConfirmOtpBottomSheet> {
               Text(
                 "Verification Successful",
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   fontWeight: FontWeight.bold,
                   color: Colors.black54,
                   fontSize: 18,
@@ -75,7 +76,7 @@ class _ConfirmOtpBottomSheetState extends State<ConfirmOtpBottomSheet> {
               Text(
                 "Your code has been verified successfully.",
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   fontWeight: FontWeight.w300,
                   color: Colors.grey.shade700,
                   fontSize: 14,
@@ -98,7 +99,7 @@ class _ConfirmOtpBottomSheetState extends State<ConfirmOtpBottomSheet> {
                   },
                   child: Text(
                     "Proceed",
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: Colors.white,
                       fontWeight: FontWeight.w500,
                       fontSize: 16,
@@ -222,9 +223,9 @@ class _ConfirmOtpBottomSheetState extends State<ConfirmOtpBottomSheet> {
                 const SizedBox(height: 10),
                 Row(
                   children: [
-                    const Text(
+                    Text(
                       "Confirm OTP Code",
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -235,7 +236,7 @@ class _ConfirmOtpBottomSheetState extends State<ConfirmOtpBottomSheet> {
                 Text.rich(
                   TextSpan(
                     text: "We've just sent a code to ",
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w300,
                       color: Colors.black45,
@@ -243,12 +244,12 @@ class _ConfirmOtpBottomSheetState extends State<ConfirmOtpBottomSheet> {
                     children: [
                       TextSpan(
                         text: widget.phoneNumber,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
                         ),
                       ),
-                      const TextSpan(text: ". Enter the 6 digit code below."),
+                      TextSpan(text: ". Enter the 6 digit code below."),
                     ],
                   ),
                   textAlign: TextAlign.start,
@@ -271,7 +272,7 @@ class _ConfirmOtpBottomSheetState extends State<ConfirmOtpBottomSheet> {
                             ? TextInputAction.next
                             : TextInputAction.done,
                         cursorColor: Colors.blue,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                         ),
@@ -306,9 +307,9 @@ class _ConfirmOtpBottomSheetState extends State<ConfirmOtpBottomSheet> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       "Didn't get a code? ",
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 14,
                         color: Colors.black54,
                         fontWeight: FontWeight.w500,
@@ -316,9 +317,9 @@ class _ConfirmOtpBottomSheetState extends State<ConfirmOtpBottomSheet> {
                     ),
                     InkWell(
                       onTap: _isLoading ? null : _resendCode,
-                      child: const Text(
+                      child: Text(
                         "Resend",
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
                           color: Colors.blue,
@@ -346,7 +347,7 @@ class _ConfirmOtpBottomSheetState extends State<ConfirmOtpBottomSheet> {
                         child: Center(
                           child: Text(
                             "No, Cancel",
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               color: Colors.grey.shade500,
                               fontSize: 14,
                               fontWeight: FontWeight.w800,
@@ -371,9 +372,9 @@ class _ConfirmOtpBottomSheetState extends State<ConfirmOtpBottomSheet> {
                                     Colors.white,
                                   ),
                                 )
-                              : const Text(
+                              : Text(
                                   "Continue",
-                                  style: TextStyle(
+                                  style: GoogleFonts.inter(
                                     color: Colors.white,
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,

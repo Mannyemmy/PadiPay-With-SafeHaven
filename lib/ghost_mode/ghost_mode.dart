@@ -7,6 +7,7 @@ import 'package:dropdown_search/dropdown_search.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:uuid/uuid.dart';
 
 class GhostModeTransfer extends StatefulWidget {
@@ -706,9 +707,9 @@ Future<void> _refundUser(String userAccountId, String companyAccountId, double a
                           ),
                         ),
                         const Spacer(),
-                        const Text(
+                        Text(
                           "Ghost Mode",
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                             fontWeight: FontWeight.w600,
                             fontSize: 18,
                             color: Colors.white,
@@ -718,13 +719,13 @@ Future<void> _refundUser(String userAccountId, String companyAccountId, double a
                       ],
                     ),
                     const SizedBox(height: 30),
-                    const Row(
+                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Expanded(
                           child: Text(
                             textAlign: TextAlign.center,
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               color: Colors.white,
                               fontWeight: FontWeight.w300,
                             ),
@@ -736,9 +737,9 @@ Future<void> _refundUser(String userAccountId, String companyAccountId, double a
                     const SizedBox(height: 40),
                     // PAGE 1: Account details
                     if (_currentPage == 0) ...[
-                      const Text(
+                      Text(
                         'Beneficiary Account Number',
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           color: Colors.white,
                           fontWeight: FontWeight.w100,
                         ),
@@ -749,7 +750,7 @@ Future<void> _refundUser(String userAccountId, String companyAccountId, double a
                         controller: accountNumberController,
                         keyboardType: TextInputType.number,
                         inputFormatters: [LengthLimitingTextInputFormatter(10)],
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w100,
                         ),
@@ -759,7 +760,7 @@ Future<void> _refundUser(String userAccountId, String companyAccountId, double a
                             borderRadius: BorderRadius.circular(8),
                           ),
                           hintText: 'Account number',
-                          hintStyle: const TextStyle(
+                          hintStyle: TextStyle(
                             color: Colors.white54,
                             fontWeight: FontWeight.w100,
                           ),
@@ -782,9 +783,9 @@ Future<void> _refundUser(String userAccountId, String companyAccountId, double a
                         },
                       ),
                       const SizedBox(height: 16),
-                      const Text(
+                      Text(
                         'Beneficiary Bank',
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           color: Colors.white,
                           fontWeight: FontWeight.w100,
                         ),
@@ -809,7 +810,7 @@ Future<void> _refundUser(String userAccountId, String companyAccountId, double a
                                 searchFieldProps: TextFieldProps(
                                   decoration: InputDecoration(
                                     hintText: "Search bank...",
-                                    hintStyle: TextStyle(
+                                    hintStyle: GoogleFonts.inter(
                                       fontSize: 14,
                                       color: Colors.white54,
                                     ),
@@ -823,7 +824,7 @@ Future<void> _refundUser(String userAccountId, String companyAccountId, double a
                                       vertical: 12,
                                     ),
                                   ),
-                                  style: TextStyle(color: Colors.white),
+                                  style: GoogleFonts.inter(color: Colors.white),
                                 ),
                                 showSearchBox: true,
                                 fit: FlexFit.loose,
@@ -835,7 +836,7 @@ Future<void> _refundUser(String userAccountId, String companyAccountId, double a
                                           item,
                                           overflow: TextOverflow.ellipsis,
                                           maxLines: 1,
-                                          style: TextStyle(
+                                          style: GoogleFonts.inter(
                                             fontSize: 14,
                                             color: Colors.white,
                                           ),
@@ -863,7 +864,7 @@ Future<void> _refundUser(String userAccountId, String companyAccountId, double a
                               },
                               decoratorProps: DropDownDecoratorProps(
                                 decoration: InputDecoration(
-                                  hintStyle: TextStyle(
+                                  hintStyle: GoogleFonts.inter(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w100,
                                   ),
@@ -879,7 +880,7 @@ Future<void> _refundUser(String userAccountId, String companyAccountId, double a
                               dropdownBuilder: (context, selectedItem) {
                                 return Text(
                                   selectedItem ?? "Select Bank",
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 14,
                                   ),
@@ -916,9 +917,9 @@ Future<void> _refundUser(String userAccountId, String companyAccountId, double a
                                   : null,
                             ),
                       const SizedBox(height: 16),
-                      const Text(
+                      Text(
                         'Account Name',
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           color: Colors.white,
                           fontWeight: FontWeight.w100,
                         ),
@@ -927,12 +928,12 @@ Future<void> _refundUser(String userAccountId, String companyAccountId, double a
                       TextField(
                         controller: accountNameController,
                         enabled: false,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w100,
                         ),
                         decoration: InputDecoration(
-                          hintStyle: const TextStyle(
+                          hintStyle: TextStyle(
                             color: Colors.white54,
                             fontWeight: FontWeight.w100,
                           ),
@@ -972,9 +973,9 @@ Future<void> _refundUser(String userAccountId, String companyAccountId, double a
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Next',
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                             color: Colors.black,
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
@@ -1001,7 +1002,7 @@ Future<void> _refundUser(String userAccountId, String companyAccountId, double a
                                     .take(2)
                                     .map((s) => s[0].toUpperCase())
                                     .join(),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -1014,7 +1015,7 @@ Future<void> _refundUser(String userAccountId, String companyAccountId, double a
                                 children: [
                                   Text(
                                     accountNameController.text,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontWeight: FontWeight.w600,
                                       fontSize: 14,
                                       color: Colors.white,
@@ -1024,7 +1025,7 @@ Future<void> _refundUser(String userAccountId, String companyAccountId, double a
                                     '${accountNumberController.text} Â· ${banks.firstWhere((b) => b['id'] == selectedBank, orElse: () => {
                                       'attributes': {'name': 'Unknown'},
                                     })['attributes']['name']}',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       color: Colors.white54,
                                       fontSize: 12,
                                     ),
@@ -1036,9 +1037,9 @@ Future<void> _refundUser(String userAccountId, String companyAccountId, double a
                         ),
                       ),
                       const SizedBox(height: 24),
-                      const Text(
+                      Text(
                         'Amount to Send',
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           color: Colors.white,
                           fontWeight: FontWeight.w100,
                         ),
@@ -1058,7 +1059,7 @@ Future<void> _refundUser(String userAccountId, String companyAccountId, double a
                           children: [
                             Text(
                               '₦',
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 color: Colors.white,
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -1069,27 +1070,27 @@ Future<void> _refundUser(String userAccountId, String companyAccountId, double a
                               child: TextField(
                                 controller: amountController,
                                 keyboardType:
-                                    const TextInputType.numberWithOptions(
+                                    TextInputType.numberWithOptions(
                                       decimal: true,
                                     ),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w100,
                                 ),
-                                decoration: const InputDecoration(
+                                decoration:  InputDecoration(
                                   isDense: true,
                                   border: InputBorder.none,
                                   enabledBorder: InputBorder.none,
                                   focusedBorder: InputBorder.none,
                                   contentPadding: EdgeInsets.zero,
                                   hintText: '0.00',
-                                  hintStyle: TextStyle(color: Colors.white54),
+                                  hintStyle: GoogleFonts.inter(color: Colors.white54),
                                 ),
                               ),
                             ),
                             Text(
                               feeText,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -1098,9 +1099,9 @@ Future<void> _refundUser(String userAccountId, String companyAccountId, double a
                         ),
                       ),
                       const SizedBox(height: 16),
-                      const Text(
+                      Text(
                         'Remark',
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           color: Colors.white,
                           fontWeight: FontWeight.w100,
                         ),
@@ -1108,12 +1109,12 @@ Future<void> _refundUser(String userAccountId, String companyAccountId, double a
                       const SizedBox(height: 8),
                       TextField(
                         controller: remarkController,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w100,
                         ),
                         decoration: InputDecoration(
-                          hintStyle: const TextStyle(
+                          hintStyle: TextStyle(
                             color: Colors.white54,
                             fontWeight: FontWeight.w100,
                           ),
@@ -1145,9 +1146,9 @@ Future<void> _refundUser(String userAccountId, String companyAccountId, double a
                             ? const CircularProgressIndicator(
                                 color: Colors.white,
                               )
-                            : const Text(
+                            : Text(
                                 'Confirm',
-                                style: TextStyle(
+                                style: GoogleFonts.inter(
                                   color: Colors.black,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,

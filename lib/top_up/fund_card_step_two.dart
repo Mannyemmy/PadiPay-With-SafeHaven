@@ -1,6 +1,7 @@
 import 'package:card_app/ui/success_bottom_sheet.dart';
 import 'package:card_app/utils.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class FundCardStepTwo extends StatelessWidget {
   const FundCardStepTwo({super.key});
@@ -26,9 +27,9 @@ class FundCardStepTwo extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Fund Card',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                    style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w700),
                   ),
                   SizedBox(height: 20),
                   Container(
@@ -42,7 +43,7 @@ class FundCardStepTwo extends StatelessWidget {
                       children: [
                         Text(
                           "Amount",
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                             fontWeight: FontWeight.w600,
                             color: Colors.black45,
                           ),
@@ -60,7 +61,7 @@ class FundCardStepTwo extends StatelessWidget {
                               ),
                               child: Text(
                                 "₦",
-                                style: TextStyle(
+                                style: GoogleFonts.inter(
                                   fontSize: 16,
                                   color: Colors.grey.shade700,
                                 ),
@@ -92,7 +93,7 @@ class FundCardStepTwo extends StatelessWidget {
                         SizedBox(height: 10),
                         Text(
                           "Rate = \$1 = ₦1,559.00",
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                             color: Colors.black45,
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
@@ -104,14 +105,14 @@ class FundCardStepTwo extends StatelessWidget {
                           children: [
                             Text(
                               "Amount",
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 color: Colors.grey.shade400,
                                 fontSize: 11,
                               ),
                             ),
                             Text(
                               "₦4,500.22",
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 color: Colors.grey.shade400,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
@@ -125,14 +126,14 @@ class FundCardStepTwo extends StatelessWidget {
                           children: [
                             Text(
                               "Fee",
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 color: Colors.grey.shade400,
                                 fontSize: 11,
                               ),
                             ),
                             Text(
                               "₦1,652.44",
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 color: Colors.grey.shade400,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
@@ -146,14 +147,14 @@ class FundCardStepTwo extends StatelessWidget {
                           children: [
                             Text(
                               "Total Amount",
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 color: Colors.grey.shade400,
                                 fontSize: 11,
                               ),
                             ),
                             Text(
                               "₦6,345.44",
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 color: Colors.grey.shade400,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
@@ -164,7 +165,7 @@ class FundCardStepTwo extends StatelessWidget {
                         SizedBox(height: 30),
                         Text(
                           "Fund From",
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                             fontWeight: FontWeight.w600,
                             color: Colors.black45,
                           ),
@@ -185,7 +186,7 @@ class FundCardStepTwo extends StatelessWidget {
                                 children: [
                                   Text(
                                     "Default Wallet",
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       color: Colors.grey,
                                       fontWeight: FontWeight.w500,
                                       fontSize: 11,
@@ -194,7 +195,7 @@ class FundCardStepTwo extends StatelessWidget {
                                   SizedBox(height: 5),
                                   Text(
                                     "***6532",
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontSize: 14,
                                       color: Colors.grey,
                                       fontWeight: FontWeight.w800,
@@ -207,7 +208,7 @@ class FundCardStepTwo extends StatelessWidget {
                                 children: [
                                   Text(
                                     "Available",
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontSize: 11,
                                       color: Colors.grey,
                                       fontWeight: FontWeight.w500,
@@ -216,7 +217,7 @@ class FundCardStepTwo extends StatelessWidget {
                                   SizedBox(height: 5),
                                   Text(
                                     "₦50,000",
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontSize: 14,
                                       color: Colors.grey,
                                       fontWeight: FontWeight.w800,
@@ -251,7 +252,7 @@ class FundCardStepTwo extends StatelessWidget {
                       ),
                       child: Text(
                         "Next",
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           color: Colors.white,
                           fontWeight: FontWeight.w800,
                         ),

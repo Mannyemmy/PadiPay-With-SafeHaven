@@ -1,6 +1,7 @@
 import 'package:card_app/utils.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class VerifyPhoneAsBottomSheet extends StatefulWidget {
   final Map<String, String> userData;
@@ -96,9 +97,9 @@ class _VerifyPhoneAsBottomSheetState extends State<VerifyPhoneAsBottomSheet> {
               ]),
               
               SizedBox(height: 30),
-              Text("Verify Phone Number", style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold)),
+              Text("Verify Phone Number", style: GoogleFonts.inter(fontSize: 25, fontWeight: FontWeight.bold)),
               SizedBox(height: 10),
-              Text("A code will be sent to this number for verification.", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w300)),
+              Text("A code will be sent to this number for verification.", style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w300)),
               SizedBox(height: 30),
               
               // Display phone number
@@ -111,7 +112,7 @@ class _VerifyPhoneAsBottomSheetState extends State<VerifyPhoneAsBottomSheet> {
                 child: Row(children: [
                   Icon(Icons.phone, color: Colors.blue),
                   SizedBox(width: 10),
-                  Text("${widget.countryCode} ${widget.phoneNumber}", style: TextStyle(fontSize: 16)),
+                  Text("${widget.countryCode} ${widget.phoneNumber}", style: GoogleFonts.inter(fontSize: 16)),
                 ]),
               ),
               SizedBox(height: 30),
@@ -128,7 +129,7 @@ class _VerifyPhoneAsBottomSheetState extends State<VerifyPhoneAsBottomSheet> {
                   child: Center(
                     child: _isLoading
                         ? CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.white))
-                        : Text("Send Code", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                        : Text("Send Code", style: GoogleFonts.inter(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ),

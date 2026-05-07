@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 
 class EditProfilePage extends StatefulWidget {
@@ -182,9 +183,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Change Email',
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
                       ),
@@ -192,7 +193,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     const SizedBox(height: 6),
                     Text(
                       'Current email: ${user.email}',
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 13,
                         color: Colors.grey.shade600,
                       ),
@@ -201,7 +202,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     // New email field
                     Text(
                       'New Email',
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: Colors.grey.shade700,
@@ -236,7 +237,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     // Password field for reauthentication
                     Text(
                       'Login Password',
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: Colors.grey.shade700,
@@ -287,9 +288,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             style: TextButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 12),
                             ),
-                            child: const Text(
+                            child: Text(
                               'Cancel',
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 color: Colors.grey,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -351,9 +352,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            child: const Text(
+                            child: Text(
                               'Change Email',
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -408,9 +409,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               color: Colors.black45, size: 20),
                         ),
                         const SizedBox(height: 20),
-                        const Text(
+                        Text(
                           'Edit Profile',
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                             fontSize: 20,
                             fontWeight: FontWeight.w600,
                           ),
@@ -524,7 +525,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         children: [
           Text(
             label,
-            style: TextStyle(
+            style: GoogleFonts.inter(
               fontWeight: FontWeight.w500,
               fontSize: 13,
               color: Colors.grey.shade700,
@@ -541,7 +542,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             ),
             child: Text(
               value.isEmpty ? '—' : value,
-              style: TextStyle(
+              style: GoogleFonts.inter(
                 fontSize: 14,
                 color: value.isEmpty ? Colors.grey.shade400 : Colors.black87,
               ),
@@ -560,7 +561,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         children: [
           Text(
             'Email',
-            style: TextStyle(
+            style: GoogleFonts.inter(
               fontWeight: FontWeight.w500,
               fontSize: 13,
               color: Colors.grey.shade700,
@@ -579,7 +580,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   ),
                   child: Text(
                     email ?? '—',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       fontSize: 14,
                       color: Colors.black87,
                     ),
@@ -598,9 +599,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Change',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
@@ -623,7 +624,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         children: [
           Text(
             'Phone',
-            style: TextStyle(
+            style: GoogleFonts.inter(
               fontWeight: FontWeight.w500,
               fontSize: 13,
               color: Colors.grey.shade700,
@@ -667,9 +668,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Save',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
                       fontSize: 13,

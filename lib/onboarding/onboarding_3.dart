@@ -1,6 +1,7 @@
 import 'package:card_app/onboarding/onboarding_4.dart';
 import 'package:card_app/utils.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class Onboarding3 extends StatelessWidget {
   const Onboarding3({super.key});
@@ -61,7 +62,7 @@ class Onboarding3 extends StatelessWidget {
             const SizedBox(height: 30),
             Text(
               "Smart Cards",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30),
+              style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 30),
             ),
             const SizedBox(height: 10),
             Padding(
@@ -69,7 +70,7 @@ class Onboarding3 extends StatelessWidget {
               child: Text(
                 "Create Physical, Virtual, or Anonymous cards — all managed in one app.",
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   fontWeight: FontWeight.w300,
                   color: Colors.black,
                   fontSize: 15,

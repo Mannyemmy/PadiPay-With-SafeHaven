@@ -396,9 +396,9 @@ class _CardDetailsBottomSheetState extends State<CardDetailsBottomSheet> {
                               ),
                             ),
                             const SizedBox(width: 10),
-                            const Text(
+                            Text(
                               "Withdraw",
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 16,
                                 color: Colors.white,
@@ -451,9 +451,9 @@ class _CardDetailsBottomSheetState extends State<CardDetailsBottomSheet> {
                               ),
                             ),
                             const SizedBox(width: 10),
-                            const Text(
+                            Text(
                               "Deposit",
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 16,
                                 color: Colors.white,
@@ -482,9 +482,9 @@ class _CardDetailsBottomSheetState extends State<CardDetailsBottomSheet> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
+                          Text(
                             'Recent Activity',
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
@@ -676,7 +676,7 @@ class _CardDetailsBottomSheetState extends State<CardDetailsBottomSheet> {
                       Icon(Icons.schedule, size: 12, color: Colors.grey),
                       Text(
                         date,
-                        style: TextStyle(color: Colors.grey, fontSize: 12),
+                        style: GoogleFonts.inter(color: Colors.grey, fontSize: 12),
                       ),
                     ],
                   ),
@@ -688,7 +688,7 @@ class _CardDetailsBottomSheetState extends State<CardDetailsBottomSheet> {
               children: [
                 Text(
                   amount,
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     fontWeight: FontWeight.bold,
                     color: amountColor,
                   ),
@@ -697,7 +697,7 @@ class _CardDetailsBottomSheetState extends State<CardDetailsBottomSheet> {
                   const SizedBox(height: 2),
                   Text(
                     statusLabel,
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: statusColor ?? amountColor,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
@@ -718,8 +718,8 @@ class _CardDetailsBottomSheetState extends State<CardDetailsBottomSheet> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
-          Flexible(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13), textAlign: TextAlign.end)),
+          Text(label, style: GoogleFonts.inter(color: Colors.grey.shade600, fontSize: 13)),
+          Flexible(child: Text(value, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13), textAlign: TextAlign.end)),
         ],
       ),
     );
@@ -813,19 +813,19 @@ class _MoreActionsBottomSheetState extends State<MoreActionsBottomSheet> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Terminate Card'),
-        content: const Text(
+        title: Text('Terminate Card'),
+        content: Text(
           'Are you sure you want to terminate this card?\n\nThis action is permanent and cannot be undone. The card will be deactivated immediately and all future transactions will be declined.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Terminate'),
+            child: Text('Terminate'),
           ),
         ],
       ),
@@ -872,7 +872,7 @@ class _MoreActionsBottomSheetState extends State<MoreActionsBottomSheet> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Track Physical Card'),
+        title: Text('Track Physical Card'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -891,7 +891,7 @@ class _MoreActionsBottomSheetState extends State<MoreActionsBottomSheet> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Close'),
+            child: Text('Close'),
           ),
         ],
       ),
@@ -932,16 +932,16 @@ class _MoreActionsBottomSheetState extends State<MoreActionsBottomSheet> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const SizedBox(width: 16),
-                const Text(
+                Text(
                   'More Actions',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
             const SizedBox(height: 40),
             ListTile(
               leading: const Icon(Icons.description),
-              title: const Text('Account Statement'),
+              title: Text('Account Statement'),
               trailing: const Icon(Icons.arrow_forward_ios, size: 20),
               onTap: () {
                 navigateTo(context, AccountStatementPage(card: widget.card));
@@ -949,9 +949,9 @@ class _MoreActionsBottomSheetState extends State<MoreActionsBottomSheet> {
             ),
             ListTile(
               leading: const Icon(Icons.contactless_outlined),
-              title: const Text('Pay at POS (Tap to Pay)'),
-              subtitle: const Text('Use your phone at contactless payment terminals',
-                  style: TextStyle(fontSize: 12)),
+              title: Text('Pay at POS (Tap to Pay)'),
+              subtitle: Text('Use your phone at contactless payment terminals',
+                  style: GoogleFonts.inter(fontSize: 12)),
               trailing: const Icon(Icons.arrow_forward_ios, size: 20),
               onTap: () {
                 final cardId = widget.card['card_id']?.toString();
@@ -982,11 +982,11 @@ class _MoreActionsBottomSheetState extends State<MoreActionsBottomSheet> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Row(
+                   Row(
                     children: [
                       Icon(FontAwesomeIcons.snowflake, size: 20),
                       SizedBox(width: 12),
-                      Text('Freeze Card', style: TextStyle(fontSize: 16)),
+                      Text('Freeze Card', style: GoogleFonts.inter(fontSize: 16)),
                     ],
                   ),
                   FlutterSwitch(
@@ -1014,7 +1014,7 @@ class _MoreActionsBottomSheetState extends State<MoreActionsBottomSheet> {
 
             ListTile(
               leading: const Icon(Icons.swap_horiz),
-              title: const Text('Change Card Channels'),
+              title: Text('Change Card Channels'),
               trailing: const Icon(Icons.arrow_forward_ios, size: 20),
               onTap: () {
                 navigateTo(context, ChangeCardChannelsPage(card: widget.card));
@@ -1022,7 +1022,7 @@ class _MoreActionsBottomSheetState extends State<MoreActionsBottomSheet> {
             ),
             ListTile(
               leading: const Icon(Icons.storefront),
-              title: const Text('Manage Merchants'),
+              title: Text('Manage Merchants'),
               trailing: const Icon(Icons.arrow_forward_ios, size: 20),
               onTap: () {
                 navigateTo(context, ManageMerchantsPage(card: widget.card));
@@ -1030,7 +1030,7 @@ class _MoreActionsBottomSheetState extends State<MoreActionsBottomSheet> {
             ),
             ListTile(
               leading: const Icon(Icons.subscriptions_outlined),
-              title: const Text('Subscriptions'),
+              title: Text('Subscriptions'),
               trailing: const Icon(Icons.arrow_forward_ios, size: 20),
               onTap: () {
                 navigateTo(context, SubscriptionsPage(card: widget.card));
@@ -1039,10 +1039,10 @@ class _MoreActionsBottomSheetState extends State<MoreActionsBottomSheet> {
             if (_isPhysicalCard)
               ListTile(
                 leading: const Icon(Icons.local_shipping_outlined),
-                title: const Text('Track Physical Card'),
+                title: Text('Track Physical Card'),
                 subtitle: Text(
                   'Status: ${( _physicalTracking['status']?.toString() ?? 'pending').toUpperCase()}',
-                  style: const TextStyle(fontSize: 12),
+                  style: TextStyle(fontSize: 12),
                 ),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 20),
                 onTap: _showTrackPhysicalCard,
@@ -1058,7 +1058,7 @@ class _MoreActionsBottomSheetState extends State<MoreActionsBottomSheet> {
                   _isDelivered
                       ? 'Tap to activate this delivered card'
                       : 'Activation becomes available when delivery is marked completed',
-                  style: const TextStyle(fontSize: 12),
+                  style: TextStyle(fontSize: 12),
                 ),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 20),
                 onTap: _isDelivered && !_isActivated
@@ -1067,7 +1067,7 @@ class _MoreActionsBottomSheetState extends State<MoreActionsBottomSheet> {
               ),
             ListTile(
               leading: const Icon(Icons.lock),
-              title: const Text('Change PIN'),
+              title: Text('Change PIN'),
               trailing: const Icon(Icons.arrow_forward_ios, size: 20),
               onTap: () {
                 final cardId = widget.card['card_id']?.toString();
@@ -1095,8 +1095,8 @@ class _MoreActionsBottomSheetState extends State<MoreActionsBottomSheet> {
                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.red),
                     )
                   : const Icon(Icons.cancel, color: Colors.red),
-              title: const Text('Terminate Card',
-                  style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600)),
+              title: Text('Terminate Card',
+                  style: GoogleFonts.inter(color: Colors.red, fontWeight: FontWeight.w600)),
               trailing: const Icon(Icons.arrow_forward_ios, size: 20),
               onTap: _terminateLoading ? null : _terminateCard,
             ),
@@ -1138,15 +1138,15 @@ class _EnterPasscodeSheetState extends State<EnterPasscodeSheet> {
                 ],
               ),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'Enter Account Passcode',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'Enter your 4-digit passcode to view card details',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14),
+                style: GoogleFonts.inter(fontSize: 14),
               ),
               const SizedBox(height: 40),
               Row(
@@ -1169,7 +1169,7 @@ class _EnterPasscodeSheetState extends State<EnterPasscodeSheet> {
                       child: isEntered
                           ? Text(
                               pin[index],
-                              style: const TextStyle(fontSize: 20),
+                              style: TextStyle(fontSize: 20),
                             )
                           : null,
                     ),
@@ -1204,9 +1204,9 @@ class _EnterPasscodeSheetState extends State<EnterPasscodeSheet> {
                     backgroundColor: pin.length == 4 ? Colors.blue : Colors.grey,
                     disabledBackgroundColor: Colors.grey[300],
                   ),
-                  child: const Text(
+                  child: Text(
                     'Continue',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -1303,13 +1303,13 @@ class _CreatePasscodeSheetState extends State<CreatePasscodeSheet> {
               const SizedBox(height: 20),
               Text(
                 title,
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
               Text(
                 subtitle,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 14),
+                style: TextStyle(fontSize: 14),
               ),
               const SizedBox(height: 40),
               Row(
@@ -1332,7 +1332,7 @@ class _CreatePasscodeSheetState extends State<CreatePasscodeSheet> {
                       child: isEntered
                           ? Text(
                               currentPin[index],
-                              style: const TextStyle(fontSize: 20),
+                              style: TextStyle(fontSize: 20),
                             )
                           : null,
                     ),
@@ -1381,7 +1381,7 @@ class _CreatePasscodeSheetState extends State<CreatePasscodeSheet> {
                   ),
                   child: Text(
                     isConfirming ? 'Confirm' : 'Next',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -1417,9 +1417,9 @@ class _CardTypeBottomSheetState extends State<CardTypeBottomSheet> {
                 const SizedBox(height: 30),
                 Row(
                   children: [
-                    const Text(
+                    Text(
                       'Choose Your Card Type',
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         color: Colors.black,
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
@@ -1430,10 +1430,10 @@ class _CardTypeBottomSheetState extends State<CardTypeBottomSheet> {
                 const SizedBox(height: 20),
                 Image.asset("assets/cards.png"),
                 const SizedBox(height: 20),
-                const Text(
+                Text(
                   textAlign: TextAlign.center,
                   'Select the type of card that works\nbest for you',
-                  style: TextStyle(color: Colors.black38),
+                  style: GoogleFonts.inter(color: Colors.black38),
                 ),
                 const SizedBox(height: 20),
                 _buildOption(
@@ -1510,7 +1510,7 @@ class _CardTypeBottomSheetState extends State<CardTypeBottomSheet> {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.black54,
                       fontWeight: FontWeight.w800,
                       fontSize: 14,
@@ -1519,7 +1519,7 @@ class _CardTypeBottomSheetState extends State<CardTypeBottomSheet> {
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.black54,
                       fontWeight: FontWeight.w200,
                       fontSize: 12,
@@ -1713,17 +1713,17 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                   ),
                 ),
                 SizedBox(height: 30),
-                const Text(
+                Text(
                   'Basic Details',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   'Set up your card details',
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                  style: GoogleFonts.inter(fontSize: 14, color: Colors.grey),
                 ),
                 const SizedBox(height: 10),
-                const Text('Step 1 of 3'),
+                Text('Step 1 of 3'),
                 const SizedBox(height: 4),
                 LinearProgressIndicator(
                   value: 1 / 3,
@@ -1731,7 +1731,7 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                   color: primaryColor,
                 ),
                 const SizedBox(height: 20),
-                const Text('Scheme'),
+                Text('Scheme'),
                 const SizedBox(height: 10),
                 Container(
                   width: double.infinity,
@@ -1789,7 +1789,7 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                 ),
                 const SizedBox(height: 20),
                 if (widget.cardType != 'Anonymous') ...[
-                  const Text('Name on Card'),
+                  Text('Name on Card'),
                   const SizedBox(height: 10),
                   TextField(
                     controller: _nameController,
@@ -1804,7 +1804,7 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                   ),
                   const SizedBox(height: 20),
                 ],
-                const Text('Select Currency'),
+                Text('Select Currency'),
                 const SizedBox(height: 10),
                 DropdownButtonFormField<String>(
                   decoration: InputDecoration(
@@ -1849,7 +1849,7 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                   const SizedBox(height: 10),
                   TextField(
                     controller: _fundAmountController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: false),
+                    keyboardType: TextInputType.numberWithOptions(decimal: false),
                     onChanged: (_) {
                       if (mounted) setState(() {});
                     },
@@ -1894,7 +1894,7 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                                   : rate == null
                                       ? 'USD/NGN rate unavailable. Please try again shortly.'
                                       : 'Rate: 1 USD = ₦${NumberFormat('#,##0.##').format(rate)}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.black87,
@@ -1904,7 +1904,7 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                               const SizedBox(height: 4),
                               Text(
                                 'Funding equivalent: \u20A6${NumberFormat('#,##0.##').format(equivalent)}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
                                   color: Colors.black87,
                                 ),
@@ -1913,7 +1913,7 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                             const SizedBox(height: 4),
                             Text(
                               'Card fee: \$$_usdVirtualCardFee',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.black87,
                               ),
@@ -1922,7 +1922,7 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                               const SizedBox(height: 4),
                               Text(
                                 'Fee equivalent: \u20A6${NumberFormat('#,##0.##').format(feeEquivalent)}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
                                   color: Colors.black87,
                                 ),
@@ -1932,7 +1932,7 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                               const SizedBox(height: 4),
                               Text(
                                 'Total debit: \u20A6${NumberFormat('#,##0.##').format(totalEquivalent)}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
                                   color: Colors.black87,
                                 ),
@@ -1952,14 +1952,14 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                         border: Border.all(color: Colors.amber.shade300),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Row(
+                      child:  Row(
                         children: [
                           Icon(Icons.info_outline, color: Colors.amber),
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               'USD cards require identity verification. Please provide your BVN.',
-                              style: TextStyle(fontSize: 12, color: Colors.black87),
+                              style: GoogleFonts.inter(fontSize: 12, color: Colors.black87),
                             ),
                           ),
                         ],
@@ -1967,7 +1967,7 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                     ),
                     if (_bvnMissing) ...[
                       const SizedBox(height: 16),
-                      const Text('BVN (Bank Verification Number)'),
+                      Text('BVN (Bank Verification Number)'),
                       const SizedBox(height: 8),
                       TextField(
                         controller: _bvnController,
@@ -1985,7 +1985,7 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                     ],
                     if (_dobMissing) ...[  
                       const SizedBox(height: 16),
-                      const Text('Date of Birth'),
+                      Text('Date of Birth'),
                       const SizedBox(height: 8),
                       TextField(
                         controller: _dobController,
@@ -2020,7 +2020,7 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                       Expanded(
                         child: Wrap(
                           children: [
-                            const Text('Agree with '),
+                            Text('Agree with '),
                             GestureDetector(
                               onTap: () {
                                 // Navigate or show dialog
@@ -2028,7 +2028,7 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                               },
                               child: Text(
                                 'Terms and Conditions',
-                                style: TextStyle(
+                                style: GoogleFonts.inter(
                                   color: primaryColor,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -2042,9 +2042,9 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                 ),
                 if (widget.cardType == 'Physical') ...[
                   const SizedBox(height: 20),
-                  const Text('Shipping Address'),
+                  Text('Shipping Address'),
                   const SizedBox(height: 20),
-                  const Text('Address Line 1'),
+                  Text('Address Line 1'),
                   const SizedBox(height: 10),
                   TextField(
                     controller: _address1Controller,
@@ -2057,7 +2057,7 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  const Text('Address Line 2'),
+                  Text('Address Line 2'),
                   const SizedBox(height: 10),
                   TextField(
                     controller: _address2Controller,
@@ -2070,7 +2070,7 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  const Text('State'),
+                  Text('State'),
                   const SizedBox(height: 10),
                   _buildSearchablePicker(
                     hint: 'Select State',
@@ -2078,7 +2078,7 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                     onTap: _openStateSelector,
                   ),
                   const SizedBox(height: 20),
-                  const Text('City'),
+                  Text('City'),
                   const SizedBox(height: 10),
                   _buildSearchablePicker(
                     hint: _selectedState == null ? 'Select a state first' : 'Select City',
@@ -2194,9 +2194,9 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Continue',
-                    style: TextStyle(color: Colors.white),
+                    style: GoogleFonts.inter(color: Colors.white),
                   ),
                 ),
               ],
@@ -2226,7 +2226,7 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
           children: [
             Text(
               value ?? hint,
-              style: TextStyle(
+              style: GoogleFonts.inter(
                 color: value != null ? Colors.black87 : Colors.grey.shade500,
                 fontSize: 16,
               ),
@@ -2294,7 +2294,7 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(title,
-                            style: const TextStyle(
+                            style: TextStyle(
                                 fontSize: 18, fontWeight: FontWeight.w600)),
                         GestureDetector(
                           onTap: () => Navigator.pop(ctx),
@@ -2339,7 +2339,7 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                     child: filtered.isEmpty
                         ? Center(
                             child: Text('No results found',
-                                style: TextStyle(color: Colors.grey.shade500)))
+                                style: GoogleFonts.inter(color: Colors.grey.shade500)))
                         : ListView.builder(
                             itemCount: filtered.length,
                             padding: const EdgeInsets.all(16),
@@ -2373,7 +2373,7 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                                       Expanded(
                                         child: Text(
                                           item,
-                                          style: TextStyle(
+                                          style: GoogleFonts.inter(
                                             fontSize: 15,
                                             fontWeight: isSelected
                                                 ? FontWeight.w600
@@ -2502,17 +2502,17 @@ class _CustomizeCardBottomSheetState extends State<CustomizeCardBottomSheet>
                   ),
                 ],
               ),
-              const Text(
+              Text(
                 'Customize Your Card',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 4),
-              const Text(
+              Text(
                 'Set up your card preference',
-                style: TextStyle(fontSize: 14, color: Colors.grey),
+                style: GoogleFonts.inter(fontSize: 14, color: Colors.grey),
               ),
               const SizedBox(height: 10),
-              const Text('Step 2 of 3'),
+              Text('Step 2 of 3'),
               const SizedBox(height: 4),
               LinearProgressIndicator(
                 value: 2 / 3,
@@ -2536,7 +2536,7 @@ class _CustomizeCardBottomSheetState extends State<CustomizeCardBottomSheet>
                   _colorOverride != null
                       ? 'Custom Color'
                       : _selectedTemplate.name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -2610,9 +2610,9 @@ class _CustomizeCardBottomSheetState extends State<CustomizeCardBottomSheet>
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'I want this Card',
-                  style: TextStyle(color: Colors.white),
+                  style: GoogleFonts.inter(color: Colors.white),
                 ),
               ),
             ],
@@ -2695,7 +2695,7 @@ class _CustomizeCardBottomSheetState extends State<CustomizeCardBottomSheet>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Pick a color'),
+        title: Text('Pick a color'),
         content: SingleChildScrollView(
           child: ColorPicker(
             pickerColor: pickerColor,
@@ -2707,7 +2707,7 @@ class _CustomizeCardBottomSheetState extends State<CustomizeCardBottomSheet>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text('Cancel'),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: primaryColor),
@@ -2715,7 +2715,7 @@ class _CustomizeCardBottomSheetState extends State<CustomizeCardBottomSheet>
               setState(() => _colorOverride = pickerColor);
               Navigator.pop(ctx);
             },
-            child: const Text('Apply', style: TextStyle(color: Colors.white)),
+            child: Text('Apply', style: GoogleFonts.inter(color: Colors.white)),
           ),
         ],
       ),
@@ -2845,23 +2845,23 @@ class ReviewConfirmBottomSheet extends StatelessWidget {
                     ),
                   ],
                 ),
-                const Text(
+                Text(
                   'Review & Confirm',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   'Double-check your card details before creating',
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                  style: GoogleFonts.inter(fontSize: 14, color: Colors.grey),
                 ),
                 const SizedBox(height: 10),
-                const Text('Step 3 of 3'),
+                Text('Step 3 of 3'),
                 const SizedBox(height: 4),
                 LinearProgressIndicator(value: 1.0),
                 const SizedBox(height: 20),
-                const Text(
+                Text(
                   'Your New Card',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 10),
                 Center(
@@ -2904,14 +2904,14 @@ class ReviewConfirmBottomSheet extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
+                            Text(
                               'Summary',
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                              style: GoogleFonts.inter(fontWeight: FontWeight.bold),
                             ),
                             if (selectedCurrency.contains("USD"))
                               Text(
                                 "\$${NumberFormat('#,##0.##').format(usdCardFee)} Fee",
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -2919,7 +2919,7 @@ class ReviewConfirmBottomSheet extends StatelessWidget {
                                 cardType != 'Physical')
                               Text(
                                 "\u20A6${NumberFormat('#,##0.##').format(ngnCardFee)} Fee",
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -2997,14 +2997,14 @@ class ReviewConfirmBottomSheet extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Column(
-                    children: const [
+                    children:  [
                       Row(
                         children: [
                           Icon(Icons.security, color: Colors.green),
                           SizedBox(width: 8),
                           Text(
                             "Secure & Protected",
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               fontWeight: FontWeight.bold,
                               color: Colors.green,
                             ),
@@ -3018,7 +3018,7 @@ class ReviewConfirmBottomSheet extends StatelessWidget {
                           Expanded(
                             child: Text(
                               'YOUR CARD WILL BE SECURED WITH INDUSTRY-STANDARD ENCRYPTION AND FRAUD PROTECTION.',
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 color: Colors.green,
                                 fontWeight: FontWeight.w500,
                                 fontSize: 14,
@@ -3042,9 +3042,9 @@ class ReviewConfirmBottomSheet extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'I want this Card',
-                    style: TextStyle(color: Colors.white),
+                    style: GoogleFonts.inter(color: Colors.white),
                   ),
                 ),
               ],
@@ -3063,11 +3063,11 @@ class ReviewConfirmBottomSheet extends StatelessWidget {
         children: [
           Text(
             label,
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+            style: GoogleFonts.inter(color: Colors.grey.shade600, fontSize: 12),
           ),
           Text(
             value,
-            style: TextStyle(
+            style: GoogleFonts.inter(
               color: Colors.black87,
               fontSize: 12,
               fontWeight: FontWeight.w300,
@@ -3513,9 +3513,9 @@ class _SudoSecureCardSheetState extends State<SudoSecureCardSheet> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Secure Card Details',
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           color: Colors.black87,
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
@@ -3528,7 +3528,7 @@ class _SudoSecureCardSheetState extends State<SudoSecureCardSheet> {
                           const SizedBox(width: 4),
                           Text(
                             'PCI-DSS Compliant',
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               color: Colors.green.shade600,
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
@@ -3569,7 +3569,7 @@ class _SudoSecureCardSheetState extends State<SudoSecureCardSheet> {
                             const SizedBox(height: 12),
                             Text(
                               'Could not load secure card view:\n$_error',
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 color: Colors.red.shade400,
                                 fontSize: 13,
                               ),
@@ -3591,7 +3591,7 @@ class _SudoSecureCardSheetState extends State<SudoSecureCardSheet> {
                               const SizedBox(height: 12),
                               Text(
                                 'Loading card details...',
-                                style: TextStyle(color: Colors.grey.shade500),
+                                style: GoogleFonts.inter(color: Colors.grey.shade500),
                               ),
                             ],
                           ),
@@ -3742,9 +3742,9 @@ class _ChangeSudoCardPinSheetState extends State<ChangeSudoCardPinSheet> {
         children: [
           Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
           const SizedBox(height: 20),
-          Text('Change Card PIN', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text('Change Card PIN', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          Text(_stepTitle, style: TextStyle(color: Colors.grey.shade600)),
+          Text(_stepTitle, style: GoogleFonts.inter(color: Colors.grey.shade600)),
           const SizedBox(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -3785,19 +3785,19 @@ class ConfirmTransactionBottomSheet extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 15),
-              const Text(
+              Text(
                 'Confirm Transaction',
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: Colors.black,
                 ),
               ),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'Review and confirm to complete your transaction.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: Colors.grey),
+                style: GoogleFonts.inter(fontSize: 14, color: Colors.grey),
               ),
               const SizedBox(height: 30),
               Container(
@@ -3810,21 +3810,21 @@ class ConfirmTransactionBottomSheet extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Summary',
-                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                      style: GoogleFonts.inter(fontSize: 14, color: Colors.grey),
                     ),
                     const SizedBox(height: 16),
-                    const Row(
+                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           'AMOUNT:',
-                          style: TextStyle(color: Colors.grey, fontSize: 12),
+                          style: GoogleFonts.inter(color: Colors.grey, fontSize: 12),
                         ),
                         Text(
                           '₦20,000',
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
                           ),
@@ -3832,16 +3832,16 @@ class ConfirmTransactionBottomSheet extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    const Row(
+                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           'MERCHANT/POS:',
-                          style: TextStyle(color: Colors.grey, fontSize: 12),
+                          style: GoogleFonts.inter(color: Colors.grey, fontSize: 12),
                         ),
                         Text(
                           'Zenith Bank POS - Lekki Branch',
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
                           ),
@@ -3849,16 +3849,16 @@ class ConfirmTransactionBottomSheet extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    const Row(
+                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           'CARD:',
-                          style: TextStyle(color: Colors.grey, fontSize: 12),
+                          style: GoogleFonts.inter(color: Colors.grey, fontSize: 12),
                         ),
                         Text(
                           'Virtual Card (••• 4821)',
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
                           ),
@@ -3889,9 +3889,9 @@ class ConfirmTransactionBottomSheet extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'Confirm',
-                  style: TextStyle(color: Colors.white, fontSize: 18),
+                  style: GoogleFonts.inter(color: Colors.white, fontSize: 18),
                 ),
               ),
               const SizedBox(height: 30),

@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:local_auth/local_auth.dart';
 
 class ChangePasscode extends StatefulWidget {
@@ -169,9 +170,9 @@ class _ChangePasscodeState extends State<ChangePasscode> {
                           color: Colors.green, size: 28),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
+                    Text(
                       'Passcode Updated',
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         color: Colors.green,
                         fontSize: 16.0,
                         fontWeight: FontWeight.w700,
@@ -181,7 +182,7 @@ class _ChangePasscodeState extends State<ChangePasscode> {
                     const SizedBox(height: 8),
                     Text(
                       'Your passcode has been changed successfully.',
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         color: Colors.grey.shade600,
                         fontSize: 13.0,
                       ),
@@ -199,9 +200,9 @@ class _ChangePasscodeState extends State<ChangePasscode> {
                             borderRadius: BorderRadius.circular(12.0),
                           ),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Done',
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                             color: Colors.white,
                             fontSize: 16.0,
                             fontWeight: FontWeight.w600,
@@ -275,24 +276,24 @@ class _ChangePasscodeState extends State<ChangePasscode> {
           ),
         ),
         const SizedBox(height: 20),
-        const Center(
+         Center(
           child: Text(
             'Verify Your Identity',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700),
           ),
         ),
         const SizedBox(height: 6),
         Center(
           child: Text(
             'Enter your login password to continue',
-            style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+            style: GoogleFonts.inter(fontSize: 13, color: Colors.grey.shade500),
             textAlign: TextAlign.center,
           ),
         ),
         const SizedBox(height: 32),
         Text(
           'Login Password',
-          style: TextStyle(
+          style: GoogleFonts.inter(
             fontSize: 13,
             fontWeight: FontWeight.w600,
             color: Colors.grey.shade700,
@@ -305,7 +306,7 @@ class _ChangePasscodeState extends State<ChangePasscode> {
           keyboardType: TextInputType.visiblePassword,
           decoration: InputDecoration(
             hintText: 'Enter your password',
-            hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+            hintStyle: GoogleFonts.inter(color: Colors.grey.shade400, fontSize: 14),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             border: OutlineInputBorder(
@@ -350,9 +351,9 @@ class _ChangePasscodeState extends State<ChangePasscode> {
                     child: CircularProgressIndicator(
                         strokeWidth: 2, color: Colors.white),
                   )
-                : const Text(
+                : Text(
                     'Continue',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: Colors.white,
                       fontWeight: FontWeight.w700,
                       fontSize: 15,
@@ -394,7 +395,7 @@ class _ChangePasscodeState extends State<ChangePasscode> {
                   const SizedBox(height: 8),
                   Text(
                     'Use Fingerprint / Face ID',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       fontSize: 13,
                       color: Colors.grey.shade600,
                       fontWeight: FontWeight.w500,
@@ -435,12 +436,12 @@ class _ChangePasscodeState extends State<ChangePasscode> {
         const SizedBox(height: 16),
         Text(title,
             style:
-                const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
         const SizedBox(height: 6),
         Text(
           subtitle,
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+          style: GoogleFonts.inter(fontSize: 13, color: Colors.grey.shade500),
         ),
         const SizedBox(height: 32),
         _buildPinDots(currentPin),
@@ -513,9 +514,9 @@ class _ChangePasscodeState extends State<ChangePasscode> {
                 ],
               ),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'Change Passcode',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 12),
               // Step progress indicator

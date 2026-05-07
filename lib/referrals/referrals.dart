@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:share_plus/share_plus.dart';
@@ -198,7 +199,7 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
                 children: [
                   Text(
                     "Referrals",
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                    style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
@@ -245,7 +246,7 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
                                   children: [
                                     Text(
                                       '$totalReferrals',
-                                      style: TextStyle(
+                                      style: GoogleFonts.inter(
                                         fontSize: 24,
                                         fontWeight: FontWeight.bold,
                                         color: primaryColor,
@@ -253,7 +254,7 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
                                     ),
                                     Text(
                                       'Total Referrals',
-                                      style: TextStyle(
+                                      style: GoogleFonts.inter(
                                         fontSize: 12,
                                         color: primaryColor,
                                       ),
@@ -276,7 +277,7 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
                                   children: [
                                     Text(
                                       '$activeReferrals',
-                                      style: TextStyle(
+                                      style: GoogleFonts.inter(
                                         fontSize: 24,
                                         fontWeight: FontWeight.bold,
                                         color: Color(0xFFDD00FF),
@@ -284,7 +285,7 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
                                     ),
                                     Text(
                                       'Active Users',
-                                      style: TextStyle(
+                                      style: GoogleFonts.inter(
                                         fontSize: 12,
                                         color: Color(0xFFDD00FF),
                                       ),
@@ -317,7 +318,7 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
                                   SizedBox(width: 8),
                                   Text(
                                     'Your Referral Code',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontSize: 15,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -341,7 +342,7 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
                                       ),
                                       child: Text(
                                         data['referralCode'] ?? 'LOADING',
-                                        style: TextStyle(
+                                        style: GoogleFonts.inter(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w500,
                                         ),
@@ -398,7 +399,7 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
                                             SizedBox(width: 8),
                                             Text(
                                               "Share Link",
-                                              style: TextStyle(
+                                              style: GoogleFonts.inter(
                                                 fontWeight: FontWeight.w600,
                                                 fontSize: 13,
                                                 color: Colors.white,
@@ -436,7 +437,7 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
                                             SizedBox(width: 8),
                                             Text(
                                               "Invite Contacts",
-                                              style: TextStyle(
+                                              style: GoogleFonts.inter(
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w600,
                                                 color: Colors.white,
@@ -468,7 +469,7 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
                                         minTransactionAmount > 0
                                             ? 'Earn ₦${bonusPerReferral.toStringAsFixed(0)} per referral who transacts at least ₦${minTransactionAmount.toStringAsFixed(0)}'
                                             : 'Earn ₦${bonusPerReferral.toStringAsFixed(0)} per referral',
-                                        style: TextStyle(
+                                        style: GoogleFonts.inter(
                                           fontSize: 12,
                                           color: primaryColor,
                                         ),
@@ -494,7 +495,7 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
                         Center(
                           child: Text(
                             "No referrals yet",
-                            style: TextStyle(color: Colors.grey),
+                            style: GoogleFonts.inter(color: Colors.grey),
                           ),
                         )
                       else
@@ -560,7 +561,7 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
                 SizedBox(width: 15),
                 Text(
                   'Earnings Summary',
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
                   ),
@@ -584,14 +585,14 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
                   children: [
                     Text(
                       'Total Earned',
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 12,
                         color: Colors.grey.shade500,
                       ),
                     ),
                     Text(
                       '₦${totalEarned.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}',
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: Colors.grey.shade700,
@@ -603,14 +604,14 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
                   children: [
                     Text(
                       'Per Referral',
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 12,
                         color: Colors.grey.shade500,
                       ),
                     ),
                     Text(
                       '₦${bonusPerReferral.toStringAsFixed(0)}',
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: Colors.grey.shade700,
@@ -633,7 +634,7 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
                   children: [
                     Text(
                       'Min. Transaction Required',
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: primaryColor.withValues(alpha: 0.6),
@@ -642,7 +643,7 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
                     Spacer(),
                     Text(
                       '₦${minTransactionAmount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}',
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w900,
                         color: primaryColor,
@@ -688,7 +689,7 @@ class PermissionExplanationBottomSheet extends StatelessWidget {
           SizedBox(height: 30),
           Text(
             "Access to Contacts",
-            style: TextStyle(
+            style: GoogleFonts.inter(
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
@@ -696,7 +697,7 @@ class PermissionExplanationBottomSheet extends StatelessWidget {
           SizedBox(height: 16),
           Text(
             "We need access to your contacts so you can easily invite your friends to join the app using your referral code.",
-            style: TextStyle(
+            style: GoogleFonts.inter(
               fontSize: 15,
               color: Colors.grey.shade700,
             ),
@@ -704,7 +705,7 @@ class PermissionExplanationBottomSheet extends StatelessWidget {
           SizedBox(height: 8),
           Text(
             "• Select multiple contacts at once\n• Send invitation via SMS, WhatsApp, or any messaging app\n• No contact information is stored or shared",
-            style: TextStyle(
+            style: GoogleFonts.inter(
               fontSize: 14,
               color: Colors.grey.shade600,
             ),
@@ -721,7 +722,7 @@ class PermissionExplanationBottomSheet extends StatelessWidget {
                   ),
                   child: Text(
                     "Cancel",
-                    style: TextStyle(color: Colors.black87),
+                    style: GoogleFonts.inter(color: Colors.black87),
                   ),
                 ),
               ),
@@ -735,7 +736,7 @@ class PermissionExplanationBottomSheet extends StatelessWidget {
                   ),
                   child: Text(
                     "Continue",
-                    style: TextStyle(color: Colors.white),
+                    style: GoogleFonts.inter(color: Colors.white),
                   ),
                 ),
               ),

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 class CashbackHistoryPage extends StatelessWidget {
@@ -17,9 +18,9 @@ class CashbackHistoryPage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
-        title: const Text(
+        title: Text(
           'Cashback History',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600),
         ),
       ),
       body: uid == null
@@ -64,7 +65,7 @@ class CashbackHistoryPage extends StatelessWidget {
                               children: [
                                 Text(
                                   'Current Cashback Balance',
-                                  style: TextStyle(
+                                  style: GoogleFonts.inter(
                                     color: Colors.green.shade800,
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
@@ -73,7 +74,7 @@ class CashbackHistoryPage extends StatelessWidget {
                                 const SizedBox(height: 4),
                                 Text(
                                   '₦ ${NumberFormat('#,##0.00').format(currentBalance)}',
-                                  style: TextStyle(
+                                  style: GoogleFonts.inter(
                                     color: Colors.green.shade900,
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold,
@@ -169,7 +170,7 @@ class CashbackHistoryPage extends StatelessWidget {
                                         isEarned
                                             ? 'Cashback Earned'
                                             : 'Cashback Used',
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontWeight: FontWeight.w700,
                                           fontSize: 14,
                                         ),
@@ -178,7 +179,7 @@ class CashbackHistoryPage extends StatelessWidget {
                                       Text(
                                         sourceType[0].toUpperCase() +
                                             sourceType.substring(1),
-                                        style: TextStyle(
+                                        style: GoogleFonts.inter(
                                           color: Colors.grey.shade700,
                                           fontSize: 12,
                                         ),
@@ -188,7 +189,7 @@ class CashbackHistoryPage extends StatelessWidget {
                                         DateFormat(
                                           'dd MMM yyyy, h:mm a',
                                         ).format(when),
-                                        style: TextStyle(
+                                        style: GoogleFonts.inter(
                                           color: Colors.grey.shade600,
                                           fontSize: 11,
                                         ),
@@ -198,7 +199,7 @@ class CashbackHistoryPage extends StatelessWidget {
                                 ),
                                 Text(
                                   '${isEarned ? '+' : '-'}₦ ${NumberFormat('#,##0.00').format(amount)}',
-                                  style: TextStyle(
+                                  style: GoogleFonts.inter(
                                     color: isEarned
                                         ? Colors.green
                                         : Colors.orange,

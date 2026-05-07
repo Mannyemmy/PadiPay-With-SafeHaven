@@ -813,7 +813,7 @@ class _AliasFormSheetState extends State<_AliasFormSheet> {
                           searchFieldProps: TextFieldProps(
                             decoration: InputDecoration(
                               hintText: 'Search bank...',
-                              hintStyle: const TextStyle(fontSize: 14),
+                              hintStyle: TextStyle(fontSize: 14),
                               border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8)),
                               contentPadding: const EdgeInsets.symmetric(
@@ -827,7 +827,7 @@ class _AliasFormSheetState extends State<_AliasFormSheet> {
                               ListTile(
                             title: Text(item,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontSize: 14)),
+                                style: TextStyle(fontSize: 14)),
                           ),
                         ),
                         items: (filter, _) async => _banks

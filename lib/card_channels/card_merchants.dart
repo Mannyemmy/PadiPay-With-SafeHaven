@@ -2,6 +2,7 @@ import 'package:card_app/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 String _normalizeMerchantKey(String name) {
   return name
@@ -155,17 +156,17 @@ class _ManageMerchantsPageState extends State<ManageMerchantsPage> {
                       color: Colors.white, size: 20),
                 ),
                 const SizedBox(height: 60),
-                const Text(
+                Text(
                   'Manage Merchants',
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: Colors.white),
                 ),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   'Block specific merchants on this card',
-                  style: TextStyle(fontSize: 13, color: Colors.white70),
+                  style: GoogleFonts.inter(fontSize: 13, color: Colors.white70),
                 ),
                 const SizedBox(height: 8),
               ],
@@ -174,14 +175,14 @@ class _ManageMerchantsPageState extends State<ManageMerchantsPage> {
           if (_loading)
             const Expanded(child: Center(child: CircularProgressIndicator()))
           else if (merchants.isEmpty)
-            const Expanded(
+             Expanded(
               child: Center(
                 child: Padding(
                   padding: EdgeInsets.all(32),
                   child: Text(
                     'No merchants yet.\nMerchants will appear here after your card is used.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey, fontSize: 14),
+                    style: GoogleFonts.inter(color: Colors.grey, fontSize: 14),
                   ),
                 ),
               ),

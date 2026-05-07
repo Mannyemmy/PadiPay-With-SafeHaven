@@ -16,6 +16,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:flutter_switch/flutter_switch.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:app_settings/app_settings.dart';
@@ -101,7 +102,7 @@ class _ProfilePageState extends State<ProfilePage> {
             children: [
               Text(
                 'Biometric Not Available',
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
@@ -109,7 +110,7 @@ class _ProfilePageState extends State<ProfilePage> {
               SizedBox(height: 12),
               Text(
                 'Your device does not support Touch ID or Face ID. Please enable biometric authentication in your device settings first.',
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   fontSize: 14,
                   color: Colors.grey.shade600,
                 ),
@@ -243,7 +244,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     SizedBox(height: 10),
                     Text(
                       "${firstName ?? ""} ${lastName ?? ""}",
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
@@ -251,7 +252,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     SizedBox(height: 5),
                     Text(
                       email ?? "",
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontWeight: FontWeight.w300,
                         fontSize: 16,
                         color: Colors.grey.shade400,
@@ -283,7 +284,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                   : tier == "0"
                                       ? "KYC Not Verified"
                                       : "KYC Verified Tier $tier",
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: Colors.green,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -326,7 +327,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                   SizedBox(width: 20),
                                   Text(
                                     'Edit Profile',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w700,
                                       color: Colors.grey.shade700,
@@ -372,7 +373,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                   SizedBox(width: 20),
                                   Text(
                                     'Upgrade Account',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w700,
                                       color: Colors.grey.shade700,
@@ -418,7 +419,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           //         SizedBox(width: 20),
                           //         Text(
                           //           'Promos & Offers',
-                          //           style: TextStyle(
+                          //           style: GoogleFonts.inter(
                           //             fontSize: 15,
                           //             fontWeight: FontWeight.w700,
                           //             color: Colors.grey.shade700,
@@ -466,7 +467,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                   SizedBox(width: 20),
                                   Text(
                                     'Referrals',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w700,
                                       color: Colors.grey.shade700,
@@ -512,7 +513,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                   SizedBox(width: 20),
                                   Text(
                                     'Notification Settings',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w700,
                                       color: Colors.grey.shade700,
@@ -558,7 +559,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                   SizedBox(width: 20),
                                   Text(
                                     'Change Passcode',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w700,
                                       color: Colors.grey.shade700,
@@ -604,7 +605,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                   SizedBox(width: 20),
                                   Text(
                                     'Login with Fingerprint / Face ID',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w700,
                                       color: Colors.grey.shade700,
@@ -654,7 +655,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                   SizedBox(width: 20),
                                   Text(
                                     'Legal',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w700,
                                       color: Colors.grey.shade700,
@@ -700,7 +701,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                   SizedBox(width: 20),
                                   Text(
                                     'Visit Our Website',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w700,
                                       color: Colors.grey.shade700,
@@ -744,7 +745,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                   SizedBox(width: 20),
                                   Text(
                                     'Customer Support',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w700,
                                       color: Colors.grey.shade700,
@@ -790,7 +791,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                   SizedBox(width: 20),
                                   Text(
                                     'Log Out',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w700,
                                       color: Colors.grey.shade700,

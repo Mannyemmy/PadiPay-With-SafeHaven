@@ -3,6 +3,7 @@ import 'package:card_app/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class ChangeCardChannelsPage extends StatefulWidget {
   final Map<String, dynamic> card;
@@ -105,14 +106,14 @@ class _ChangeCardChannelsPageState extends State<ChangeCardChannelsPage> {
                   child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
                 ),
                 const SizedBox(height: 60),
-                const Text(
+                Text(
                   'Card Channels',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   'Control where your card can be used',
-                  style: TextStyle(fontSize: 13, color: Colors.white70),
+                  style: GoogleFonts.inter(fontSize: 13, color: Colors.white70),
                 ),
                 const SizedBox(height: 8),
               ],
@@ -131,8 +132,8 @@ class _ChangeCardChannelsPageState extends State<ChangeCardChannelsPage> {
                       decoration: BoxDecoration(color: primaryColor, borderRadius: BorderRadius.circular(4)),
                       child: const Icon(Icons.payment, color: Colors.white, size: 20),
                     ),
-                    title: const Text('POS'),
-                    subtitle: const Text('Allow this card to work on POS terminals'),
+                    title: Text('POS'),
+                    subtitle: Text('Allow this card to work on POS terminals'),
                     value: _posEnabled,
                     onChanged: _saving ? null : (val) {
                       setState(() => _posEnabled = val);
@@ -145,8 +146,8 @@ class _ChangeCardChannelsPageState extends State<ChangeCardChannelsPage> {
                       decoration: BoxDecoration(color: primaryColor, borderRadius: BorderRadius.circular(4)),
                       child: const Icon(Icons.atm, color: Colors.white, size: 20),
                     ),
-                    title: const Text('ATM'),
-                    subtitle: const Text('Allow this card to work on ATMs'),
+                    title: Text('ATM'),
+                    subtitle: Text('Allow this card to work on ATMs'),
                     value: _atmEnabled,
                     onChanged: _saving ? null : (val) {
                       setState(() => _atmEnabled = val);
@@ -159,8 +160,8 @@ class _ChangeCardChannelsPageState extends State<ChangeCardChannelsPage> {
                       decoration: BoxDecoration(color: primaryColor, borderRadius: BorderRadius.circular(4)),
                       child: const Icon(Icons.web, color: Colors.white, size: 20),
                     ),
-                    title: const Text('Web / Online'),
-                    subtitle: const Text('Allow this card to work on online stores'),
+                    title: Text('Web / Online'),
+                    subtitle: Text('Allow this card to work on online stores'),
                     value: _webEnabled,
                     onChanged: _saving ? null : (val) {
                       setState(() => _webEnabled = val);

@@ -2,6 +2,7 @@ import 'package:card_app/home_pages/home_page.dart';
 import 'package:card_app/ui/receipt_page.dart';
 import 'package:card_app/utils.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 class PaymentSuccessfulPage extends StatefulWidget {
@@ -108,7 +109,7 @@ class _PaymentSuccessfulPageState extends State<PaymentSuccessfulPage>
                               padding: const EdgeInsets.all(8.0),
                               child: Text(
                                 "Done",
-                                style: TextStyle(
+                                style: GoogleFonts.inter(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
@@ -158,7 +159,7 @@ class _PaymentSuccessfulPageState extends State<PaymentSuccessfulPage>
                       const SizedBox(height: 20),
                       Text(
                         widget.title,
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           color: Colors.white,
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -169,7 +170,7 @@ class _PaymentSuccessfulPageState extends State<PaymentSuccessfulPage>
                       widget.amount == "0"
                           ? Text(
                               "₦${formatNumber(widget.amount)}",
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 30,
                                 color: Colors.white,
@@ -179,7 +180,7 @@ class _PaymentSuccessfulPageState extends State<PaymentSuccessfulPage>
                       SizedBox(height: 15),
                       Text(
                         widget.description,
-                        style: TextStyle(color: Colors.white70),
+                        style: GoogleFonts.inter(color: Colors.white70),
                         textAlign: TextAlign.center,
                       ),
 
@@ -206,7 +207,7 @@ class _PaymentSuccessfulPageState extends State<PaymentSuccessfulPage>
                             SizedBox(width: 15),
                             Text(
                               "Share Receipt",
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                              style: GoogleFonts.inter(fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),

@@ -14,6 +14,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -563,7 +564,7 @@ If none found, return an empty array: []
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              const Text(
+              Text(
                 'Import From Image',
                 style:
                     TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -571,7 +572,7 @@ If none found, return an empty array: []
               const SizedBox(height: 4),
               Text(
                 'Snap or upload a screenshot of usernames / a chat',
-                style: TextStyle(
+                style: GoogleFonts.inter(
                     fontSize: 13, color: Colors.grey.shade600),
               ),
               const SizedBox(height: 16),
@@ -581,7 +582,7 @@ If none found, return an empty array: []
                   child: const Icon(Icons.camera_alt,
                       color: Colors.white),
                 ),
-                title: const Text('Take a Photo'),
+                title: Text('Take a Photo'),
                 onTap: () =>
                     Navigator.of(ctx).pop(ImageSource.camera),
               ),
@@ -591,7 +592,7 @@ If none found, return an empty array: []
                   child: const Icon(Icons.photo_library,
                       color: Colors.white),
                 ),
-                title: const Text('Choose from Gallery'),
+                title: Text('Choose from Gallery'),
                 onTap: () =>
                     Navigator.of(ctx).pop(ImageSource.gallery),
               ),
@@ -833,9 +834,9 @@ If none found, return an empty array: []
           child: const Icon(Icons.arrow_back_ios,
               color: Colors.black87, size: 20),
         ),
-        title: const Text(
+        title: Text(
           'Targeted Giveaway',
-          style: TextStyle(
+          style: GoogleFonts.inter(
             color: Colors.black87,
             fontWeight: FontWeight.bold,
             fontSize: 18,
@@ -876,7 +877,7 @@ If none found, return an empty array: []
                 const SizedBox(width: 8),
                 Text(
                   'Balance: ${_balance ?? 'ï¿½'}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: primaryColor,
                   ),
@@ -890,9 +891,9 @@ If none found, return an empty array: []
           _buildStepIndicator(0),
           const SizedBox(height: 20),
 
-          const Text(
+          Text(
             'Add Recipients',
-            style: TextStyle(
+            style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -900,7 +901,7 @@ If none found, return an empty array: []
           const SizedBox(height: 4),
           Text(
             'Enter Padi-tags manually, import from a file, or scan an image.',
-            style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+            style: GoogleFonts.inter(fontSize: 13, color: Colors.grey.shade600),
           ),
           const SizedBox(height: 16),
 
@@ -948,9 +949,9 @@ If none found, return an empty array: []
                   color: primaryColor,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Text(
+                child: Text(
                   'Add tags',
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                       color: Colors.white, fontWeight: FontWeight.bold),
                 ),
               ),
@@ -993,7 +994,7 @@ If none found, return an empty array: []
                   onDeleted: () => _removeTag(tag.username),
                   backgroundColor: chipColor.withOpacity(0.1),
                   side: BorderSide(color: chipColor.withOpacity(0.35), width: 1),
-                  labelStyle: TextStyle(
+                  labelStyle: GoogleFonts.inter(
                     color: chipColor,
                     fontWeight: FontWeight.w500,
                     fontSize: 13,
@@ -1006,7 +1007,7 @@ If none found, return an empty array: []
               children: [
                 Text(
                   '${_tags.length} tag(s)\u00b7${_tags.where((t) => t.status == _TagStatus.valid).length} valid\u00b7${_tags.where((t) => t.status == _TagStatus.invalid).length} invalid',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  style: GoogleFonts.inter(fontSize: 12, color: Colors.grey.shade600),
                 ),
                 const Spacer(),
                 if (_hasInvalidTags)
@@ -1019,14 +1020,14 @@ If none found, return an empty array: []
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(color: const Color(0xFFFF3B30).withOpacity(0.3)),
                       ),
-                      child: const Row(
+                      child:  Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.delete_sweep, size: 14, color: Color(0xFFFF3B30)),
                           SizedBox(width: 4),
                           Text(
                             'Clear invalid',
-                            style: TextStyle(color: Color(0xFFFF3B30), fontSize: 12, fontWeight: FontWeight.w600),
+                            style: GoogleFonts.inter(color: Color(0xFFFF3B30), fontSize: 12, fontWeight: FontWeight.w600),
                           ),
                         ],
                       ),
@@ -1045,7 +1046,7 @@ If none found, return an empty array: []
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Text(
                   'or import',
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                       color: Colors.grey.shade500, fontSize: 13),
                 ),
               ),
@@ -1076,14 +1077,14 @@ If none found, return an empty array: []
           // extraction loading
           if (_isExtracting) ...[
             const SizedBox(height: 16),
-            const Center(
+             Center(
               child: Column(
                 children: [
                   CircularProgressIndicator(color: primaryColor),
                   SizedBox(height: 10),
                   Text(
                     'Extracting usernames with Padi AIï¿½',
-                    style: TextStyle(color: Colors.grey),
+                    style: GoogleFonts.inter(color: Colors.grey),
                   ),
                 ],
               ),
@@ -1117,7 +1118,7 @@ If none found, return an empty array: []
                 ),
                 child: Text(
                   label,
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     color: blocked
                         ? Colors.grey.shade600
                         : Colors.white,
@@ -1166,11 +1167,11 @@ If none found, return an empty array: []
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(label,
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontWeight: FontWeight.w600, fontSize: 14)),
                   const SizedBox(height: 2),
                   Text(subtitle,
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                           color: Colors.grey.shade600, fontSize: 12)),
                 ],
               ),
@@ -1195,9 +1196,9 @@ If none found, return an empty array: []
           _buildStepIndicator(1),
           const SizedBox(height: 20),
 
-          const Text(
+          Text(
             'Configure Giveaway',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
           Text(
@@ -1208,9 +1209,9 @@ If none found, return an empty array: []
           const SizedBox(height: 20),
 
           // amount per person
-          const Text(
+          Text(
             'Amount Per Person (?)',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14),
           ),
           const SizedBox(height: 8),
           TextField(
@@ -1222,7 +1223,7 @@ If none found, return an empty array: []
               fillColor: Colors.white,
               hintText: 'e.g. 5,000',
               prefixText: ' ?  ',
-              prefixStyle: const TextStyle(color: Colors.black87),
+              prefixStyle: TextStyle(color: Colors.black87),
               contentPadding:
                   const EdgeInsets.symmetric(vertical: 15, horizontal: 4),
               border: OutlineInputBorder(
@@ -1239,9 +1240,9 @@ If none found, return an empty array: []
           const SizedBox(height: 20),
 
           // who pays fee
-          const Text(
+          Text(
             'Who Pays the Fee?',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14),
           ),
           const SizedBox(height: 10),
           Row(
@@ -1296,9 +1297,9 @@ If none found, return an empty array: []
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Use Custom Code',
-                style: TextStyle(
+                style: GoogleFonts.inter(
                     fontWeight: FontWeight.bold, fontSize: 14),
               ),
               Switch(
@@ -1345,7 +1346,7 @@ If none found, return an empty array: []
               const SizedBox(width: 6),
               Text(
                 'Balance: ${_balance ?? 'ï¿½'}',
-                style: TextStyle(
+                style: GoogleFonts.inter(
                     color: Colors.grey.shade600, fontSize: 13),
               ),
             ],
@@ -1373,9 +1374,9 @@ If none found, return an empty array: []
               child: _isCreating
                   ? const CircularProgressIndicator(
                       color: Colors.white)
-                  : const Text(
+                  : Text(
                       'Create Targeted Giveaway',
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                           color: Colors.white,
                           fontWeight: FontWeight.bold),
                     ),
@@ -1386,7 +1387,7 @@ If none found, return an empty array: []
             child: Text(
               'Only the ${_validTags.length} registered user(s) you selected can claim this code',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: GoogleFonts.inter(
                   color: Colors.grey.shade500, fontSize: 12),
             ),
           ),
@@ -1413,7 +1414,7 @@ If none found, return an empty array: []
           ),
           child: Text(
             label,
-            style: TextStyle(
+            style: GoogleFonts.inter(
               color: selected ? Colors.white : Colors.black87,
               fontWeight: FontWeight.w600,
               fontSize: 13,
@@ -1432,14 +1433,14 @@ If none found, return an empty array: []
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label,
-              style: TextStyle(
+              style: GoogleFonts.inter(
                   color: Colors.grey.shade700,
                   fontSize: 13,
                   fontWeight:
                       bold ? FontWeight.bold : FontWeight.normal)),
           Text(
             value,
-            style: TextStyle(
+            style: GoogleFonts.inter(
               fontWeight: bold ? FontWeight.bold : FontWeight.w500,
               fontSize: 13,
               color: color ?? Colors.black87,
@@ -1480,7 +1481,7 @@ If none found, return an empty array: []
                               color: Colors.white, size: 14)
                           : Text(
                               '${i + 1}',
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 color: active
                                     ? Colors.white
                                     : Colors.grey.shade600,
@@ -1493,7 +1494,7 @@ If none found, return an empty array: []
                   const SizedBox(height: 4),
                   Text(
                     labels[i],
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       fontSize: 10,
                       color: active
                           ? primaryColor

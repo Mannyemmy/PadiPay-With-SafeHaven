@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:card_app/ui/permission_explanation_sheet.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -65,14 +66,14 @@ Future<AccountScanResult?> scanAccountFromImage(BuildContext context) async {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const Text(
+            Text(
               'Scan Account Details',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 4),
             Text(
               'Take or upload a photo of the account details',
-              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+              style: GoogleFonts.inter(fontSize: 13, color: Colors.grey.shade600),
             ),
             const SizedBox(height: 16),
             ListTile(
@@ -80,7 +81,7 @@ Future<AccountScanResult?> scanAccountFromImage(BuildContext context) async {
                 backgroundColor: Color(0xFF007AFF),
                 child: Icon(Icons.camera_alt, color: Colors.white),
               ),
-              title: const Text('Take a Photo'),
+              title: Text('Take a Photo'),
               onTap: () => Navigator.of(ctx).pop(ImageSource.camera),
             ),
             ListTile(
@@ -88,7 +89,7 @@ Future<AccountScanResult?> scanAccountFromImage(BuildContext context) async {
                 backgroundColor: Color(0xFF007AFF),
                 child: Icon(Icons.photo_library, color: Colors.white),
               ),
-              title: const Text('Choose from Gallery'),
+              title: Text('Choose from Gallery'),
               onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
             ),
           ],
@@ -204,15 +205,15 @@ Rules:
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  const Text(
+                  Text(
                     'Error',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'Could not extract account details: $e',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
+                    style: GoogleFonts.inter(fontSize: 14, color: Colors.grey.shade700),
                   ),
                   const SizedBox(height: 24),
                   SizedBox(
@@ -223,9 +224,9 @@ Rules:
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF007AFF),
                       ),
-                      child: const Text(
+                      child: Text(
                         'OK',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),

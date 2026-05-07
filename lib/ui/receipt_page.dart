@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:card_app/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
@@ -671,7 +672,7 @@ class _ReceiptPageState extends State<ReceiptPage> {
       children: [
         Text(
           title,
-          style: TextStyle(
+          style: GoogleFonts.inter(
             color: Colors.black,fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
@@ -686,7 +687,7 @@ class _ReceiptPageState extends State<ReceiptPage> {
                   flex: 3,
                   child: Text(
                     item['label'] ?? '',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       fontWeight: FontWeight.w700,
                       color: Colors.grey,fontSize: 12
                     ),
@@ -700,7 +701,7 @@ class _ReceiptPageState extends State<ReceiptPage> {
                     textAlign: TextAlign.right,
                     softWrap: true,
                     overflow: TextOverflow.visible,
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       fontWeight: FontWeight.w600,
                       fontSize: 12,
                     ),
@@ -738,7 +739,7 @@ class _ReceiptPageState extends State<ReceiptPage> {
                     SizedBox(width: 10),
                     Text(
                       "Share Image",
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         color: Colors.grey.shade700,
                         fontWeight: FontWeight.w600,
                       ),
@@ -763,7 +764,7 @@ class _ReceiptPageState extends State<ReceiptPage> {
                     SizedBox(width: 10),
                     Text(
                       "Share PDF",
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         color: Colors.grey.shade700,
                         fontWeight: FontWeight.w600,
                       ),
@@ -787,7 +788,7 @@ class _ReceiptPageState extends State<ReceiptPage> {
         ),
         title: Text(
           "Share Receipt",
-          style: TextStyle(
+          style: GoogleFonts.inter(
             color: Colors.black87,
             fontWeight: FontWeight.bold,
             fontSize: 18,
@@ -846,7 +847,7 @@ class _ReceiptPageState extends State<ReceiptPage> {
                           ),
                           Text(
                             "₦${getFormattedAmount()}",
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               color: Colors.black,
                               fontSize: 30,
                               fontWeight: FontWeight.bold,
@@ -868,14 +869,14 @@ class _ReceiptPageState extends State<ReceiptPage> {
                               SizedBox(width: 5),
                               Text(
                                 _statusDisplayLabel(),
-                                style: TextStyle(color: _getStatusColor()),
+                                style: GoogleFonts.inter(color: _getStatusColor()),
                               ),
                             ],
                           ),
                           SizedBox(height: 10),
                           Text(
                             transactionDateTime,
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               color: Colors.grey.shade500,
                               fontWeight: FontWeight.w600,
                             ),
@@ -905,7 +906,7 @@ class _ReceiptPageState extends State<ReceiptPage> {
                                   child: Text(
                                     textAlign: TextAlign.center,
                                     "Enjoy a better life with PadiPay. Get free transfers, instant loans, and cashback rewards.",
-                                    style: TextStyle(color: Colors.grey.shade500),
+                                    style: GoogleFonts.inter(color: Colors.grey.shade500),
                                   ),
                                 ),
                               ],
@@ -1018,7 +1019,7 @@ class WatermarkPainter extends CustomPainter {
     final textPainter = TextPainter(
       text: TextSpan(
         text: 'PadiPay',
-        style: TextStyle(
+        style: GoogleFonts.inter(
           fontSize: 25,
           color: Colors.grey.withValues(alpha: 0.07),
         ),

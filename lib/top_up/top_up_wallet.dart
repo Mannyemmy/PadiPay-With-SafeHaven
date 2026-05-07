@@ -1,6 +1,7 @@
 import 'package:card_app/top_up/transfer_details.dart';
 import 'package:card_app/utils.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 
 class TopUpWallet extends StatelessWidget {
@@ -24,9 +25,9 @@ class TopUpWallet extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Top Up Your Wallet',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+              style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 20),
             ListTile(
@@ -34,13 +35,13 @@ class TopUpWallet extends StatelessWidget {
                 backgroundColor: Colors.grey.shade200,
                 child: Icon(Icons.account_balance, color: Colors.grey),
               ),
-              title: const Text(
+              title: Text(
                 'Add via a bank transfer',
-                style: TextStyle(fontWeight: FontWeight.w500),
+                style: GoogleFonts.inter(fontWeight: FontWeight.w500),
               ),
-              subtitle: const Text(
+              subtitle: Text(
                 'Fund your account by sending money to your unique NG bank account',
-                style: TextStyle(fontWeight: FontWeight.w300),
+                style: GoogleFonts.inter(fontWeight: FontWeight.w300),
               ),
               onTap: () {
                navigateTo(context, AddViaBankTransfer());
@@ -52,13 +53,13 @@ class TopUpWallet extends StatelessWidget {
             //     backgroundColor: Colors.grey.shade200,
             //     child: Icon(Icons.currency_bitcoin, color: Colors.grey),
             //   ),
-            //   title: const Text(
+            //   title: Text(
             //     'Add via Crypto',
-            //     style: TextStyle(fontWeight: FontWeight.w500),
+            //     style: GoogleFonts.inter(fontWeight: FontWeight.w500),
             //   ),
-            //   subtitle: const Text(
+            //   subtitle: Text(
             //     'Send crypto through different networks to any wallet',
-            //     style: TextStyle(fontWeight: FontWeight.w300),
+            //     style: GoogleFonts.inter(fontWeight: FontWeight.w300),
             //   ),
             //   onTap: () {
             //     navigateTo(context, CryptoTopUp());

@@ -935,7 +935,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
                         Spacer(),
                         Text(
                           "Bank Transfer",
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: Colors.black,
@@ -947,7 +947,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
                     SizedBox(height: 30),
                     // PAGE 1: Account details
                     if (_currentPage == 0) ...[
-                      const Text('Beneficiary Account Number'),
+                      Text('Beneficiary Account Number'),
                       const SizedBox(height: 8),
                       TextField(
                         maxLength: 10,
@@ -956,7 +956,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
                         inputFormatters: [LengthLimitingTextInputFormatter(10)],
                         decoration: InputDecoration(
                           counterText: "",
-                          hintStyle: TextStyle(color: Colors.grey.shade600),
+                          hintStyle: GoogleFonts.inter(color: Colors.grey.shade600),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -977,7 +977,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
                         },
                       ),
                       const SizedBox(height: 16),
-                      const Text('Beneficiary Bank'),
+                      Text('Beneficiary Bank'),
                       const SizedBox(height: 8),
                       isFetchingBanks
                           ? Center(
@@ -993,7 +993,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
                                 searchFieldProps: TextFieldProps(
                                   decoration: InputDecoration(
                                     hintText: "Search bank...",
-                                    hintStyle: TextStyle(fontSize: 14),
+                                    hintStyle: GoogleFonts.inter(fontSize: 14),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(8),
                                     ),
@@ -1017,7 +1017,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
                                           item,
                                           overflow: TextOverflow.ellipsis,
                                           maxLines: 1,
-                                          style: TextStyle(fontSize: 14),
+                                          style: GoogleFonts.inter(fontSize: 14),
                                         ),
                                       );
                                     },
@@ -1039,7 +1039,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
                               decoratorProps: DropDownDecoratorProps(
                                 decoration: InputDecoration(
                                   hintText: "Select Bank",
-                                  hintStyle: TextStyle(
+                                  hintStyle: GoogleFonts.inter(
                                     color: Colors.grey.shade600,
                                   ),
                                   border: OutlineInputBorder(
@@ -1070,13 +1070,13 @@ class _BankTransferPageState extends State<BankTransferPage> {
                             ),
                       SizedBox(height: 16),
                       if (isFetchingAccountName || accountNameController.text.isNotEmpty) ...[
-                        const Text('Account Name'),
+                        Text('Account Name'),
                         const SizedBox(height: 8),
                         TextField(
                           controller: accountNameController,
                           enabled: false,
                           decoration: InputDecoration(
-                            hintStyle: TextStyle(color: Colors.grey.shade600),
+                            hintStyle: GoogleFonts.inter(color: Colors.grey.shade600),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -1114,9 +1114,9 @@ class _BankTransferPageState extends State<BankTransferPage> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Next',
-                          style: TextStyle(color: Colors.white),
+                          style: GoogleFonts.inter(color: Colors.white),
                         ),
                       ),
                     ]
@@ -1139,7 +1139,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
                                     .take(2)
                                     .map((s) => s[0].toUpperCase())
                                     .join(),
-                                style: TextStyle(
+                                style: GoogleFonts.inter(
                                   color: primaryColor,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -1152,14 +1152,14 @@ class _BankTransferPageState extends State<BankTransferPage> {
                                 children: [
                                   Text(
                                     accountNameController.text,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontWeight: FontWeight.w600,
                                       fontSize: 14,
                                     ),
                                   ),
                                   Text(
                                     '${accountNumberController.text} Â· ${banks.firstWhere((b) => b['id'] == selectedBank, orElse: () => {'attributes': {'name': 'Unknown'}})['attributes']['name']}',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       color: Colors.grey.shade600,
                                       fontSize: 12,
                                     ),
@@ -1171,7 +1171,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
                         ),
                       ),
                       const SizedBox(height: 24),
-                      const Text('Amount to Send'),
+                      Text('Amount to Send'),
                       const SizedBox(height: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -1187,7 +1187,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
                           children: [
                             Text(
                               '₦',
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 fontSize: 18,
                                 color: Colors.grey.shade700,
                                 fontWeight: FontWeight.bold,
@@ -1197,7 +1197,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
                             Expanded(
                               child: TextField(
                                 controller: amountController,
-                                keyboardType: const TextInputType.numberWithOptions(
+                                keyboardType: TextInputType.numberWithOptions(
                                   decimal: true,
                                 ),
                                 decoration: const InputDecoration(
@@ -1208,7 +1208,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
                                   contentPadding: EdgeInsets.zero,
                                   hintText: '0.00',
                                 ),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -1251,7 +1251,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
                               alignment: Alignment.center,
                               child: Text(
                                 '₦$fmtAmt',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.w600,
                                   fontSize: 13,
                                 ),
@@ -1261,12 +1261,12 @@ class _BankTransferPageState extends State<BankTransferPage> {
                         }).toList(),
                       ),
                       const SizedBox(height: 16),
-                      const Text('Remark'),
+                      Text('Remark'),
                       const SizedBox(height: 8),
                       TextField(
                         controller: remarkController,
                         decoration: InputDecoration(
-                          hintStyle: TextStyle(color: Colors.grey.shade600),
+                          hintStyle: GoogleFonts.inter(color: Colors.grey.shade600),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -1333,9 +1333,9 @@ class _BankTransferPageState extends State<BankTransferPage> {
                         ),
                         child: isLoading
                             ? CircularProgressIndicator(color: Colors.white)
-                            : const Text(
+                            : Text(
                                 'Confirm',
-                                style: TextStyle(color: Colors.white),
+                                style: GoogleFonts.inter(color: Colors.white),
                               ),
                       ),
                     ],
@@ -1361,7 +1361,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
                             padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
                             child: Text(
                               'Contacts',
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 15,
                                 color: Colors.black87,
@@ -1402,7 +1402,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
                                       Colors.orange.withValues(alpha: 0.15),
                                   child: Text(
                                     initials,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       color: Colors.orange,
                                       fontWeight: FontWeight.bold,
                                       fontSize: 14,
@@ -1411,7 +1411,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
                                 ),
                                 title: Text(
                                   contact.alias,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontWeight: FontWeight.w600,
                                     fontSize: 14,
                                   ),
@@ -1422,7 +1422,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
                                     if (contact.bankName?.isNotEmpty == true)
                                       contact.bankName!,
                                   ].join(' Â· '),
-                                  style: TextStyle(
+                                  style: GoogleFonts.inter(
                                     color: Colors.grey.shade600,
                                     fontSize: 12,
                                   ),
@@ -1487,7 +1487,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
                             padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
                             child: Text(
                               'Recents',
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 15,
                                 color: Colors.black87,
@@ -1527,7 +1527,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
                                       primaryColor.withValues(alpha: 0.12),
                                   child: Text(
                                     initials,
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       color: primaryColor,
                                       fontWeight: FontWeight.bold,
                                       fontSize: 14,
@@ -1539,7 +1539,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
                                     Flexible(
                                       child: Text(
                                         name,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontWeight: FontWeight.w600,
                                           fontSize: 14,
                                         ),
@@ -1559,7 +1559,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
                                         ),
                                         child: Text(
                                           '~${alias.alias}',
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             color: Colors.orange,
                                             fontSize: 11,
                                             fontWeight: FontWeight.w600,
@@ -1571,7 +1571,7 @@ class _BankTransferPageState extends State<BankTransferPage> {
                                 ),
                                 subtitle: Text(
                                   '$acct Â· $bank',
-                                  style: TextStyle(
+                                  style: GoogleFonts.inter(
                                     color: Colors.grey.shade600,
                                     fontSize: 12,
                                   ),

@@ -7,6 +7,7 @@ import 'package:cloudcard_flutter/cloudcard_flutter.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
@@ -377,8 +378,8 @@ class _NfcPosSheetState extends State<NfcPosSheet> {
                 await _runChecks();
               },
               style: ElevatedButton.styleFrom(backgroundColor: primaryColor),
-              child: const Text('Open NFC Settings',
-                  style: TextStyle(color: Colors.white)),
+              child: Text('Open NFC Settings',
+                  style: GoogleFonts.inter(color: Colors.white)),
             ),
             _closeButton(context),
           ],
@@ -418,7 +419,7 @@ class _NfcPosSheetState extends State<NfcPosSheet> {
               onPressed: _runChecks,
               style: ElevatedButton.styleFrom(backgroundColor: primaryColor),
               child:
-                  const Text('Try Again', style: TextStyle(color: Colors.white)),
+                  Text('Try Again', style: GoogleFonts.inter(color: Colors.white)),
             ),
             _closeButton(context),
           ],
@@ -428,7 +429,7 @@ class _NfcPosSheetState extends State<NfcPosSheet> {
 
   Widget _closeButton(BuildContext context) => TextButton(
         onPressed: () => Navigator.pop(context),
-        child: const Text('Close'),
+        child: Text('Close'),
       );
 }
 
@@ -465,7 +466,7 @@ class _LoadingView extends StatelessWidget {
         const SizedBox(height: 24),
         Text(
           message,
-          style: const TextStyle(fontSize: 16, color: Colors.black54),
+          style: TextStyle(fontSize: 16, color: Colors.black54),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 20),
@@ -499,13 +500,13 @@ class _MessageView extends StatelessWidget {
         const SizedBox(height: 16),
         Text(
           title,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 12),
         Text(
           message,
-          style: const TextStyle(fontSize: 14, color: Colors.black54),
+          style: TextStyle(fontSize: 14, color: Colors.black54),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 28),
@@ -555,10 +556,10 @@ class _ReadyView extends StatelessWidget {
           child: Icon(Icons.contactless_outlined, size: 64, color: primaryColor),
         ),
         const SizedBox(height: 16),
-        const Center(
+         Center(
           child: Text(
             'Set Up Tap-to-Pay',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold),
           ),
         ),
         const SizedBox(height: 8),
@@ -567,7 +568,7 @@ class _ReadyView extends StatelessWidget {
             cardholderName != null && lastFour != null
                 ? 'Card ending in $lastFour will be enabled for NFC\npayments at any contactless POS terminal.'
                 : 'Your virtual card will be enabled for NFC\npayments at any contactless POS terminal.',
-            style: const TextStyle(fontSize: 14, color: Colors.black54),
+            style: TextStyle(fontSize: 14, color: Colors.black54),
             textAlign: TextAlign.center,
           ),
         ),
@@ -587,7 +588,7 @@ class _ReadyView extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'For tap-to-pay to work, Padi Pay must be set as your default payment app.',
-                    style: TextStyle(fontSize: 13, color: Colors.amber.shade900),
+                    style: GoogleFonts.inter(fontSize: 13, color: Colors.amber.shade900),
                   ),
                 ),
               ],
@@ -598,7 +599,7 @@ class _ReadyView extends StatelessWidget {
             width: double.infinity,
             child: OutlinedButton(
               onPressed: onDefaultPaymentTap,
-              child: const Text('Set as Default Payment App'),
+              child: Text('Set as Default Payment App'),
             ),
           ),
           const SizedBox(height: 8),
@@ -613,9 +614,9 @@ class _ReadyView extends StatelessWidget {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10)),
             ),
-            child: const Text(
+            child: Text(
               'Enable Tap-to-Pay',
-              style: TextStyle(
+              style: GoogleFonts.inter(
                   color: Colors.white,
                   fontSize: 16,
                   fontWeight: FontWeight.w600),
@@ -647,15 +648,15 @@ class _SuccessView extends StatelessWidget {
         const SizedBox(height: 20),
         const Icon(Icons.check_circle_outline, size: 72, color: Colors.green),
         const SizedBox(height: 16),
-        const Text(
+        Text(
           'Card Ready for Tap-to-Pay!',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 12),
-        const Text(
+        Text(
           'Hold the back of your phone near any contactless POS terminal to pay.',
-          style: TextStyle(fontSize: 14, color: Colors.black54),
+          style: GoogleFonts.inter(fontSize: 14, color: Colors.black54),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 24),
@@ -675,7 +676,7 @@ class _SuccessView extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'Padi Pay is not your default payment app yet. Tap below to set it — otherwise NFC payments will use a different app.',
-                    style: TextStyle(fontSize: 13, color: Colors.amber.shade900),
+                    style: GoogleFonts.inter(fontSize: 13, color: Colors.amber.shade900),
                   ),
                 ),
               ],
@@ -687,8 +688,8 @@ class _SuccessView extends StatelessWidget {
             child: ElevatedButton(
               onPressed: onSetDefaultTap,
               style: ElevatedButton.styleFrom(backgroundColor: primaryColor),
-              child: const Text('Set as Default Payment App',
-                  style: TextStyle(color: Colors.white)),
+              child: Text('Set as Default Payment App',
+                  style: GoogleFonts.inter(color: Colors.white)),
             ),
           ),
           const SizedBox(height: 8),
@@ -697,7 +698,7 @@ class _SuccessView extends StatelessWidget {
           width: double.infinity,
           child: TextButton(
             onPressed: onClose,
-            child: const Text('Done'),
+            child: Text('Done'),
           ),
         ),
       ],

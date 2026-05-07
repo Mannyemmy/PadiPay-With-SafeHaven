@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class CryptoTopUp extends StatelessWidget {
   const CryptoTopUp({super.key});
@@ -24,9 +25,9 @@ class CryptoTopUp extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Add Via Crypto',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                    style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 20),
                   Center(
@@ -37,7 +38,7 @@ class CryptoTopUp extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  const Text('Network'),
+                  Text('Network'),
                   const SizedBox(height: 8),
                   TextField(
                     decoration: InputDecoration(
@@ -48,7 +49,7 @@ class CryptoTopUp extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text('USDC Address'),
+                  Text('USDC Address'),
                   const SizedBox(height: 8),
                   TextField(
                     readOnly: true,
@@ -61,7 +62,7 @@ class CryptoTopUp extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text('Fee'),
+                  Text('Fee'),
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -69,9 +70,9 @@ class CryptoTopUp extends StatelessWidget {
                       color: Colors.grey[100],
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Text(
+                    child: Text(
                       'A 0.8% instant funding fee applies (minimum \$1, maximum \$8)',
-                      style: TextStyle(color: Colors.grey),
+                      style: GoogleFonts.inter(color: Colors.grey),
                     ),
                   ),
                 ],

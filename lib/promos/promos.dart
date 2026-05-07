@@ -1,6 +1,7 @@
 import 'package:card_app/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class PromosScreen extends StatelessWidget {
   const PromosScreen({super.key});
@@ -34,7 +35,7 @@ class PromosScreen extends StatelessWidget {
                 children: [
                   Text(
                     "Promos & Offers",
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                    style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
@@ -55,7 +56,7 @@ class PromosScreen extends StatelessWidget {
                           SizedBox(width: 15),
                           Text(
                             'This Months\'s Earnings',
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               fontSize: 15,
                               fontWeight: FontWeight.bold,
                             ),
@@ -71,7 +72,7 @@ class PromosScreen extends StatelessWidget {
                             children: [
                               Text(
                                 '₦145,000',
-                                style: TextStyle(
+                                style: GoogleFonts.inter(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.grey.shade500,
@@ -79,7 +80,7 @@ class PromosScreen extends StatelessWidget {
                               ),
                               Text(
                                 'Bonus Rewards',
-                                style: TextStyle(
+                                style: GoogleFonts.inter(
                                   fontSize: 12,
                                   color: Colors.grey.shade500,
                                 ),
@@ -91,7 +92,7 @@ class PromosScreen extends StatelessWidget {
                             children: [
                               Text(
                                 '₦28,500',
-                                style: TextStyle(
+                                style: GoogleFonts.inter(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.grey.shade500,
@@ -99,7 +100,7 @@ class PromosScreen extends StatelessWidget {
                               ),
                               Text(
                                 'Cashback Earned',
-                                style: TextStyle(
+                                style: GoogleFonts.inter(
                                   fontSize: 12,
                                   color: Colors.grey.shade500,
                                 ),
@@ -135,7 +136,7 @@ class PromosScreen extends StatelessWidget {
                   SizedBox(width: 5),
                   Text(
                     "Active Promotions",
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: Colors.black.withValues(alpha: 0.6),
                       fontWeight: FontWeight.w800,
                       fontSize: 16,
@@ -166,7 +167,7 @@ class PromosScreen extends StatelessWidget {
                                   SizedBox(height: 40),
                                   Text(
                                     'Triple Rewards Weekend',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontSize: 15,
                                       fontWeight: FontWeight.bold,
                                       color: Colors.grey.shade600,
@@ -174,7 +175,7 @@ class PromosScreen extends StatelessWidget {
                                   ),
                                   Text(
                                     "Earn 3x cashback on all\ntransactions this weekend",
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontSize: 13,
                                       fontWeight: FontWeight.bold,
                                       color: Colors.grey.shade400,
@@ -203,7 +204,7 @@ class PromosScreen extends StatelessWidget {
                                           const SizedBox(width: 5),
                                           Text(
                                             "3% Cashback",
-                                            style: TextStyle(
+                                            style: GoogleFonts.inter(
                                               color: Colors.grey.shade500,
                                               fontWeight: FontWeight.w700,
                                               fontSize: 12,
@@ -222,7 +223,7 @@ class PromosScreen extends StatelessWidget {
                                           const SizedBox(width: 5),
                                           Text(
                                             "Valid until 9/20/2025",
-                                            style: TextStyle(
+                                            style: GoogleFonts.inter(
                                               color: Colors.grey.shade500,
                                               fontWeight: FontWeight.w700,
                                               fontSize: 12,
@@ -252,7 +253,7 @@ class PromosScreen extends StatelessWidget {
                                           children: [
                                             Text(
                                               "Claim Now",
-                                              style: TextStyle(
+                                              style: GoogleFonts.inter(
                                                 fontWeight: FontWeight.w600,
                                                 fontSize: 13,
                                                 color: Colors.white,
@@ -364,7 +365,7 @@ class PromosScreen extends StatelessWidget {
                                   SizedBox(height: 40),
                                   Text(
                                     'Triple Rewards Weekend',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontSize: 15,
                                       fontWeight: FontWeight.bold,
                                       color: Colors.grey.shade600,
@@ -372,7 +373,7 @@ class PromosScreen extends StatelessWidget {
                                   ),
                                   Text(
                                     "Earn 3x cashback on all\ntransactions this weekend",
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontSize: 13,
                                       fontWeight: FontWeight.bold,
                                       color: Colors.grey.shade400,
@@ -401,7 +402,7 @@ class PromosScreen extends StatelessWidget {
                                           const SizedBox(width: 5),
                                           Text(
                                             "3% Cashback",
-                                            style: TextStyle(
+                                            style: GoogleFonts.inter(
                                               color: Colors.grey.shade500,
                                               fontWeight: FontWeight.w700,
                                               fontSize: 12,
@@ -420,7 +421,7 @@ class PromosScreen extends StatelessWidget {
                                           const SizedBox(width: 5),
                                           Text(
                                             "Valid until 9/20/2025",
-                                            style: TextStyle(
+                                            style: GoogleFonts.inter(
                                               color: Colors.grey.shade500,
                                               fontWeight: FontWeight.w700,
                                               fontSize: 12,
@@ -450,7 +451,7 @@ class PromosScreen extends StatelessWidget {
                                           children: [
                                             Text(
                                               "Claim Now",
-                                              style: TextStyle(
+                                              style: GoogleFonts.inter(
                                                 fontWeight: FontWeight.w600,
                                                 fontSize: 13,
                                                 color: Colors.white,
@@ -562,7 +563,7 @@ class PromosScreen extends StatelessWidget {
                                   SizedBox(height: 40),
                                   Text(
                                     'Triple Rewards Weekend',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontSize: 15,
                                       fontWeight: FontWeight.bold,
                                       color: Colors.grey.shade600,
@@ -570,7 +571,7 @@ class PromosScreen extends StatelessWidget {
                                   ),
                                   Text(
                                     "Earn 3x cashback on all\ntransactions this weekend",
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontSize: 13,
                                       fontWeight: FontWeight.bold,
                                       color: Colors.grey.shade400,
@@ -599,7 +600,7 @@ class PromosScreen extends StatelessWidget {
                                           const SizedBox(width: 5),
                                           Text(
                                             "3% Cashback",
-                                            style: TextStyle(
+                                            style: GoogleFonts.inter(
                                               color: Colors.grey.shade500,
                                               fontWeight: FontWeight.w700,
                                               fontSize: 12,
@@ -618,7 +619,7 @@ class PromosScreen extends StatelessWidget {
                                           const SizedBox(width: 5),
                                           Text(
                                             "Valid until 9/20/2025",
-                                            style: TextStyle(
+                                            style: GoogleFonts.inter(
                                               color: Colors.grey.shade500,
                                               fontWeight: FontWeight.w700,
                                               fontSize: 12,
@@ -648,7 +649,7 @@ class PromosScreen extends StatelessWidget {
                                           children: [
                                             Text(
                                               "Claim Now",
-                                              style: TextStyle(
+                                              style: GoogleFonts.inter(
                                                 fontWeight: FontWeight.w600,
                                                 fontSize: 13,
                                                 color: Colors.white,

@@ -1,6 +1,7 @@
 import 'package:card_app/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class BottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -70,7 +71,7 @@ class BottomNavBar extends StatelessWidget {
                   SizedBox(height: 5),
                   Text(
                     label,
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: isSelected ? primaryColor : Colors.grey,
                       fontSize: 11,
                     ),
@@ -94,7 +95,7 @@ class BottomNavBar extends StatelessWidget {
                     ),
                     child: Text(
                       "Hot",
-                      style: TextStyle(color: Colors.white, fontSize: 10),
+                      style: GoogleFonts.inter(color: Colors.white, fontSize: 10),
                     ),
                   ),
                 ),

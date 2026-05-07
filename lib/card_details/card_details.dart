@@ -1,6 +1,7 @@
 import 'package:card_app/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:card_app/utils/screen_security.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class CardDetailsPage extends StatefulWidget {
   const CardDetailsPage({super.key});
@@ -50,7 +51,7 @@ class _CardDetailsPageState extends State<CardDetailsPage> {
                 SizedBox(height: 60),
                 Text(
                   'Card Details',
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
@@ -66,7 +67,7 @@ class _CardDetailsPageState extends State<CardDetailsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Name on Card'),
+                Text('Name on Card'),
                 const SizedBox(height: 8),
                 TextField(
                   readOnly: true,
@@ -78,7 +79,7 @@ class _CardDetailsPageState extends State<CardDetailsPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text('Card PAN'),
+                Text('Card PAN'),
                 const SizedBox(height: 8),
                 TextField(
                   readOnly: true,
@@ -90,7 +91,7 @@ class _CardDetailsPageState extends State<CardDetailsPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text('Card Exp Date'),
+                Text('Card Exp Date'),
                 const SizedBox(height: 8),
                 TextField(
                   readOnly: true,
@@ -102,7 +103,7 @@ class _CardDetailsPageState extends State<CardDetailsPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text('CVV'),
+                Text('CVV'),
                 const SizedBox(height: 8),
                 TextField(
                   readOnly: true,
@@ -114,7 +115,7 @@ class _CardDetailsPageState extends State<CardDetailsPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text('Default PIN'),
+                Text('Default PIN'),
                 const SizedBox(height: 8),
                 TextField(
                   readOnly: true,
@@ -126,7 +127,7 @@ class _CardDetailsPageState extends State<CardDetailsPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text('Address'),
+                Text('Address'),
                 const SizedBox(height: 8),
                 TextField(
                   readOnly: true,

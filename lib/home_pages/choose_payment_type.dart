@@ -10,6 +10,7 @@ import 'package:card_app/utils.dart';
 import 'package:card_app/wifi_payment/wifi_payment.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:nfc_manager/nfc_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -125,9 +126,9 @@ class _ChoosePaymentTypeBottomSheetState
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
+                Text(
                   'Choose Payment Type',
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Colors.black,
@@ -203,7 +204,7 @@ class _ChoosePaymentTypeBottomSheetState
                                 children: [
                                   Text(
                                     'Send via bank transfer',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontWeight: FontWeight.bold,
                                       color: Colors.black,
                                       fontSize: 16,
@@ -211,7 +212,7 @@ class _ChoosePaymentTypeBottomSheetState
                                   ),
                                   Text(
                                     'Use bank transfer to send money to a previous or new recipient',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       color: Colors.grey,
                                       fontSize: 14,
                                     ),
@@ -258,7 +259,7 @@ class _ChoosePaymentTypeBottomSheetState
                                 children: [
                                   Text(
                                     'Send via tag/username',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontWeight: FontWeight.bold,
                                       color: Colors.black,
                                       fontSize: 16,
@@ -266,7 +267,7 @@ class _ChoosePaymentTypeBottomSheetState
                                   ),
                                   Text(
                                     'Use tag/username to send money to a PadiPay user',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       color: Colors.grey,
                                       fontSize: 14,
                                     ),
@@ -318,7 +319,7 @@ class _ChoosePaymentTypeBottomSheetState
                                 children: [
                                   Text(
                                     'Tap to Pay',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontWeight: FontWeight.bold,
                                       color: Colors.black,
                                       fontSize: 16,
@@ -326,7 +327,7 @@ class _ChoosePaymentTypeBottomSheetState
                                   ),
                                   Text(
                                     'Make payments instantly using your phone\'s NFC chip.',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       color: Colors.grey,
                                       fontSize: 14,
                                     ),
@@ -387,7 +388,7 @@ class _ChoosePaymentTypeBottomSheetState
                                 children: [
                                   Text(
                                     'Scan to Pay',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontWeight: FontWeight.bold,
                                       color: Colors.black,
                                       fontSize: 16,
@@ -395,7 +396,7 @@ class _ChoosePaymentTypeBottomSheetState
                                   ),
                                   Text(
                                     'Send or receive money instantly through a secure Wi-Fi connection.',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       color: Colors.grey,
                                       fontSize: 14,
                                     ),
@@ -525,9 +526,9 @@ class _ChooseTransferTypeBottomSheetState
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
+                Text(
                   'Choose Payment Type',
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Colors.black,
@@ -570,7 +571,7 @@ class _ChooseTransferTypeBottomSheetState
                                 children: [
                                   Text(
                                     'Send via tag/username',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontWeight: FontWeight.bold,
                                       color: Colors.black,
                                       fontSize: 16,
@@ -578,7 +579,7 @@ class _ChooseTransferTypeBottomSheetState
                                   ),
                                   Text(
                                     'Use tag/username to send money to a PadiPay user',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       color: Colors.grey,
                                       fontSize: 14,
                                     ),
@@ -624,7 +625,7 @@ class _ChooseTransferTypeBottomSheetState
                                 children: [
                                   Text(
                                     'Send via bank transfer',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontWeight: FontWeight.bold,
                                       color: Colors.black,
                                       fontSize: 16,
@@ -632,7 +633,7 @@ class _ChooseTransferTypeBottomSheetState
                                   ),
                                   Text(
                                     'Use bank transfer to send money to a previous or new recipient',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       color: Colors.grey,
                                       fontSize: 14,
                                     ),
@@ -699,7 +700,7 @@ class _ChooseTransferTypeBottomSheetState
                                     children: [
                                       Text(
                                         'Tap to Pay',
-                                        style: TextStyle(
+                                        style: GoogleFonts.inter(
                                           fontWeight: FontWeight.bold,
                                           color: Colors.black,
                                           fontSize: 16,
@@ -707,7 +708,7 @@ class _ChooseTransferTypeBottomSheetState
                                       ),
                                       Text(
                                         "Watch Tutorial",
-                                        style: TextStyle(
+                                        style: GoogleFonts.inter(
                                           color: primaryColor,
                                           fontSize: 12,
                                           decoration: TextDecoration.underline,
@@ -718,7 +719,7 @@ class _ChooseTransferTypeBottomSheetState
                                   ),SizedBox(height: 5,),
                                   Text(
                                     'Make payments instantly using your phone\'s NFC chip.',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       color: Colors.grey,
                                       fontSize: 14,
                                     ),
@@ -781,14 +782,14 @@ class _ChooseTransferTypeBottomSheetState
                                     children: [
                                       Text(
                                         'Scan to Pay',
-                                        style: TextStyle(
+                                        style: GoogleFonts.inter(
                                           fontWeight: FontWeight.bold,
                                           color: Colors.black,
                                           fontSize: 16,
                                         ),
                                       ),Text(
                                         "Watch Tutorial",
-                                        style: TextStyle(
+                                        style: GoogleFonts.inter(
                                           color: primaryColor,
                                           fontSize: 12,
                                           decoration: TextDecoration.underline,
@@ -799,7 +800,7 @@ class _ChooseTransferTypeBottomSheetState
                                   ),SizedBox(height: 5,),
                                   Text(
                                     'Send or receive money instantly through a secure Wi-Fi connection.',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       color: Colors.grey,
                                       fontSize: 14,
                                     ),

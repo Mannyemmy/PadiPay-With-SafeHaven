@@ -12,6 +12,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 // ignore_for_file: unused_element, unused_field, dead_code, unnecessary_cast, unused_import
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:qoreidsdk/qoreidsdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -436,7 +437,7 @@ class _IdentityVerificationStep1PageState
         ),
         _StepCircle(label: '2', isActive: false, isDone: false),
         const SizedBox(width: 8),
-        const Text('Liveness'),
+        Text('Liveness'),
       ],
     );
   }
@@ -444,7 +445,7 @@ class _IdentityVerificationStep1PageState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Identity Verification')),
+      appBar: AppBar(title: Text('Identity Verification')),
       body: SafeArea(
         bottom: true,
         child: _isChecking
@@ -471,10 +472,10 @@ class _IdentityVerificationStep1PageState
                       textCapitalization: TextCapitalization.words,
                       keyboardType: TextInputType.name,
                       controller: _firstNameController,
-                      style: TextStyle(color: Colors.black87),
+                      style: GoogleFonts.inter(color: Colors.black87),
                       decoration: InputDecoration(
                         labelText: 'First Name',
-                        hintStyle: TextStyle(color: Colors.grey.shade500),
+                        hintStyle: GoogleFonts.inter(color: Colors.grey.shade500),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: BorderSide(color: Colors.grey.shade200),
@@ -498,10 +499,10 @@ class _IdentityVerificationStep1PageState
                       textCapitalization: TextCapitalization.words,
                       keyboardType: TextInputType.name,
                       controller: _lastNameController,
-                      style: TextStyle(color: Colors.black87),
+                      style: GoogleFonts.inter(color: Colors.black87),
                       decoration: InputDecoration(
                         labelText: 'Last Name',
-                        hintStyle: TextStyle(color: Colors.grey.shade500),
+                        hintStyle: GoogleFonts.inter(color: Colors.grey.shade500),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: BorderSide(color: Colors.grey.shade200),
@@ -524,10 +525,10 @@ class _IdentityVerificationStep1PageState
                     TextField(
                       controller: _phoneController,
                       keyboardType: TextInputType.phone,
-                      style: TextStyle(color: Colors.black87),
+                      style: GoogleFonts.inter(color: Colors.black87),
                       decoration: InputDecoration(
                         labelText: 'Phone (+234...)',
-                        hintStyle: TextStyle(color: Colors.grey.shade500),
+                        hintStyle: GoogleFonts.inter(color: Colors.grey.shade500),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: BorderSide(color: Colors.grey.shade200),
@@ -558,12 +559,12 @@ class _IdentityVerificationStep1PageState
                           child: Wrap(
                             crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
-                              const Text('I agree to the '),
+                              Text('I agree to the '),
                               InkWell(
                                 onTap: _openPrivacyPolicy,
                                 child: Text(
                                   'privacy policy',
-                                  style: TextStyle(color: primaryColor),
+                                  style: GoogleFonts.inter(color: primaryColor),
                                 ),
                               ),
                             ],
@@ -592,7 +593,7 @@ class _IdentityVerificationStep1PageState
                                   ),
                                 ),
                               )
-                            : const Text('Start ID Verification'),
+                            : Text('Start ID Verification'),
                       ),
                     ),
                     if (_idVerified) ...[
@@ -604,9 +605,9 @@ class _IdentityVerificationStep1PageState
                           color: Colors.green.shade50,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Text(
+                        child: Text(
                           'ID verification completed successfully',
-                          style: TextStyle(color: Colors.green),
+                          style: GoogleFonts.inter(color: Colors.green),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -614,7 +615,7 @@ class _IdentityVerificationStep1PageState
                         onPressed: () {
                         Navigator.of(context).pop();
                         },
-                        child: const Text('Go Home'),
+                        child: Text('Go Home'),
                       ),
                     ],
                   ],
@@ -660,7 +661,7 @@ class _StepCircle extends StatelessWidget {
           ? const Icon(Icons.check, size: 16, color: Colors.white)
           : Text(
               label,
-              style: TextStyle(
+              style: GoogleFonts.inter(
                 color: isActive ? activeColor : baseColor,
                 fontWeight: FontWeight.bold,
               ),

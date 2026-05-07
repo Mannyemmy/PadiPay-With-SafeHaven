@@ -7,6 +7,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -189,7 +190,7 @@ class _RequiredDocumentsPageState extends State<RequiredDocumentsPage> {
         color: bg,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(label, style: TextStyle(color: fg, fontSize: 12)),
+      child: Text(label, style: GoogleFonts.inter(color: fg, fontSize: 12)),
     );
   }
 
@@ -197,7 +198,7 @@ class _RequiredDocumentsPageState extends State<RequiredDocumentsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Submit Documents'),
+        title: Text('Submit Documents'),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -235,7 +236,7 @@ class _RequiredDocumentsPageState extends State<RequiredDocumentsPage> {
                             Expanded(
                               child: Text(
                                 title,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -247,7 +248,7 @@ class _RequiredDocumentsPageState extends State<RequiredDocumentsPage> {
                         const SizedBox(height: 8),
                         Text(
                           description,
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                             fontSize: 13,
                             color: Colors.grey.shade700,
                           ),

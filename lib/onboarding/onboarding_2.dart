@@ -1,6 +1,7 @@
 import 'package:card_app/onboarding/onboarding_3.dart';
 import 'package:card_app/utils.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class Onboarding2 extends StatelessWidget {
   const Onboarding2({super.key});
@@ -53,7 +54,7 @@ class Onboarding2 extends StatelessWidget {
             const SizedBox(height: 30),
             Text(
               "Tap To Pay",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30),
+              style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 30),
             ),
             const SizedBox(height: 10),
             Padding(
@@ -61,7 +62,7 @@ class Onboarding2 extends StatelessWidget {
               child: Text(
                 "Digitize your cards and pay instantly with NFC on any POS machine.",
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   fontWeight: FontWeight.w300,
                   color: Colors.black,
                   fontSize: 15,

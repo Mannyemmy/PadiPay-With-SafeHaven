@@ -1121,16 +1121,16 @@ void main() async {
           final doUpdate = await showDialog<bool>(
             context: ctx,
             builder: (context) => AlertDialog(
-              title: const Text('Update available'),
-              content: const Text('A newer version is available on Google Play. Update now?'),
+              title: Text('Update available'),
+              content: Text('A newer version is available on Google Play. Update now?'),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Later'),
+                  child: Text('Later'),
                 ),
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(true),
-                  child: const Text('Update'),
+                  child: Text('Update'),
                 ),
               ],
             ),
@@ -1348,20 +1348,20 @@ class _AppLauncherState extends State<AppLauncher> with WidgetsBindingObserver {
               barrierDismissible: false,
               builder: (ctx) {
                 return AlertDialog(
-                  title: const Text('Security Warning'),
-                  content: const Text('This device appears to be rooted or jailbroken. For your security, certain features may be disabled.'),
+                  title: Text('Security Warning'),
+                  content: Text('This device appears to be rooted or jailbroken. For your security, certain features may be disabled.'),
                   actions: [
                     TextButton(
                       onPressed: () {
                         Navigator.of(ctx).pop();
                       },
-                      child: const Text('Continue'),
+                      child: Text('Continue'),
                     ),
                     TextButton(
                       onPressed: () {
                         SystemNavigator.pop();
                       },
-                      child: const Text('Exit'),
+                      child: Text('Exit'),
                     ),
                   ],
                 );

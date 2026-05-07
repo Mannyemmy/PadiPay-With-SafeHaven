@@ -6,6 +6,7 @@ import 'package:card_app/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
@@ -337,7 +338,7 @@ class _TransactionDetailsPageState extends State<TransactionDetailsPage> {
     if (errorMessage != null) {
       return Scaffold(
         backgroundColor: Colors.white,
-        body: Center(child: Text(errorMessage!, style: TextStyle(color: Colors.red))),
+        body: Center(child: Text(errorMessage!, style: GoogleFonts.inter(color: Colors.red))),
       );
     }
 
@@ -362,7 +363,7 @@ class _TransactionDetailsPageState extends State<TransactionDetailsPage> {
                   SizedBox(width: 10),
                   Text(
                     "Share Image",
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: Colors.grey.shade700,
                       fontWeight: FontWeight.w600,
                     ),
@@ -387,7 +388,7 @@ class _TransactionDetailsPageState extends State<TransactionDetailsPage> {
                   SizedBox(width: 10),
                   Text(
                     "Share PDF",
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: Colors.grey.shade700,
                       fontWeight: FontWeight.w600,
                     ),
@@ -410,7 +411,7 @@ class _TransactionDetailsPageState extends State<TransactionDetailsPage> {
         ),
         title: Text(
           "Share Receipt",
-          style: TextStyle(
+          style: GoogleFonts.inter(
             color: Colors.black87,
             fontWeight: FontWeight.bold,
             fontSize: 18,
@@ -458,7 +459,7 @@ class _TransactionDetailsPageState extends State<TransactionDetailsPage> {
                         ),
                         Text(
                           "₦$amount",
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                             color: Colors.black,
                             fontSize: 30,
                             fontWeight: FontWeight.bold,
@@ -476,7 +477,7 @@ class _TransactionDetailsPageState extends State<TransactionDetailsPage> {
                             SizedBox(width: 5),
                             Text(
                               status ?? 'Successful',
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 color: status == 'Successful' ? Color(0xFF00A86B) : Colors.red,
                               ),
                             ),
@@ -494,15 +495,15 @@ class _TransactionDetailsPageState extends State<TransactionDetailsPage> {
                             SizedBox(width: 4),
                             Text(
                               DateFormat('HH:mm').format(transactionDate!),
-                              style: TextStyle(color: Colors.grey, fontSize: 14),
+                              style: GoogleFonts.inter(color: Colors.grey, fontSize: 14),
                             ),
                             Text(
                               ' • ',
-                              style: TextStyle(color: Colors.grey, fontSize: 14),
+                              style: GoogleFonts.inter(color: Colors.grey, fontSize: 14),
                             ),
                             Text(
                               DateFormat('MMMM d, yyyy').format(transactionDate!),
-                              style: TextStyle(color: Colors.grey, fontSize: 14),
+                              style: GoogleFonts.inter(color: Colors.grey, fontSize: 14),
                             ),
                           ],
                         ),
@@ -517,7 +518,7 @@ class _TransactionDetailsPageState extends State<TransactionDetailsPage> {
                                 children: [
                                   Text(
                                     "Recipient Details",
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       color: Colors.black,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -530,14 +531,14 @@ class _TransactionDetailsPageState extends State<TransactionDetailsPage> {
                                 children: [
                                   Text(
                                     "Recipient Name",
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontWeight: FontWeight.w700,
                                       color: Colors.grey,
                                     ),
                                   ),
                                   Text(
                                     recipientName,
-                                    style: TextStyle(fontWeight: FontWeight.w600),
+                                    style: GoogleFonts.inter(fontWeight: FontWeight.w600),
                                   ),
                                 ],
                               ),
@@ -547,14 +548,14 @@ class _TransactionDetailsPageState extends State<TransactionDetailsPage> {
                                 children: [
                                   Text(
                                     "Bank Name",
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontWeight: FontWeight.w700,
                                       color: Colors.grey,
                                     ),
                                   ),
                                   Text(
                                     "Access Bank",
-                                    style: TextStyle(fontWeight: FontWeight.w600),
+                                    style: GoogleFonts.inter(fontWeight: FontWeight.w600),
                                   ),
                                 ],
                               ),
@@ -564,14 +565,14 @@ class _TransactionDetailsPageState extends State<TransactionDetailsPage> {
                                 children: [
                                   Text(
                                     "Account Number",
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontWeight: FontWeight.w700,
                                       color: Colors.grey,
                                     ),
                                   ),
                                   Text(
                                     "012****789",
-                                    style: TextStyle(fontWeight: FontWeight.w600),
+                                    style: GoogleFonts.inter(fontWeight: FontWeight.w600),
                                   ),
                                 ],
                               ),
@@ -582,7 +583,7 @@ class _TransactionDetailsPageState extends State<TransactionDetailsPage> {
                                 children: [
                                   Text(
                                     "Sender Details",
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       color: Colors.black,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -595,14 +596,14 @@ class _TransactionDetailsPageState extends State<TransactionDetailsPage> {
                                 children: [
                                   Text(
                                     "Sender Name",
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontWeight: FontWeight.w700,
                                       color: Colors.grey,
                                     ),
                                   ),
                                   Text(
                                     senderName,
-                                    style: TextStyle(fontWeight: FontWeight.w600),
+                                    style: GoogleFonts.inter(fontWeight: FontWeight.w600),
                                   ),
                                 ],
                               ),
@@ -612,14 +613,14 @@ class _TransactionDetailsPageState extends State<TransactionDetailsPage> {
                                 children: [
                                   Text(
                                     "Bank Name",
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontWeight: FontWeight.w700,
                                       color: Colors.grey,
                                     ),
                                   ),
                                   Text(
                                     "PadiPay",
-                                    style: TextStyle(fontWeight: FontWeight.w600),
+                                    style: GoogleFonts.inter(fontWeight: FontWeight.w600),
                                   ),
                                 ],
                               ),
@@ -629,14 +630,14 @@ class _TransactionDetailsPageState extends State<TransactionDetailsPage> {
                                 children: [
                                   Text(
                                     "Account Number",
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontWeight: FontWeight.w700,
                                       color: Colors.grey,
                                     ),
                                   ),
                                   Text(
                                     "785****345",
-                                    style: TextStyle(fontWeight: FontWeight.w600),
+                                    style: GoogleFonts.inter(fontWeight: FontWeight.w600),
                                   ),
                                 ],
                               ),
@@ -647,7 +648,7 @@ class _TransactionDetailsPageState extends State<TransactionDetailsPage> {
                                 children: [
                                   Text(
                                     "Transaction Information",
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       color: Colors.black,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -660,14 +661,14 @@ class _TransactionDetailsPageState extends State<TransactionDetailsPage> {
                                 children: [
                                   Text(
                                     "Transaction No.",
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontWeight: FontWeight.w700,
                                       color: Colors.grey,
                                     ),
                                   ),
                                   Text(
                                     widget.transactionId,
-                                    style: TextStyle(fontWeight: FontWeight.w600),
+                                    style: GoogleFonts.inter(fontWeight: FontWeight.w600),
                                   ),
                                 ],
                               ),
@@ -677,14 +678,14 @@ class _TransactionDetailsPageState extends State<TransactionDetailsPage> {
                                 children: [
                                   Text(
                                     "Session ID",
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontWeight: FontWeight.w700,
                                       color: Colors.grey,
                                     ),
                                   ),
                                   Text(
                                     "SES-4F3A2B1C",
-                                    style: TextStyle(fontWeight: FontWeight.w600),
+                                    style: GoogleFonts.inter(fontWeight: FontWeight.w600),
                                   ),
                                 ],
                               ),
@@ -701,7 +702,7 @@ class _TransactionDetailsPageState extends State<TransactionDetailsPage> {
                           child: Text(
                             textAlign: TextAlign.center,
                             "Enjoy a better life with PadiPay. Get free transfers, instant loans, and cashback rewards.",
-                            style: TextStyle(color: Colors.grey.shade500),
+                            style: GoogleFonts.inter(color: Colors.grey.shade500),
                           ),
                         ),
                       ],
@@ -725,7 +726,7 @@ class WatermarkPainter extends CustomPainter {
     final textPainter = TextPainter(
       text: TextSpan(
         text: 'PadiPay',
-        style: TextStyle(
+        style: GoogleFonts.inter(
           fontSize: 25,
           color: Colors.grey.withValues(alpha: 0.07),
         ),

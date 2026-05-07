@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 // ignore_for_file: unused_element, unused_field, dead_code, unnecessary_cast, unused_import
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 String _normKey(String name) => name
@@ -233,17 +234,17 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
                       color: Colors.white, size: 20),
                 ),
                 const SizedBox(height: 60),
-                const Text(
+                Text(
                   'Subscriptions',
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: Colors.white),
                 ),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   'Recurring merchants detected on your cards',
-                  style: TextStyle(fontSize: 13, color: Colors.white70),
+                  style: GoogleFonts.inter(fontSize: 13, color: Colors.white70),
                 ),
                 const SizedBox(height: 8),
               ],
@@ -252,14 +253,14 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
           if (_loading)
             const Expanded(child: Center(child: CircularProgressIndicator()))
           else if (_subs.isEmpty)
-            const Expanded(
+             Expanded(
               child: Center(
                 child: Padding(
                   padding: EdgeInsets.all(32),
                   child: Text(
                     'No recurring charges detected yet.\nUse your card and we\'ll track subscription patterns here.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey, fontSize: 14),
+                    style: GoogleFonts.inter(color: Colors.grey, fontSize: 14),
                   ),
                 ),
               ),
@@ -388,7 +389,7 @@ class _SubCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     sub.merchantName,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontWeight: FontWeight.bold, fontSize: 15),
                   ),
                 ),
@@ -402,7 +403,7 @@ class _SubCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text('Blocked',
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                             color: Colors.red.shade700,
                             fontSize: 11,
                             fontWeight: FontWeight.w600)),
@@ -435,13 +436,13 @@ class _SubCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Next expected charge',
-                      style: TextStyle(color: Colors.grey, fontSize: 12)),
+                  Text('Next expected charge',
+                      style: GoogleFonts.inter(color: Colors.grey, fontSize: 12)),
                   Row(
                     children: [
                       Text(
                         daysUntilLabel(sub.estimatedNextChargeAt),
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                             color: nextColor,
                             fontSize: 12,
                             fontWeight: FontWeight.w600),
@@ -450,7 +451,7 @@ class _SubCard extends StatelessWidget {
                       Text(
                         '(${formatDate(sub.estimatedNextChargeAt)})',
                         style:
-                            const TextStyle(color: Colors.grey, fontSize: 12),
+                            TextStyle(color: Colors.grey, fontSize: 12),
                       ),
                     ],
                   ),
@@ -468,15 +469,15 @@ class _SubCard extends StatelessWidget {
                 const Icon(Icons.notifications_outlined,
                     size: 18, color: Colors.grey),
                 const SizedBox(width: 6),
-                const Text('Remind me',
-                    style: TextStyle(fontSize: 13, color: Colors.grey)),
+                Text('Remind me',
+                    style: GoogleFonts.inter(fontSize: 13, color: Colors.grey)),
                 const Spacer(),
                 if (sub.reminderEnabled) ...[
                   DropdownButtonHideUnderline(
                     child: DropdownButton<int>(
                       value: sub.reminderDaysBefore,
                       isDense: true,
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 13,
                           color: Colors.black87,
                           fontFamily: 'Poppins'),
@@ -520,7 +521,7 @@ class _SubCard extends StatelessWidget {
                   sub.isBlocked
                       ? 'Unblock this merchant'
                       : 'Block this merchant on this card',
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     fontSize: 13,
                     color: sub.isBlocked
                         ? Colors.green.shade700
@@ -565,11 +566,11 @@ class _InfoPair extends StatelessWidget {
       children: [
         Text(label,
             textAlign: align,
-            style: const TextStyle(color: Colors.grey, fontSize: 11)),
+            style: TextStyle(color: Colors.grey, fontSize: 11)),
         const SizedBox(height: 2),
         Text(value,
             textAlign: align,
-            style: const TextStyle(
+            style: TextStyle(
                 fontWeight: FontWeight.w600, fontSize: 14)),
       ],
     );

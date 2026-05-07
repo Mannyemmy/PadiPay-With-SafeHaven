@@ -697,7 +697,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
         ],
         title: Text(
           "Giveaway",
-          style: TextStyle(
+          style: GoogleFonts.inter(
             color: Colors.black87,
             fontWeight: FontWeight.bold,
             fontSize: 18,
@@ -731,7 +731,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                       ),
                       child: Text(
                         "Send Giveaway",
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: sendOrReceiveGiveAway == 0
@@ -761,7 +761,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                       ),
                       child: Text(
                         "Receive Giveaway",
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: sendOrReceiveGiveAway == 1
@@ -793,7 +793,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                     children: [
                       Text(
                         "Claim Your Reward",
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           fontWeight: FontWeight.bold,
                           color: Colors.black,
                           fontSize: 16,
@@ -802,7 +802,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                       SizedBox(height: 10),
                       Text(
                         "Enter your promo code to claim your giveaway funds",
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           fontSize: 14,
                           color: Colors.grey,
                           fontWeight: FontWeight.w200,
@@ -811,7 +811,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                       SizedBox(height: 20),
                       Text(
                         "Promo Code",
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           fontSize: 16,
                           color: Colors.grey.shade700,
                           fontWeight: FontWeight.bold,
@@ -823,7 +823,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                         controller: promoCodeController,
                         onChanged: (value) => setState(() {}),
                         keyboardType: TextInputType.text,
-                        style: TextStyle(fontSize: 15),
+                        style: GoogleFonts.inter(fontSize: 15),
                         decoration: InputDecoration(
                           fillColor: Colors.white,
                           filled: true,
@@ -831,9 +831,9 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                             horizontal: 4,
                             vertical: 15,
                           ),
-                          hintStyle: TextStyle(color: Colors.grey),
+                          hintStyle: GoogleFonts.inter(color: Colors.grey),
                           hintText: "Enter code PADI#123456",
-                          prefixStyle: TextStyle(color: Colors.black),
+                          prefixStyle: GoogleFonts.inter(color: Colors.black),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(color: Colors.grey.shade300),
@@ -865,7 +865,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                               ? CircularProgressIndicator(color: Colors.white)
                               : Text(
                                   "Claim Reward",
-                                  style: TextStyle(color: Colors.white),
+                                  style: GoogleFonts.inter(color: Colors.white),
                                 ),
                         ),
                       ),
@@ -907,14 +907,14 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                           children: [
                             Text(
                               "Giveaway Details",
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             Text(
                               "Choose how you'd like to distribute your funds",
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 fontWeight: FontWeight.w600,
                                 color: Colors.grey.shade500,
                               ),
@@ -932,7 +932,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                               children: [
                                 Text(
                                   "Select Giveaway Type",
-                                  style: TextStyle(
+                                  style: GoogleFonts.inter(
                                     fontWeight: FontWeight.bold,
                                     color: Colors.black87,
                                     fontSize: 14,
@@ -988,7 +988,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                             : (selectedGiveAwayType == 0
                                                   ? "Pool Giveaway - Distribute a total amount among many people"
                                                   : "Individual Giveaway - Give a set amount to each person"),
-                                        style: TextStyle(
+                                        style: GoogleFonts.inter(
                                           color: selectedGiveAwayType == null
                                               ? Colors.grey
                                               : Colors.black87,
@@ -1016,7 +1016,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                     children: [
                                       Text(
                                         "Total Amount to Give Away",
-                                        style: TextStyle(
+                                        style: GoogleFonts.inter(
                                           fontWeight: FontWeight.bold,
                                           color: Colors.black87,
                                           fontSize: 14,
@@ -1029,7 +1029,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                     controller: totalAmountController,
                                     keyboardType: TextInputType.number,
                                     inputFormatters: [ThousandsFormatter()],
-                                    style: TextStyle(fontSize: 15),
+                                    style: GoogleFonts.inter(fontSize: 15),
                                     decoration: InputDecoration(
                                       fillColor: Colors.white,
                                       filled: true,
@@ -1037,14 +1037,14 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                         horizontal: 0,
                                         vertical: 15,
                                       ),
-                                      hintStyle: TextStyle(
+                                      hintStyle: GoogleFonts.inter(
                                         color: Colors.grey,
                                         fontSize: 12,
                                       ),
                                       hintText:
                                           "Enter total spending amount e.g 1,000,000",
                                       prefixText: " ₦ ",
-                                      prefixStyle: TextStyle(
+                                      prefixStyle: GoogleFonts.inter(
                                         color: Colors.black,
                                       ),
                                       border: OutlineInputBorder(
@@ -1073,7 +1073,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                     children: [
                                       Text(
                                         "Number of People",
-                                        style: TextStyle(
+                                        style: GoogleFonts.inter(
                                           fontWeight: FontWeight.bold,
                                           color: Colors.black87,
                                           fontSize: 14,
@@ -1085,7 +1085,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                   TextField(
                                     controller: numPeoplePoolController,
                                     keyboardType: TextInputType.number,
-                                    style: TextStyle(fontSize: 15),
+                                    style: GoogleFonts.inter(fontSize: 15),
                                     decoration: InputDecoration(
                                       fillColor: Colors.white,
                                       filled: true,
@@ -1093,7 +1093,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                         horizontal: 10,
                                         vertical: 15,
                                       ),
-                                      hintStyle: TextStyle(
+                                      hintStyle: GoogleFonts.inter(
                                         color: Colors.grey,
                                         fontSize: 12,
                                       ),
@@ -1129,7 +1129,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                     children: [
                                       Text(
                                         "Amount per Person",
-                                        style: TextStyle(
+                                        style: GoogleFonts.inter(
                                           fontWeight: FontWeight.bold,
                                           color: Colors.black87,
                                           fontSize: 14,
@@ -1142,7 +1142,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                     controller: amountPerPersonController,
                                     keyboardType: TextInputType.number,
                                     inputFormatters: [ThousandsFormatter()],
-                                    style: TextStyle(fontSize: 15),
+                                    style: GoogleFonts.inter(fontSize: 15),
                                     decoration: InputDecoration(
                                       fillColor: Colors.white,
                                       filled: true,
@@ -1150,10 +1150,10 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                         horizontal: 0,
                                         vertical: 15,
                                       ),
-                                      hintStyle: TextStyle(color: Colors.grey),
+                                      hintStyle: GoogleFonts.inter(color: Colors.grey),
                                       hintText: "Enter amount e.g 20,000",
                                       prefixText: " ₦ ",
-                                      prefixStyle: TextStyle(
+                                      prefixStyle: GoogleFonts.inter(
                                         color: Colors.black,
                                       ),
                                       border: OutlineInputBorder(
@@ -1182,7 +1182,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                     children: [
                                       Text(
                                         "Number of People",
-                                        style: TextStyle(
+                                        style: GoogleFonts.inter(
                                           fontWeight: FontWeight.bold,
                                           color: Colors.black87,
                                           fontSize: 14,
@@ -1194,7 +1194,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                   TextField(
                                     controller: numPeopleIndividualController,
                                     keyboardType: TextInputType.number,
-                                    style: TextStyle(fontSize: 15),
+                                    style: GoogleFonts.inter(fontSize: 15),
                                     decoration: InputDecoration(
                                       fillColor: Colors.white,
                                       filled: true,
@@ -1202,7 +1202,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                         horizontal: 10,
                                         vertical: 15,
                                       ),
-                                      hintStyle: TextStyle(color: Colors.grey),
+                                      hintStyle: GoogleFonts.inter(color: Colors.grey),
                                       hintText:
                                           "Enter number of recipients (e.g 200)",
                                       border: OutlineInputBorder(
@@ -1239,7 +1239,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                     children: [
                                       Text(
                                         "Customize Giveaway Code",
-                                        style: TextStyle(
+                                        style: GoogleFonts.inter(
                                           fontWeight: FontWeight.bold,
                                           color: Colors.black87,
                                           fontSize: 14,
@@ -1276,7 +1276,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                           RegExp(r'\s'),
                                         ), // blocks spaces
                                       ],
-                                      style: TextStyle(fontSize: 15),
+                                      style: GoogleFonts.inter(fontSize: 15),
                                       decoration: InputDecoration(
                                         fillColor: Colors.white,
                                         filled: true,
@@ -1284,7 +1284,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                           horizontal: 10,
                                           vertical: 15,
                                         ),
-                                        hintStyle: TextStyle(
+                                        hintStyle: GoogleFonts.inter(
                                           color: Colors.grey,
                                           fontSize: 12,
                                         ),
@@ -1320,7 +1320,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                   SizedBox(height: 15),
                                   Text(
                                     "Who Pays the Fee?",
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontWeight: FontWeight.bold,
                                       color: Colors.black87,
                                       fontSize: 14,
@@ -1349,7 +1349,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                             child: Center(
                                               child: Text(
                                                 "I Pay",
-                                                style: TextStyle(
+                                                style: GoogleFonts.inter(
                                                   color: whoPays == 'sender'
                                                       ? Colors.white
                                                       : Colors.black87,
@@ -1384,7 +1384,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                             child: Center(
                                               child: Text(
                                                 "Receivers",
-                                                style: TextStyle(
+                                                style: GoogleFonts.inter(
                                                   color: whoPays == 'receivers'
                                                       ? Colors.white
                                                       : Colors.black87,
@@ -1425,7 +1425,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                             SizedBox(width: 10),
                                             Text(
                                               "Summary:",
-                                              style: TextStyle(
+                                              style: GoogleFonts.inter(
                                                 fontWeight: FontWeight.w500,
                                                 color: Colors.grey.shade600,
                                                 fontSize: 16,
@@ -1436,21 +1436,21 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                         SizedBox(height: 10),
                                         Text(
                                           "Fee (${(feeRate * 100).toStringAsFixed(0)}%): ₦${numberFormat.format(getFee())}",
-                                          style: TextStyle(
+                                          style: GoogleFonts.inter(
                                             color: Colors.black87,
                                           ),
                                         ),
                                         SizedBox(height: 5),
                                         Text(
                                           "Total Transfer: ₦${numberFormat.format(getTransferAmount())}",
-                                          style: TextStyle(
+                                          style: GoogleFonts.inter(
                                             color: Colors.black87,
                                           ),
                                         ),
                                         SizedBox(height: 5),
                                         Text(
                                           "Each Receives: ₦${numberFormat.format(getAmountPerPerson())}",
-                                          style: TextStyle(
+                                          style: GoogleFonts.inter(
                                             color: Colors.black87,
                                           ),
                                         ),
@@ -1462,7 +1462,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                     children: [
                                       Text(
                                         "Select Wallet",
-                                        style: TextStyle(
+                                        style: GoogleFonts.inter(
                                           fontWeight: FontWeight.bold,
                                           color: Colors.black87,
                                           fontSize: 14,
@@ -1490,14 +1490,14 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                       children: [
                                         Text(
                                           "Default Wallet",
-                                          style: TextStyle(
+                                          style: GoogleFonts.inter(
                                             color: Colors.black87,
                                             fontWeight: FontWeight.w500,
                                           ),
                                         ),
                                         Text(
                                           balance ?? '₦ 0.00',
-                                          style: TextStyle(
+                                          style: GoogleFonts.inter(
                                             color: Colors.black87,
                                             fontWeight: FontWeight.w600,
                                           ),
@@ -1523,7 +1523,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                             ),
                                             child: Text(
                                               generatedCode!,
-                                              style: TextStyle(
+                                              style: GoogleFonts.inter(
                                                 fontSize: 16,
                                                 color: primaryColor,
                                                 fontWeight: FontWeight.bold,
@@ -1587,7 +1587,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                   Text(
                                     textAlign: TextAlign.center,
                                     "You'll receive a unique code to share with recipients",
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontWeight: FontWeight.w500,
                                       color: Colors.grey,
                                     ),
@@ -1617,7 +1617,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                   Text(
                                     textAlign: TextAlign.center,
                                     "Select a giveaway type above to get started",
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontWeight: FontWeight.bold,
                                       color: Colors.grey.shade600,
                                       fontSize: 14,
@@ -1688,9 +1688,9 @@ class _ChooseGiveAwayTypeBottomSheetState
                 SizedBox(height: 10),
                 Row(
                   children: [
-                    const Text(
+                    Text(
                       'Choose GiveAway Type',
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: Colors.black,
@@ -1733,7 +1733,7 @@ class _ChooseGiveAwayTypeBottomSheetState
                                 children: [
                                   Text(
                                     'Pool Giveaway',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontWeight: FontWeight.bold,
                                       color: Colors.black,
                                       fontSize: 16,
@@ -1741,7 +1741,7 @@ class _ChooseGiveAwayTypeBottomSheetState
                                   ),
                                   Text(
                                     'Distribute a total amount among many people',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       color: Colors.grey,
                                       fontSize: 14,
                                     ),
@@ -1785,7 +1785,7 @@ class _ChooseGiveAwayTypeBottomSheetState
                                 children: [
                                   Text(
                                     'Individual Giveaway',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontWeight: FontWeight.bold,
                                       color: Colors.black,
                                       fontSize: 16,
@@ -1793,7 +1793,7 @@ class _ChooseGiveAwayTypeBottomSheetState
                                   ),
                                   Text(
                                     'Give a set amount to each person',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       color: Colors.grey,
                                       fontSize: 14,
                                     ),
@@ -1837,7 +1837,7 @@ class _ChooseGiveAwayTypeBottomSheetState
                                 children: [
                                   Text(
                                     'Targeted Giveaway',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontWeight: FontWeight.bold,
                                       color: Colors.black,
                                       fontSize: 16,
@@ -1845,7 +1845,7 @@ class _ChooseGiveAwayTypeBottomSheetState
                                   ),
                                   Text(
                                     'Only specific Padi users you choose can claim',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       color: Colors.grey,
                                       fontSize: 14,
                                     ),
@@ -1894,7 +1894,7 @@ class GiveawaysHistoryPage extends StatelessWidget {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Giveaways History')),
+        appBar: AppBar(title: Text('Giveaways History')),
         body: const Center(child: Text('Please sign in to view giveaways')),
       );
     }
@@ -1913,11 +1913,11 @@ class GiveawaysHistoryPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Giveaways History'),
+        title: Text('Giveaways History'),
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
         iconTheme: const IconThemeData(color: Colors.black87),
-        titleTextStyle: const TextStyle(
+        titleTextStyle: TextStyle(
           color: Colors.black87,
           fontWeight: FontWeight.bold,
           fontSize: 18,
@@ -1995,12 +1995,12 @@ class GiveawaysHistoryPage extends StatelessWidget {
                       children: [
                         Text(
                           '₦ ${NumberFormat('#,##0.00').format(total)}',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                          style: GoogleFonts.inter(fontWeight: FontWeight.bold),
                         ),
                         SizedBox(height: 4),
                         Text(
                           '$numPeople ppl',
-                          style: TextStyle(color: Colors.grey, fontSize: 12),
+                          style: GoogleFonts.inter(color: Colors.grey, fontSize: 12),
                         ),
                       ],
                     ),
@@ -2017,7 +2017,7 @@ class GiveawaysHistoryPage extends StatelessWidget {
                               children: [
                                 Text(
                                   'Giveaway $code',
-                                  style: TextStyle(
+                                  style: GoogleFonts.inter(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                   ),

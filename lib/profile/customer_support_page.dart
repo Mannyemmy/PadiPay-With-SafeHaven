@@ -156,16 +156,16 @@ class _CustomerSupportPageState extends State<CustomerSupportPage>
           onPressed: () => Navigator.pop(context),
         ),
         centerTitle: true,
-        title: const Text(
+        title: Text(
           'Customer Support',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600),
         ),
         bottom: TabBar(
           controller: _tabController,
           labelColor: primaryColor,
           unselectedLabelColor: Colors.grey,
           indicatorColor: primaryColor,
-          labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+          labelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
           tabs: const [
             Tab(text: 'New Ticket'),
             Tab(text: 'My Tickets'),
@@ -217,9 +217,9 @@ class _CustomerSupportPageState extends State<CustomerSupportPage>
             const SizedBox(height: 24),
 
             // Category
-            const Text(
+            Text(
               'Issue Category',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+              style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
@@ -247,9 +247,9 @@ class _CustomerSupportPageState extends State<CustomerSupportPage>
             const SizedBox(height: 20),
 
             // Subject
-            const Text(
+            Text(
               'Subject',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+              style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
             ),
             const SizedBox(height: 8),
             TextFormField(
@@ -258,7 +258,7 @@ class _CustomerSupportPageState extends State<CustomerSupportPage>
               decoration: InputDecoration(
                 counterText: '',
                 hintText: 'Brief summary of your issue',
-                hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                hintStyle: GoogleFonts.inter(color: Colors.grey.shade400, fontSize: 14),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide: BorderSide(color: Colors.grey.shade300),
@@ -279,9 +279,9 @@ class _CustomerSupportPageState extends State<CustomerSupportPage>
             const SizedBox(height: 20),
 
             // Description
-            const Text(
+            Text(
               'Description',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+              style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
             ),
             const SizedBox(height: 8),
             TextFormField(
@@ -291,7 +291,7 @@ class _CustomerSupportPageState extends State<CustomerSupportPage>
               decoration: InputDecoration(
                 hintText:
                     'Describe your issue in detail — include dates, amounts, or reference numbers if relevant.',
-                hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                hintStyle: GoogleFonts.inter(color: Colors.grey.shade400, fontSize: 14),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide: BorderSide(color: Colors.grey.shade300),
@@ -332,9 +332,9 @@ class _CustomerSupportPageState extends State<CustomerSupportPage>
                         strokeWidth: 2.5,
                       ),
                     )
-                  : const Text(
+                  : Text(
                       'Submit Ticket',
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         color: Colors.white,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -361,7 +361,7 @@ class _CustomerSupportPageState extends State<CustomerSupportPage>
             const SizedBox(height: 12),
             Text(
               'No tickets yet',
-              style: TextStyle(
+              style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Colors.grey.shade500,
@@ -370,7 +370,7 @@ class _CustomerSupportPageState extends State<CustomerSupportPage>
             const SizedBox(height: 6),
             Text(
               'Submit a ticket and it will appear here.',
-              style: TextStyle(fontSize: 13, color: Colors.grey.shade400),
+              style: GoogleFonts.inter(fontSize: 13, color: Colors.grey.shade400),
             ),
           ],
         ),
@@ -418,7 +418,7 @@ class _CustomerSupportPageState extends State<CustomerSupportPage>
                     Expanded(
                       child: Text(
                         ticket['subject'] ?? 'No subject',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
                         ),
@@ -436,7 +436,7 @@ class _CustomerSupportPageState extends State<CustomerSupportPage>
                       ),
                       child: Text(
                         statusLabel,
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: statusColor,
@@ -448,7 +448,7 @@ class _CustomerSupportPageState extends State<CustomerSupportPage>
                 const SizedBox(height: 6),
                 Text(
                   ticket['description'] ?? '',
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     fontSize: 13,
                     color: Colors.grey.shade600,
                   ),
@@ -467,7 +467,7 @@ class _CustomerSupportPageState extends State<CustomerSupportPage>
                       ),
                       child: Text(
                         categoryLabel,
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           fontSize: 11,
                           color: Colors.grey.shade600,
                           fontWeight: FontWeight.w500,
@@ -478,7 +478,7 @@ class _CustomerSupportPageState extends State<CustomerSupportPage>
                     if (createdAt != null)
                       Text(
                         DateFormat('MMM d, yyyy').format(createdAt),
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           fontSize: 11,
                           color: Colors.grey.shade400,
                         ),

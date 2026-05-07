@@ -403,7 +403,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
                         children: [
                           Text(
                             title,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
                             ),
@@ -465,7 +465,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
                           ? Center(
                               child: Text(
                                 'No results found',
-                                style: TextStyle(color: Colors.grey.shade500),
+                                style: GoogleFonts.inter(color: Colors.grey.shade500),
                               ),
                             )
                           : ListView.builder(
@@ -600,7 +600,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
                                             children: [
                                               Text(
                                                 name,
-                                                style: TextStyle(
+                                                style: GoogleFonts.inter(
                                                   fontSize: 15,
                                                   fontWeight: isSelected
                                                       ? FontWeight.w600
@@ -615,7 +615,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
                                                 const SizedBox(height: 4),
                                                 Text(
                                                   subtitle,
-                                                  style: TextStyle(
+                                                  style: GoogleFonts.inter(
                                                     fontSize: 13,
                                                     color: Colors.grey.shade600,
                                                   ),
@@ -1186,14 +1186,14 @@ class _PayBillsPageState extends State<PayBillsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           "Buy Data Bundle",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 20),
-        const Text(
+        Text(
           "Select Network",
-          style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black54),
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.black54),
         ),
         const SizedBox(height: 4),
         isFetchingDataBillers
@@ -1278,9 +1278,9 @@ class _PayBillsPageState extends State<PayBillsPage> {
               ),
 
         const SizedBox(height: 16),
-        const Text(
+        Text(
           "Select Data Volume",
-          style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black54),
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.black54),
         ),
         const SizedBox(height: 4),
         isFetchingDataBundles
@@ -1344,9 +1344,9 @@ class _PayBillsPageState extends State<PayBillsPage> {
               ),
         const SizedBox(height: 16),
 
-        const Text(
+        Text(
           "Recipient Mobile Number",
-          style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black54),
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.black54),
         ),
         const SizedBox(height: 4),
         TextFormField(
@@ -1357,7 +1357,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
           decoration: InputDecoration(
             counterText: "",
             hintText: "Enter recipient mobile number",
-            hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 15),
+            hintStyle: GoogleFonts.inter(color: Colors.grey.shade500, fontSize: 15),
             enabledBorder: OutlineInputBorder(
               borderSide: BorderSide(color: Colors.grey.shade400),
               borderRadius: BorderRadius.circular(10),
@@ -1386,7 +1386,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
                 children: [
                   Text(
                     'Selected Network',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: Colors.black54,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1423,7 +1423,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
                 children: [
                   Text(
                     'Mobile Number',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: Colors.black54,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1450,7 +1450,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
                 children: [
                   Text(
                     'Data Purchase',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: Colors.black54,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1494,9 +1494,9 @@ class _PayBillsPageState extends State<PayBillsPage> {
           ),
           child: isLoadingData
               ? CircularProgressIndicator(color: Colors.white)
-              : const Text(
+              : Text(
                   'Pay Now',
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
@@ -1511,14 +1511,14 @@ class _PayBillsPageState extends State<PayBillsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           "Buy Cable",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 20),
-        const Text(
+        Text(
           "Select Operator",
-          style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black54),
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.black54),
         ),
         const SizedBox(height: 4),
         isFetchingCableBillers
@@ -1587,9 +1587,9 @@ class _PayBillsPageState extends State<PayBillsPage> {
                 ),
               ),
         const SizedBox(height: 16),
-        const Text(
+        Text(
           "Select Package",
-          style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black54),
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.black54),
         ),
         const SizedBox(height: 4),
         isFetchingCableSubscriptions
@@ -1669,7 +1669,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
                 ),
               ),
         const SizedBox(height: 16),
-        const Text("Card Number"),
+        Text("Card Number"),
         const SizedBox(height: 4),
         TextFormField(
           controller: cardNumberController,
@@ -1677,7 +1677,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           decoration: InputDecoration(
             hintText: "Enter card number",
-            hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 15),
+            hintStyle: GoogleFonts.inter(color: Colors.grey.shade500, fontSize: 15),
             enabledBorder: OutlineInputBorder(
               borderSide: BorderSide(color: Colors.grey.shade400),
               borderRadius: BorderRadius.circular(10),
@@ -1693,7 +1693,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
           ),
         ),
         const SizedBox(height: 16),
-        const Text("Amount"),
+        Text("Amount"),
         const SizedBox(height: 4),
         TextFormField(
           controller: cableAmountController,
@@ -1701,7 +1701,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           decoration: InputDecoration(
             hintText: "Enter amount",
-            hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 15),
+            hintStyle: GoogleFonts.inter(color: Colors.grey.shade500, fontSize: 15),
             enabledBorder: OutlineInputBorder(
               borderSide: BorderSide(color: Colors.grey.shade400),
               borderRadius: BorderRadius.circular(10),
@@ -1730,7 +1730,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
                 children: [
                   Text(
                     'Operator',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: Colors.black54,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1767,7 +1767,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
                 children: [
                   Text(
                     'Package',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: Colors.black54,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1801,7 +1801,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
                 children: [
                   Text(
                     'Card Number',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: Colors.black54,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1828,7 +1828,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
                 children: [
                   Text(
                     'Amount',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: Colors.black54,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1866,9 +1866,9 @@ class _PayBillsPageState extends State<PayBillsPage> {
           ),
           child: isLoadingCable
               ? CircularProgressIndicator(color: Colors.white)
-              : const Text(
+              : Text(
                   'Pay Now',
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
@@ -1883,14 +1883,14 @@ class _PayBillsPageState extends State<PayBillsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           "Buy Electricity",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 20),
-        const Text(
+        Text(
           "Select Disco",
-          style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black54),
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.black54),
         ),
         const SizedBox(height: 4),
         isFetchingElectricityBillers
@@ -1941,9 +1941,9 @@ class _PayBillsPageState extends State<PayBillsPage> {
         const SizedBox(height: 16),
 
         const SizedBox(height: 16),
-        const Text(
+        Text(
           "Meter Number",
-          style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black54),
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.black54),
         ),
         const SizedBox(height: 4),
         TextFormField(
@@ -1952,7 +1952,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           decoration: InputDecoration(
             hintText: "Enter meter number",
-            hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 15),
+            hintStyle: GoogleFonts.inter(color: Colors.grey.shade500, fontSize: 15),
             enabledBorder: OutlineInputBorder(
               borderSide: BorderSide(color: Colors.grey.shade400),
               borderRadius: BorderRadius.circular(10),
@@ -1968,9 +1968,9 @@ class _PayBillsPageState extends State<PayBillsPage> {
           ),
         ),
         const SizedBox(height: 16),
-        const Text(
+        Text(
           "Amount",
-          style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black54),
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.black54),
         ),
         const SizedBox(height: 4),
         TextFormField(
@@ -1982,14 +1982,14 @@ class _PayBillsPageState extends State<PayBillsPage> {
               padding: const EdgeInsets.only(left: 16.0, top: 16, bottom: 16),
               child: Text(
                 "₦",
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   color: Colors.grey[500],
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
             hintText: "Enter amount",
-            hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 15),
+            hintStyle: GoogleFonts.inter(color: Colors.grey.shade500, fontSize: 15),
             enabledBorder: OutlineInputBorder(
               borderSide: BorderSide(color: Colors.grey.shade400),
               borderRadius: BorderRadius.circular(10),
@@ -2018,7 +2018,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
                 children: [
                   Text(
                     'Disco',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: Colors.black54,
                       fontWeight: FontWeight.w600,
                     ),
@@ -2050,7 +2050,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
                 children: [
                   Text(
                     'Meter Number',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: Colors.black54,
                       fontWeight: FontWeight.w600,
                     ),
@@ -2077,7 +2077,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
                 children: [
                   Text(
                     'Amount',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: Colors.black54,
                       fontWeight: FontWeight.w600,
                     ),
@@ -2115,9 +2115,9 @@ class _PayBillsPageState extends State<PayBillsPage> {
           ),
           child: isLoadingElectricity
               ? CircularProgressIndicator(color: Colors.white)
-              : const Text(
+              : Text(
                   'Pay Now',
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
@@ -2149,7 +2149,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
               Expanded(
                 child: Text(
                   'Cashback balance: NGN ${cashbackBalance.toStringAsFixed(2)}',
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     color: Colors.green.shade800,
                     fontWeight: FontWeight.w700,
                     fontSize: 13,
@@ -2161,13 +2161,13 @@ class _PayBillsPageState extends State<PayBillsPage> {
           const SizedBox(height: 8),
           SwitchListTile.adaptive(
             contentPadding: EdgeInsets.zero,
-            title: const Text(
+            title: Text(
               'Use cashback for this payment',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+              style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13),
             ),
-            subtitle: const Text(
+            subtitle: Text(
               'You will still earn 10% cashback after payment.',
-              style: TextStyle(fontSize: 12),
+              style: GoogleFonts.inter(fontSize: 12),
             ),
             value: useCashback,
             onChanged: cashbackBalance > 0
@@ -2193,9 +2193,9 @@ class _PayBillsPageState extends State<PayBillsPage> {
           onPressed: () => Navigator.pop(context),
         ),
         centerTitle: true,
-        title: const Text(
+        title: Text(
           "Pay Bill",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600),
         ),
         elevation: 0,
         backgroundColor: Colors.white,
@@ -2206,9 +2206,9 @@ class _PayBillsPageState extends State<PayBillsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               "Your Bills",
-              style: TextStyle(
+              style: GoogleFonts.inter(
                 color: Colors.black54,
                 fontWeight: FontWeight.w600,
                 fontSize: 16,
@@ -2219,7 +2219,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
               value: 'electricity',
               groupValue: selectedBill,
               onChanged: (value) => setState(() => selectedBill = value),
-              title: const Text('Electricity'),
+              title: Text('Electricity'),
               secondary: const Icon(Icons.bolt_outlined, color: Colors.green),
               controlAffinity: ListTileControlAffinity.trailing,
               activeColor: Colors.blue,
@@ -2228,7 +2228,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
               value: 'data_bundle',
               groupValue: selectedBill,
               onChanged: (value) => setState(() => selectedBill = value),
-              title: const Text('Data Bundle'),
+              title: Text('Data Bundle'),
               secondary: const Icon(Icons.phone_android, color: Colors.purple),
               controlAffinity: ListTileControlAffinity.trailing,
               activeColor: Colors.blue,
@@ -2237,7 +2237,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
               value: 'cable',
               groupValue: selectedBill,
               onChanged: (value) => setState(() => selectedBill = value),
-              title: const Text('Cable'),
+              title: Text('Cable'),
               secondary: const Icon(Icons.tv, color: Colors.pink),
               controlAffinity: ListTileControlAffinity.trailing,
               activeColor: Colors.blue,

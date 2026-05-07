@@ -11,6 +11,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_switch/flutter_switch.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificationSettings extends StatefulWidget {
@@ -156,7 +157,7 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                       SizedBox(height: 100),
                       Text(
                         'Notification Settings',
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
@@ -193,7 +194,7 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                                     children: [
                                       Text(
                                         'Push Notification',
-                                        style: TextStyle(
+                                        style: GoogleFonts.inter(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,
                                           color: Colors.black54,
@@ -201,7 +202,7 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                                       ),
                                       Text(
                                         "Get instant transaction push notifications on this device",
-                                        style: TextStyle(
+                                        style: GoogleFonts.inter(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w300,
                                         ),
@@ -244,7 +245,7 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                                     children: [
                                       Text(
                                         'Login Notification',
-                                        style: TextStyle(
+                                        style: GoogleFonts.inter(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,
                                           color: Colors.black54,
@@ -252,7 +253,7 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                                       ),
                                       Text(
                                         "Enable login notifications on your email each time you login",
-                                        style: TextStyle(
+                                        style: GoogleFonts.inter(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w300,
                                         ),
@@ -298,7 +299,7 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                                     children: [
                                       Text(
                                         'Payment Confirmation',
-                                        style: TextStyle(
+                                        style: GoogleFonts.inter(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,
                                           color: Colors.black54,
@@ -306,7 +307,7 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                                       ),
                                       Text(
                                         "Require approval before accepting incoming wifi payments",
-                                        style: TextStyle(
+                                        style: GoogleFonts.inter(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w300,
                                         ),
@@ -349,7 +350,7 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                                     children: [
                                       Text(
                                         'Voice Alerts',
-                                        style: TextStyle(
+                                        style: GoogleFonts.inter(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,
                                           color: Colors.black54,
@@ -357,7 +358,7 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                                       ),
                                       Text(
                                         'Speak incoming payment alerts',
-                                        style: TextStyle(
+                                        style: GoogleFonts.inter(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w300,
                                         ),
@@ -396,7 +397,7 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                                 children: [
                                   Text(
                                     'Voice Language',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                       color: Colors.black54,
@@ -404,7 +405,7 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                                   ),
                                   Text(
                                     'Choose the spoken language for incoming payment alerts.',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w300,
                                     ),
@@ -414,7 +415,7 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                                     children: [
                                       Expanded(
                                         child: ChoiceChip(
-                                          label: const Text('English'),
+                                          label: Text('English'),
                                           selected:
                                               voiceAlertLanguage == 'english',
                                           onSelected: (selected) {
@@ -426,7 +427,7 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                                           },
                                           selectedColor: primaryColor
                                               .withValues(alpha: 0.18),
-                                          labelStyle: TextStyle(
+                                          labelStyle: GoogleFonts.inter(
                                             color:
                                                 voiceAlertLanguage == 'english'
                                                 ? primaryColor
@@ -444,7 +445,7 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: ChoiceChip(
-                                          label: const Text('Pidgin'),
+                                          label: Text('Pidgin'),
                                           selected:
                                               voiceAlertLanguage == 'pidgin',
                                           onSelected: (selected) {
@@ -456,7 +457,7 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                                           },
                                           selectedColor: primaryColor
                                               .withValues(alpha: 0.18),
-                                          labelStyle: TextStyle(
+                                          labelStyle: GoogleFonts.inter(
                                             color:
                                                 voiceAlertLanguage == 'pidgin'
                                                 ? primaryColor
@@ -476,7 +477,7 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                                   const SizedBox(height: 18),
                                   Text(
                                     'Voice Style',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                       color: Colors.black54,
@@ -484,7 +485,7 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                                   ),
                                   Text(
                                     'Choose the voice the app should try to use for alerts. Availability depends on your device TTS engine.',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w300,
                                     ),
@@ -494,7 +495,7 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                                     children: [
                                       Expanded(
                                         child: ChoiceChip(
-                                          label: const Text('Female'),
+                                          label: Text('Female'),
                                           selected:
                                               voiceAlertGender == 'female',
                                           onSelected: (selected) {
@@ -504,7 +505,7 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                                           },
                                           selectedColor: primaryColor
                                               .withValues(alpha: 0.18),
-                                          labelStyle: TextStyle(
+                                          labelStyle: GoogleFonts.inter(
                                             color: voiceAlertGender == 'female'
                                                 ? primaryColor
                                                 : Colors.black87,
@@ -520,7 +521,7 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: ChoiceChip(
-                                          label: const Text('Male'),
+                                          label: Text('Male'),
                                           selected: voiceAlertGender == 'male',
                                           onSelected: (selected) {
                                             if (selected) {
@@ -529,7 +530,7 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                                           },
                                           selectedColor: primaryColor
                                               .withValues(alpha: 0.18),
-                                          labelStyle: TextStyle(
+                                          labelStyle: GoogleFonts.inter(
                                             color: voiceAlertGender == 'male'
                                                 ? primaryColor
                                                 : Colors.black87,
@@ -562,7 +563,7 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                                     children: [
                                       Text(
                                         'Speak Amount in Voice Alert',
-                                        style: TextStyle(
+                                        style: GoogleFonts.inter(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,
                                           color: Colors.black54,
@@ -570,7 +571,7 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                                       ),
                                       Text(
                                         'Example: Five thousand naira received in PadiPay',
-                                        style: TextStyle(
+                                        style: GoogleFonts.inter(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w300,
                                         ),
@@ -641,7 +642,7 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                                 icon: const Icon(
                                   Icons.notifications_active_outlined,
                                 ),
-                                label: const Text(
+                                label: Text(
                                   'Simulate Incoming Notification',
                                 ),
                                 style: FilledButton.styleFrom(
@@ -667,7 +668,7 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                           //     child: OutlinedButton.icon(
                           //       onPressed: _openTtsSettings,
                           //       icon: const Icon(Icons.settings_voice_outlined),
-                          //       label: const Text('Open TTS Settings'),
+                          //       label: Text('Open TTS Settings'),
                           //       style: OutlinedButton.styleFrom(
                           //         foregroundColor: primaryColor,
                           //         side: BorderSide(color: primaryColor),
@@ -732,7 +733,7 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                           //       icon: const Icon(
                           //         Icons.record_voice_over_outlined,
                           //       ),
-                          //       label: const Text('Test Voice Alert'),
+                          //       label: Text('Test Voice Alert'),
                           //       style: OutlinedButton.styleFrom(
                           //         foregroundColor: primaryColor,
                           //         side: BorderSide(color: primaryColor),

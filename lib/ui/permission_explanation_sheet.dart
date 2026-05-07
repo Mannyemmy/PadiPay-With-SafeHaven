@@ -100,7 +100,7 @@ class PermissionExplanationSheet extends StatelessWidget {
           Text(
             _description,
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey.shade600),
+            style: GoogleFonts.inter(color: Colors.grey.shade600),
           ),
           if (_showsPrivacyPolicy) ...[
             const SizedBox(height: 12),

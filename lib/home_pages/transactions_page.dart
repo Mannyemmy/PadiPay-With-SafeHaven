@@ -778,9 +778,9 @@ class _TransactionsPageState extends State<TransactionsPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 20),
-                    const Text(
+                    Text(
                       'Transaction History',
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
@@ -815,7 +815,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
                                 const SizedBox(width: 8),
                                 Text(
                                   'Filters',
-                                  style: TextStyle(
+                                  style: GoogleFonts.inter(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
                                     color: Colors.blue,
@@ -838,7 +838,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
                                     ),
                                     child: Text(
                                       _countActiveFilters().toString(),
-                                      style: TextStyle(
+                                      style: GoogleFonts.inter(
                                         fontSize: 12,
                                         color: Colors.white,
                                         fontWeight: FontWeight.bold,
@@ -896,7 +896,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
                                         const SizedBox(width: 4),
                                         Text(
                                           'Clear All',
-                                          style: TextStyle(
+                                          style: GoogleFonts.inter(
                                             fontSize: 14,
                                             color: Colors.red,
                                             fontWeight: FontWeight.w600,
@@ -932,7 +932,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
                                   focusNode: _searchFocusNode,
                                   decoration: InputDecoration(
                                     hintText: 'Search by name, number...',
-                                    hintStyle: TextStyle(
+                                    hintStyle: GoogleFonts.inter(
                                       color: Colors.blueGrey.withOpacity(0.5),
                                     ),
                                     prefixIcon: const Icon(
@@ -1027,7 +1027,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
                                               Expanded(
                                                 child: Text(
                                                   suggestion,
-                                                  style: TextStyle(
+                                                  style: GoogleFonts.inter(
                                                     fontSize: 14,
                                                     color: Colors.grey.shade800,
                                                   ),
@@ -1075,7 +1075,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
                                                     'MMM yyyy',
                                                   ).format(_selectedMonth!)
                                                 : 'All Time',
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 14,
                                               color: Colors.black54,
                                               fontWeight: FontWeight.w700,
@@ -1176,7 +1176,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
                                                         _customStartDate!,
                                                       )
                                                     : 'Start Date',
-                                                style: const TextStyle(
+                                                style: TextStyle(
                                                   fontSize: 14,
                                                   color: Colors.black54,
                                                   fontWeight: FontWeight.w700,
@@ -1222,7 +1222,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
                                                         'dd MMM yyyy',
                                                       ).format(_customEndDate!)
                                                     : 'End Date',
-                                                style: const TextStyle(
+                                                style: TextStyle(
                                                   fontSize: 14,
                                                   color: Colors.black54,
                                                   fontWeight: FontWeight.w700,
@@ -1277,7 +1277,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
                                         Expanded(
                                           child: Text(
                                             _selectedCategory,
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 14,
                                               color: Colors.black54,
                                               fontWeight: FontWeight.w700,
@@ -1330,7 +1330,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
                                         Expanded(
                                           child: Text(
                                             _selectedStatus,
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 14,
                                               color: Colors.black54,
                                               fontWeight: FontWeight.w700,
@@ -1376,9 +1376,9 @@ class _TransactionsPageState extends State<TransactionsPage> {
                                 Icons.download_rounded,
                                 size: 20,
                               ),
-                              label: const Text(
+                              label: Text(
                                 'Download as PDF',
-                                style: TextStyle(
+                                style: GoogleFonts.inter(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -1424,9 +1424,9 @@ class _TransactionsPageState extends State<TransactionsPage> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
+                                  Text(
                                     'Total Transactions',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontSize: 12,
                                       color: Colors.grey,
                                     ),
@@ -1434,7 +1434,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
                                   const SizedBox(height: 4),
                                   Text(
                                     '${filteredDocs.length} transactions',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -1444,9 +1444,9 @@ class _TransactionsPageState extends State<TransactionsPage> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  const Text(
+                                  Text(
                                     'Total Amount',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontSize: 12,
                                       color: Colors.grey,
                                     ),
@@ -1454,7 +1454,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
                                   const SizedBox(height: 4),
                                   Text(
                                     '₦${NumberFormat('#,##0.00').format(totalAmount)}',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
                                       color: Colors.blue,
@@ -1493,7 +1493,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
                                     const SizedBox(height: 16),
                                     Text(
                                       'No transactions found',
-                                      style: TextStyle(
+                                      style: GoogleFonts.inter(
                                         fontSize: 16,
                                         color: Colors.grey[600],
                                       ),
@@ -1501,7 +1501,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
                                     const SizedBox(height: 8),
                                     Text(
                                       'Try changing your filters or search query',
-                                      style: TextStyle(
+                                      style: GoogleFonts.inter(
                                         fontSize: 14,
                                         color: Colors.grey[500],
                                       ),
@@ -2094,7 +2094,7 @@ class _TransactionItemState extends State<TransactionItem> {
             const SizedBox(height: 20),
             Text(
               widget.amount,
-              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 4),
             Container(
@@ -2105,7 +2105,7 @@ class _TransactionItemState extends State<TransactionItem> {
               ),
               child: Text(
                 statusLabel,
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   color: statusColor,
                   fontWeight: FontWeight.w600,
                   fontSize: 12,
@@ -2136,12 +2136,12 @@ class _TransactionItemState extends State<TransactionItem> {
         children: [
           Text(
             label,
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+            style: GoogleFonts.inter(color: Colors.grey.shade600, fontSize: 13),
           ),
           Flexible(
             child: Text(
               value,
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
               textAlign: TextAlign.end,
             ),
           ),
@@ -2181,11 +2181,11 @@ class _TransactionItemState extends State<TransactionItem> {
         child: Row(
           children: [
             CircleAvatar(
-              radius: 24,
+              radius: 20,
               backgroundColor: widget.bgColor,
               child: Transform.translate(
                 offset: widget.offset,
-                child: Icon(widget.icon, color: widget.iconColor, size: 20),
+                child: Icon(widget.icon, color: widget.iconColor, size: 16),
               ),
             ),
             const SizedBox(width: 14),
@@ -2195,9 +2195,9 @@ class _TransactionItemState extends State<TransactionItem> {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style:  GoogleFonts.inter(
                       fontWeight: FontWeight.w700,
-                      fontSize: 15,
+                      fontSize: 12,
                       color: Colors.black87,
                     ),
                     maxLines: 1,
@@ -2209,28 +2209,31 @@ class _TransactionItemState extends State<TransactionItem> {
                       Icon(
                         Icons.access_time,
                         color: Colors.grey.shade500,
-                        size: 13,
+                        size: 10,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         widget.formattedTime,
-                        style: TextStyle(
+                          style:  GoogleFonts.inter(
                           color: Colors.grey.shade600,
-                          fontSize: 12,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500
                         ),
                       ),
                       Text(
                         ' • ',
-                        style: TextStyle(
+                         style:  GoogleFonts.inter(
                           color: Colors.grey.shade400,
-                          fontSize: 12,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500
                         ),
                       ),
                       Text(
                         widget.formattedDate,
-                        style: TextStyle(
+                          style:  GoogleFonts.inter(
                           color: Colors.grey.shade600,
-                          fontSize: 12,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500
                         ),
                       ),
                     ],
@@ -2244,19 +2247,19 @@ class _TransactionItemState extends State<TransactionItem> {
               children: [
                 Text(
                   widget.amount,
-                  style: TextStyle(
+                   style:  GoogleFonts.inter(
                     fontWeight: FontWeight.w700,
-                    fontSize: 14,
+                    fontSize: 12,
                     color: widget.amountColor,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   widget.status,
-                  style: TextStyle(
+                   style:  GoogleFonts.inter(
                     color: widget.statusColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ],

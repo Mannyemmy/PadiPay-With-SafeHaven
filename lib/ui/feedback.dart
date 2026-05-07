@@ -10,7 +10,7 @@ void showSnackBar(
     SnackBar(
       content: Text(
         message,
-        style: const TextStyle(color: Colors.white),
+        style: TextStyle(color: Colors.white),
       ),
       backgroundColor: backgroundColor,
       behavior: SnackBarBehavior.floating,
