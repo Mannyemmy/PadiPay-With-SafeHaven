@@ -18,6 +18,16 @@ import 'package:nfc_manager/nfc_manager.dart';
 import 'package:nfc_manager/nfc_manager_android.dart';
 import 'package:nfc_manager_ndef/nfc_manager_ndef.dart';
 
+/// HOW TO SHOW THIS BOTTOM SHEET (important):
+/// Use these two properties to prevent tap-away dismissal:
+///
+/// showModalBottomSheet(
+///   context: context,
+///   isDismissible: false,   // <-- prevents tapping outside to dismiss
+///   enableDrag: false,      // <-- prevents dragging down to dismiss
+///   builder: (_) => const NFCPromptBottomSheet(),
+/// );
+
 class NFCPromptBottomSheet extends StatefulWidget {
   final bool isReader;
   const NFCPromptBottomSheet({super.key, this.isReader = true});
@@ -69,6 +79,15 @@ class _NFCPromptBottomSheetState extends State<NFCPromptBottomSheet>
     }
   }
 
+  Future<void> _cancelAndClose() async {
+    await NfcManager.instance.stopSession();
+    if (!widget.isReader && Platform.isAndroid) {
+      await _flutterNfcHce.stopNfcHce();
+    }
+    _transactionSub?.cancel();
+    if (mounted) Navigator.pop(context);
+  }
+
   Future<void> _setupNfc() async {
     if (widget.isReader) {
       NfcManager.instance.startSession(
@@ -114,7 +133,7 @@ class _NFCPromptBottomSheetState extends State<NFCPromptBottomSheet>
                   print('Sending read CC command');
                   response = await isoDep.transceive(readCC);
                   print('CC response: ${response.map((b) => '0x${b.toRadixString(16).padLeft(2, '0')}').join(' ')}');
-                  if (response.length >= 17 &&  // Min CC + SW
+                  if (response.length >= 17 &&
                       response[response.length - 2] == 0x90 &&
                       response[response.length - 1] == 0x00) {
                     // Parse NLEN (NDEF length) from bytes 12-13 (big-endian)
@@ -129,15 +148,14 @@ class _NFCPromptBottomSheetState extends State<NFCPromptBottomSheet>
                       if (response.length >= nlen + 2 &&
                           response[response.length - 2] == 0x90 &&
                           response[response.length - 1] == 0x00) {
-                        // Parse as single well-known text record (skip MB/ME/SR/IL/TNF=1, type='T', lang, text)
                         Uint8List ndefBytes = response.sublist(0, nlen);
                         print('NDEF bytes: ${ndefBytes.map((b) => '0x${b.toRadixString(16).padLeft(2, '0')}').join(' ')}');
                         if (ndefBytes.length >= 4 &&
-                            ndefBytes[0] & 0xD0 == 0xD1 &&  // MB=1, ME=1, TNF=1 (well-known)
-                            ndefBytes[1] == 0x01 &&  // Type length=1 ('T')
-                            String.fromCharCodes(ndefBytes.sublist(2, 3)) == 'T') {  // Type='T'
-                          int payloadStart = 3;  // After TNF+type+typeLen
-                          int langLength = ndefBytes[payloadStart] & 0x3F;  // RFC 4646 lang (low 6 bits)
+                            ndefBytes[0] & 0xD0 == 0xD1 &&
+                            ndefBytes[1] == 0x01 &&
+                            String.fromCharCodes(ndefBytes.sublist(2, 3)) == 'T') {
+                          int payloadStart = 3;
+                          int langLength = ndefBytes[payloadStart] & 0x3F;
                           payloadStart += 1 + langLength;
                           if (payloadStart < ndefBytes.length) {
                             receivedMessage = utf8.decode(ndefBytes.sublist(payloadStart));
@@ -165,16 +183,13 @@ class _NFCPromptBottomSheetState extends State<NFCPromptBottomSheet>
               } catch (e) {
                 print('IsoDep error: $e');
                 showSimpleDialog('Error reading HCE: $e', Colors.red);
-              } finally {
-
-              }
+              } finally {}
             } else {
               print('Invalid IsoDep tag');
               showSimpleDialog('Unsupported tag type', Colors.red);
             }
           }
 
-          // Delay stop to allow UI update
           await Future.delayed(const Duration(milliseconds: 500));
           await NfcManager.instance.stopSession();
 
@@ -186,9 +201,10 @@ class _NFCPromptBottomSheetState extends State<NFCPromptBottomSheet>
                 'receiverId': receivedMessage,
                 'amount': 0.0,
                 'purpose': 'nfc_connection',
-                'timestamp': Timestamp.now(),
+                'timestamp': FieldValue.serverTimestamp(),
                 'status': 'pending',
                 'type': 'nfc_connection',
+                'isInternal': true,
               });
             }
             DocumentSnapshot receiverDoc = await FirebaseFirestore.instance
@@ -285,7 +301,6 @@ class _NFCPromptBottomSheetState extends State<NFCPromptBottomSheet>
                     .get();
                 String senderName =
                     '${senderDoc['firstName']} ${senderDoc['lastName']}';
-                /////
                 if (mounted) {
                   Navigator.pop(context);
                   await _flutterNfcHce.stopNfcHce();
@@ -322,72 +337,107 @@ class _NFCPromptBottomSheetState extends State<NFCPromptBottomSheet>
     super.dispose();
   }
 
-
-
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: SafeArea(bottom: true,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                widget.isReader
-                    ? 'Place Your Phone\nNear the POS'
-                    : 'Place the Reader\nNear Your Phone',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+    return PopScope(
+      // Prevents the Android back gesture/button from closing the sheet
+      canPop: false,
+      child: Container(
+        width: double.infinity,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: SafeArea(
+          bottom: true,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Drag handle (purely decorative, drag is disabled)
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
-              if (!isNfcAvailable) ...[
-                 Text(
-                  'NFC is not enabled. Please enable it to proceed.',
-                  style: GoogleFonts.inter(fontSize: 14, color: Colors.red),
+                Text(
+                  widget.isReader
+                      ? 'Place Your Phone\nNear the POS'
+                      : 'Place the Reader\nNear Your Phone',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    AppSettings.openAppSettings(type: AppSettingsType.nfc);
-                    Future.delayed(
-                      const Duration(seconds: 2),
-                      _checkNfcAvailability,
-                    );
-                  },
-                  child: Text('Enable NFC'),
-                ),
-              ] else ...[
-                Text(
-                  widget.isReader
-                      ? 'Hold the back of your phone to the merchant device'
-                      : 'Hold the back of your phone to the back of the customer device',
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 40),
-                ScaleTransition(
-                  scale: _scaleAnimation,
-                  child: Container(
-                    width: 60,
-                    height: 60,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.blue,
+                if (!isNfcAvailable) ...[
+                  Text(
+                    'NFC is not enabled. Please enable it to proceed.',
+                    style: GoogleFonts.inter(fontSize: 14, color: Colors.red),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () {
+                      AppSettings.openAppSettings(type: AppSettingsType.nfc);
+                      Future.delayed(
+                        const Duration(seconds: 2),
+                        _checkNfcAvailability,
+                      );
+                    },
+                    child: const Text('Enable NFC'),
+                  ),
+                ] else ...[
+                  Text(
+                    widget.isReader
+                        ? 'Hold the back of your phone to the merchant device'
+                        : 'Hold the back of your phone to the back of the customer device',
+                    style: const TextStyle(fontSize: 14, color: Colors.grey),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 40),
+                  ScaleTransition(
+                    scale: _scaleAnimation,
+                    child: Container(
+                      width: 60,
+                      height: 60,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.blue,
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 32),
+                // Cancel button — the only way to dismiss
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: _cancelAndClose,
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 50),
+                      side: const BorderSide(color: Colors.red),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                    ),
+                    child: Text(
+                      'Cancel',
+                      style: GoogleFonts.inter(
+                        color: Colors.red,
+                        fontSize: 16,
+                      ),
                     ),
                   ),
                 ),
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -451,7 +501,7 @@ class _TransferPageState extends State<TransferPage> {
         safehavenVa?['attributes']?['bank']?['name']?.toString() ??
             setup['safehavenBankName']?.toString();
     final bankId =
-        await resolveBankId(bankId: rawBankId, bankName: bankName) ?? '999240';
+        await resolveBankId(bankId: rawBankId, bankName: bankName) ?? '090286';
     final accountName =
         safehavenVa?['attributes']?['accountName']?.toString() ??
             setup['safehavenAccountName']?.toString();
@@ -498,7 +548,6 @@ class _TransferPageState extends State<TransferPage> {
       return;
     }
 
-    // Perform real settlement with SafeHaven book transfer.
     try {
       final settled = await _settleNfcPayment(amount, purpose);
       if (!settled) {
@@ -570,7 +619,7 @@ class _TransferPageState extends State<TransferPage> {
       final recipientBankName = recipientAccount['bankName'];
       final recipientAccountName = recipientAccount['accountName'];
       final recipientBankId =
-          recipientAccount['bankId']?.toString() ?? '999240';
+          recipientAccount['bankId']?.toString() ?? '090286';
 
       // Prevent sending to own account
       final ownAccountNumber = senderAccount?['accountNumber']?.toString();
@@ -581,7 +630,6 @@ class _TransferPageState extends State<TransferPage> {
         return false;
       }
 
-      // SafeHaven book transfer; no counterparty needed for internal accounts.
       final amountKobo = (amount * 100).round();
       debugPrint('safehavenTransferIntra: from=$fromAccountId to=$toAccountId amount=$amountKobo bank=$recipientBankId');
       final transferResult = await FirebaseFunctions.instance
@@ -605,6 +653,7 @@ class _TransferPageState extends State<TransferPage> {
 
       await FirebaseFirestore.instance.collection('transactions').add({
         'userId': user.uid,
+        'senderId': user.uid,
         'receiverId': widget.endpointId,
         'type': 'nfc',
         'bank_code': recipientBankId,
@@ -631,7 +680,8 @@ class _TransferPageState extends State<TransferPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(bottom: true,
+      body: SafeArea(
+        bottom: true,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -643,18 +693,18 @@ class _TransferPageState extends State<TransferPage> {
                     onTap: () {
                       Navigator.of(context).pop();
                     },
-                    child: Icon(
+                    child: const Icon(
                       Icons.arrow_back_ios,
                       color: Colors.black87,
                       size: 20,
                     ),
                   ),
-                  SizedBox(width: 20),
+                  const SizedBox(width: 20),
                   Text(
                     receiverName == null
                         ? 'Bank Transfer'
                         : 'Send to $receiverName',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
@@ -674,7 +724,7 @@ class _TransferPageState extends State<TransferPage> {
               ),
               child: TextField(
                 controller: _amountController,
-                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 decoration: InputDecoration(
                   prefixText: '₦ ',
                   border: OutlineInputBorder(

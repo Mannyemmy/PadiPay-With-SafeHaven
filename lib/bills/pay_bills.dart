@@ -4,6 +4,7 @@ import 'package:card_app/cashback/cashback_service.dart';
 import 'package:card_app/ui/success_bottom_sheet.dart';
 import 'package:card_app/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -52,38 +53,83 @@ class _PayBillsPageState extends State<PayBillsPage> {
   double cashbackBalance = 0;
   bool useCashback = false;
 
+  // ── Cached data for performance ─────────────────────────────────────────
+  Map<String, dynamic>? _cachedUserDoc;
+  double? _cachedBalance;
+  bool _isFetchingBalance = false;
+  String? _ownAccountNumber;
+
   @override
   void initState() {
     super.initState();
     selectedBill = _mapBillType(widget.initialBillType) ?? 'data_bundle';
-    _fetchUserAccount();
+    _initAllParallel();
   }
 
-  String? _mapBillType(String? type) {
-    if (type == null) return null;
-    final t = type.toLowerCase();
-    if (t.contains('data') || t.contains('internet')) return 'data_bundle';
-    if (t.contains('cable') || t.contains('tv')) return 'cable_tv';
-    if (t.contains('electric') || t.contains('power')) return 'electricity';
-    return null;
+  Future<void> _initAllParallel() async {
+    await Future.wait([
+      _prefetchUserDocAndBalance(),
+      _prefetchAllBillers(),
+    ]);
+    // After billers are loaded, optionally preload products for the initial tab
+    if (selectedBill == 'data_bundle' && dataBillers.isNotEmpty) {
+      final firstBillerId = dataBillers[0]['id'] as String;
+      if (dataBundles.isEmpty) await _fetchProducts(firstBillerId, 'data');
+    } else if (selectedBill == 'cable' && cableBillers.isNotEmpty) {
+      final firstBillerId = cableBillers[0]['id'] as String;
+      if (cableSubscriptions.isEmpty) await _fetchProducts(firstBillerId, 'television');
+    }
   }
 
-  Future<void> _fetchUserAccount() async {
+  Future<void> _prefetchUserDocAndBalance() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
-
-    final userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .get();
-    if (userDoc.exists) {
-      setState(() {
-        userAccount = userDoc.data()?['safehavenData']?['virtualAccount'];
-        cashbackBalance =
-            (userDoc.data()?['cashback']?['balance'] as num?)?.toDouble() ?? 0;
-      });
-      _fetchBillers();
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      _cachedUserDoc = doc.data();
+      _ownAccountNumber =
+          _cachedUserDoc?['safehavenData']?['virtualAccount']?['data']?['attributes']?['accountNumber']
+              ?.toString();
+      userAccount = _cachedUserDoc?['safehavenData']?['virtualAccount'];
+      cashbackBalance =
+          (_cachedUserDoc?['cashback']?['balance'] as num?)?.toDouble() ?? 0;
+      _fetchAndCacheBalance();
+    } catch (e) {
+      debugPrint('_prefetchUserDocAndBalance error: $e');
     }
+  }
+
+  Future<void> _fetchAndCacheBalance() async {
+    if (_isFetchingBalance) return;
+    _isFetchingBalance = true;
+    try {
+      final accountId =
+          _cachedUserDoc?['safehavenData']?['virtualAccount']?['data']?['id']
+              ?.toString();
+      if (accountId == null || accountId.isEmpty) return;
+
+      final callable = FirebaseFunctions.instance.httpsCallable(
+        'safehavenFetchAccountBalance',
+      );
+      final result = await callable.call({'accountId': accountId});
+      final balanceKobo =
+          (result.data['data']['availableBalance'] as num?)?.toDouble() ?? 0.0;
+      _cachedBalance = balanceKobo / 100;
+      debugPrint('✅ PayBills balance pre-fetched: ₦$_cachedBalance');
+    } catch (e) {
+      debugPrint('_fetchAndCacheBalance error: $e');
+    } finally {
+      _isFetchingBalance = false;
+    }
+  }
+
+  Future<double> _getBalance() async {
+    if (_cachedBalance != null) return _cachedBalance!;
+    await _fetchAndCacheBalance();
+    return _cachedBalance ?? 0.0;
   }
 
   Future<void> _refreshCashbackBalance() async {
@@ -93,6 +139,8 @@ class _PayBillsPageState extends State<PayBillsPage> {
     if (!mounted) return;
     setState(() {
       cashbackBalance = balance;
+      // Also update cached user doc
+      _cachedUserDoc?['cashback'] = {'balance': balance};
     });
   }
 
@@ -166,56 +214,47 @@ class _PayBillsPageState extends State<PayBillsPage> {
     return {'used': appliedCashbackUsed, 'earned': cashbackEarned};
   }
 
-  Future<void> _fetchBillers() async {
-    setState(() {
-      isFetchingDataBillers = true;
-      isFetchingCableBillers = true;
-      isFetchingElectricityBillers = true;
-    });
+  String? _mapBillType(String? type) {
+    if (type == null) return null;
+    final t = type.toLowerCase();
+    if (t.contains('data') || t.contains('internet')) return 'data_bundle';
+    if (t.contains('cable') || t.contains('tv')) return 'cable_tv';
+    if (t.contains('electric') || t.contains('power')) return 'electricity';
+    return null;
+  }
 
-    try {
-      // Fetch all biller categories in parallel
-      await Future.wait([
-        _fetchCategoryBillers('data', (list) {
-          dataBillers = list;
-          selectedDataNetwork = dataBillers.isNotEmpty
-              ? (dataBillers[0]['id']?.toString() ??
-                    (dataBillers[0]['attributes']?['slug'] as String?) ??
-                    '')
-              : null;
-          isFetchingDataBillers = false;
-          if (selectedDataNetwork != null) {
-            _fetchProducts(dataBillers[0]['id'] as String, 'data');
-          }
-        }),
-        _fetchCategoryBillers('television', (list) {
-          cableBillers = list;
-          selectedCableOperator = cableBillers.isNotEmpty
-              ? (cableBillers[0]['id']?.toString() ??
-                    (cableBillers[0]['attributes']?['slug'] as String?) ??
-                    '')
-              : null;
-          isFetchingCableBillers = false;
-          if (selectedCableOperator != null) {
-            _fetchProducts(cableBillers[0]['id'] as String, 'television');
-          }
-        }),
-        _fetchCategoryBillers('electricity', (list) {
-          electricityBillers = list;
-          selectedDisco = electricityBillers.isNotEmpty
-              ? electricityBillers[0]['id']
-              : null;
-          isFetchingElectricityBillers = false;
-        }),
-      ]);
-    } catch (e) {
-      print('Error fetching billers: $e');
-      setState(() {
+  Future<void> _prefetchAllBillers() async {
+    // Load all three biller categories in parallel
+    await Future.wait([
+      _fetchCategoryBillers('data', (list) {
+        dataBillers = list;
+        selectedDataNetwork = dataBillers.isNotEmpty
+            ? (dataBillers[0]['id']?.toString() ??
+                (dataBillers[0]['attributes']?['slug'] as String?) ??
+                '')
+            : null;
         isFetchingDataBillers = false;
+        // For data, we need to trigger product fetch later after user selection, not here automatically
+      }),
+      _fetchCategoryBillers('television', (list) {
+        cableBillers = list;
+        selectedCableOperator = cableBillers.isNotEmpty
+            ? (cableBillers[0]['id']?.toString() ??
+                (cableBillers[0]['attributes']?['slug'] as String?) ??
+                '')
+            : null;
         isFetchingCableBillers = false;
+        // No auto-fetch products here; wait for user selection
+      }),
+      _fetchCategoryBillers('electricity', (list) {
+        electricityBillers = list;
+        selectedDisco = electricityBillers.isNotEmpty
+            ? electricityBillers[0]['id']
+            : null;
         isFetchingElectricityBillers = false;
-      });
-    }
+      }),
+    ]);
+    setState(() {}); // Refresh UI after all billers loaded
   }
 
   Future<void> _fetchCategoryBillers(
@@ -239,7 +278,6 @@ class _PayBillsPageState extends State<PayBillsPage> {
           payload: {'category': category},
         );
         final response = Map<String, dynamic>.from(result.data);
-        print('$category Billers Response: $response');
         if (response['data'] is List) {
           billerList = (response['data'] as List)
               .map((item) => Map<String, dynamic>.from(item))
@@ -247,23 +285,26 @@ class _PayBillsPageState extends State<PayBillsPage> {
           await docRef.set({'data': billerList});
         }
       }
-      setState(() {
-        setList(billerList);
-      });
+      if (mounted) {
+        setState(() {
+          setList(billerList);
+        });
+      }
     } catch (e) {
       print('Error fetching $category billers: $e');
+      if (mounted) {
+        setState(() {
+          setList([]);
+        });
+      }
     }
   }
 
   Future<void> _fetchProducts(String billerId, String category) async {
     if (category == 'data') {
-      setState(() {
-        isFetchingDataBundles = true;
-      });
+      setState(() => isFetchingDataBundles = true);
     } else if (category == 'television') {
-      setState(() {
-        isFetchingCableSubscriptions = true;
-      });
+      setState(() => isFetchingCableSubscriptions = true);
     }
 
     try {
@@ -278,75 +319,59 @@ class _PayBillsPageState extends State<PayBillsPage> {
         productList = List<Map<String, dynamic>>.from(data?['data'] ?? []);
       }
       if (productList.isEmpty) {
-        try {
-          final result = await callCloudFunctionLogged(
-            'safehavenGetCategoryProducts',
-            source: 'pay_bills.dart',
-            payload: {'billerId': billerId},
-          );
-          final response = Map<String, dynamic>.from(result.data);
-          print('Products Response for $category: $response');
-          if (response['data'] is List) {
-            productList = (response['data'] as List)
-                .map((item) => Map<String, dynamic>.from(item))
-                .toList();
-            await docRef.set({'data': productList});
-          }
-        } catch (e) {
-          print(
-            'Error calling getBillerProducts for $category with billerId=$billerId: $e',
-          );
-          rethrow;
+        final result = await callCloudFunctionLogged(
+          'safehavenGetCategoryProducts',
+          source: 'pay_bills.dart',
+          payload: {'billerId': billerId},
+        );
+        final response = Map<String, dynamic>.from(result.data);
+        if (response['data'] is List) {
+          productList = (response['data'] as List)
+              .map((item) => Map<String, dynamic>.from(item))
+              .toList();
+          await docRef.set({'data': productList});
         }
       }
       if (category == 'data') {
-        for (final bundle in productList) {
-          final attrs =
-              Map<String, dynamic>.from(bundle['attributes'] ?? <String, dynamic>{});
-          final raw =
-              Map<String, dynamic>.from(bundle['_safehaven'] ?? <String, dynamic>{});
-          print(
-            '[DataBundle] attrs=${json.encode(attrs)} raw=${json.encode(raw)}',
-          );
+        if (mounted) {
+          setState(() {
+            dataBundles = productList;
+            selectedDataBundle = dataBundles.isNotEmpty
+                ? dataBundles[0]['attributes']['slug']
+                : null;
+            isFetchingDataBundles = false;
+          });
         }
-      }
-      if (category == 'data') {
-        setState(() {
-          dataBundles = productList;
-          selectedDataBundle = dataBundles.isNotEmpty
-              ? dataBundles[0]['attributes']['slug']
-              : null;
-          isFetchingDataBundles = false;
-        });
       } else if (category == 'television') {
-        setState(() {
-          cableSubscriptions = productList;
-          selectedCablePackage = cableSubscriptions.isNotEmpty
-              ? cableSubscriptions[0]['attributes']['slug']
-              : null;
-          if (selectedCablePackage != null && cableSubscriptions.isNotEmpty) {
-            final selectedSub = cableSubscriptions.firstWhere(
-              (sub) => sub['attributes']['slug'] == selectedCablePackage,
-              orElse: () => cableSubscriptions[0],
-            );
-            cableAmountController.text =
-                (selectedSub['attributes']['price']['minimumAmount'] / 100)
-                    .toStringAsFixed(0);
-          }
-          isFetchingCableSubscriptions = false;
-        });
+        if (mounted) {
+          setState(() {
+            cableSubscriptions = productList;
+            selectedCablePackage = cableSubscriptions.isNotEmpty
+                ? cableSubscriptions[0]['attributes']['slug']
+                : null;
+            if (selectedCablePackage != null && cableSubscriptions.isNotEmpty) {
+              final selectedSub = cableSubscriptions.firstWhere(
+                (sub) => sub['attributes']['slug'] == selectedCablePackage,
+                orElse: () => cableSubscriptions[0],
+              );
+              cableAmountController.text =
+                  (selectedSub['attributes']['price']['minimumAmount'] / 100)
+                      .toStringAsFixed(0);
+            }
+            isFetchingCableSubscriptions = false;
+          });
+        }
       }
     } catch (e) {
       print('Error fetching products: $e');
-      // Set empty lists to avoid loading forever
       if (category == 'data') {
-        setState(() {
+        if (mounted) setState(() {
           dataBundles = [];
           selectedDataBundle = null;
           isFetchingDataBundles = false;
         });
       } else if (category == 'television') {
-        setState(() {
+        if (mounted) setState(() {
           cableSubscriptions = [];
           selectedCablePackage = null;
           isFetchingCableSubscriptions = false;
@@ -365,7 +390,6 @@ class _PayBillsPageState extends State<PayBillsPage> {
   }) async {
     if (items.isEmpty) return null;
 
-    // Declare searchQuery outside the builder to persist across rebuilds
     String searchQuery = '';
 
     return await showModalBottomSheet<String>(
@@ -392,7 +416,6 @@ class _PayBillsPageState extends State<PayBillsPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Header with close button
                     Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 20,
@@ -403,7 +426,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
                         children: [
                           Text(
                             title,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
                             ),
@@ -422,7 +445,6 @@ class _PayBillsPageState extends State<PayBillsPage> {
                         ],
                       ),
                     ),
-                    // Search field
                     Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
@@ -459,7 +481,6 @@ class _PayBillsPageState extends State<PayBillsPage> {
                       ),
                     ),
                     const Divider(height: 1),
-                    // List of items
                     Expanded(
                       child: filteredItems.isEmpty
                           ? Center(
@@ -502,12 +523,9 @@ class _PayBillsPageState extends State<PayBillsPage> {
                                     ),
                                     child: Row(
                                       children: [
-                                        // optionally display provider/network icon
                                         Builder(
                                           builder: (context) {
-                                            Widget iconWidget =
-                                                const SizedBox.shrink();
-                                            // Try exact logo lookup first (network/cable logos)
+                                            Widget iconWidget = const SizedBox.shrink();
                                             final netLogo = _getNetworkLogo(id);
                                             if (netLogo.isNotEmpty) {
                                               return Image.network(
@@ -516,11 +534,10 @@ class _PayBillsPageState extends State<PayBillsPage> {
                                                 height: 24,
                                                 cacheWidth: 48,
                                                 cacheHeight: 48,
-                                                errorBuilder: (_, __, ___) =>
-                                                    const Icon(
-                                                      Icons.image,
-                                                      size: 24,
-                                                    ),
+                                                errorBuilder: (_, __, ___) => const Icon(
+                                                  Icons.image,
+                                                  size: 24,
+                                                ),
                                               );
                                             }
                                             final cableLogo = _getCableLogo(id);
@@ -531,14 +548,12 @@ class _PayBillsPageState extends State<PayBillsPage> {
                                                 height: 24,
                                                 cacheWidth: 48,
                                                 cacheHeight: 48,
-                                                errorBuilder: (_, __, ___) =>
-                                                    const Icon(
-                                                      Icons.image,
-                                                      size: 24,
-                                                    ),
+                                                errorBuilder: (_, __, ___) => const Icon(
+                                                  Icons.image,
+                                                  size: 24,
+                                                ),
                                               );
                                             }
-                                            // Fall back to substring matching for local provider assets
                                             final lower = id.toLowerCase();
                                             if (lower.contains('mtn')) {
                                               iconWidget = SvgPicture.asset(
@@ -552,17 +567,13 @@ class _PayBillsPageState extends State<PayBillsPage> {
                                                 width: 24,
                                                 height: 24,
                                               );
-                                            } else if (lower.contains(
-                                              'airtel',
-                                            )) {
+                                            } else if (lower.contains('airtel')) {
                                               iconWidget = Image.asset(
                                                 'assets/airtime_providers/airtel.png',
                                                 width: 24,
                                                 height: 24,
                                               );
-                                            } else if (lower.contains(
-                                              '9mobile',
-                                            )) {
+                                            } else if (lower.contains('9mobile')) {
                                               iconWidget = SvgPicture.asset(
                                                 'assets/airtime_providers/9mobile.svg',
                                                 width: 24,
@@ -580,9 +591,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
                                                 width: 24,
                                                 height: 24,
                                               );
-                                            } else if (lower.contains(
-                                              'startimes',
-                                            )) {
+                                            } else if (lower.contains('startimes')) {
                                               iconWidget = Image.asset(
                                                 'assets/cable_providers/startimes.png',
                                                 width: 24,
@@ -656,11 +665,8 @@ class _PayBillsPageState extends State<PayBillsPage> {
       return;
     }
 
-    // Verify PIN before proceeding
     final pinVerified = await verifyTransactionPin();
-    if (!pinVerified) {
-      return;
-    }
+    if (!pinVerified) return;
 
     setState(() => isLoadingData = true);
 
@@ -697,30 +703,29 @@ class _PayBillsPageState extends State<PayBillsPage> {
         'safehavenPurchaseVas',
         source: 'pay_bills.dart',
         payload: {
-        'type': 'Data',
-        'accountId': userAccount!['data']['id'],
-        'accountType': userAccount!['data']['type'],
-        'phoneNumber': formattedPhone,
-        'amount': amount * 100,
-        'provider': dataBillers
-            .cast<Map<String, dynamic>?>()
-            .firstWhere(
-              (b) {
-                if (b == null) return false;
-                final slug = b['attributes']?['slug']?.toString();
-                return b['id']?.toString() == selectedDataNetwork ||
-                    slug == selectedDataNetwork;
-              },
-              orElse: () => null,
-            )?['id']?.toString() ??
-            selectedDataNetwork,
-        'productSlug': selectedDataBundle,
-        'reference': Uuid().v4(),
-      });
+          'type': 'Data',
+          'accountId': userAccount!['data']['id'],
+          'accountType': userAccount!['data']['type'],
+          'phoneNumber': formattedPhone,
+          'amount': amount * 100,
+          'provider': dataBillers
+              .cast<Map<String, dynamic>?>()
+              .firstWhere(
+                (b) {
+                  if (b == null) return false;
+                  final slug = b['attributes']?['slug']?.toString();
+                  return b['id']?.toString() == selectedDataNetwork ||
+                      slug == selectedDataNetwork;
+                },
+                orElse: () => null,
+              )?['id']?.toString() ??
+              selectedDataNetwork,
+          'productSlug': selectedDataBundle,
+          'reference': Uuid().v4(),
+        },
+      );
       final rawData = result.data;
-      final response =
-          json.decode(json.encode(rawData)) as Map<String, dynamic>;
-      print('Buy Data Response: $response');
+      final response = json.decode(json.encode(rawData)) as Map<String, dynamic>;
 
       final billData = response['data'] as Map<String, dynamic>?;
       if (billData == null) {
@@ -824,11 +829,8 @@ class _PayBillsPageState extends State<PayBillsPage> {
       return;
     }
 
-    // Verify PIN before proceeding
     final pinVerified = await verifyTransactionPin();
-    if (!pinVerified) {
-      return;
-    }
+    if (!pinVerified) return;
 
     setState(() => isLoadingCable = true);
     var cashbackUsed = 0.0;
@@ -848,7 +850,6 @@ class _PayBillsPageState extends State<PayBillsPage> {
       showSimpleDialog('Phone number not found', Colors.red);
       return;
     }
-    // Normalize phone number
     if (phone.startsWith('0')) {
       phone = '234${phone.substring(1)}';
     } else {
@@ -872,31 +873,30 @@ class _PayBillsPageState extends State<PayBillsPage> {
         'safehavenPurchaseVas',
         source: 'pay_bills.dart',
         payload: {
-        'type': 'Television',
-        'accountId': userAccount!['data']['id'],
-        'accountType': userAccount!['data']['type'],
-        'smartCardNumber': cardNumberController.text,
-        'amount': amount * 100,
-        'provider': cableBillers
-            .cast<Map<String, dynamic>?>()
-            .firstWhere(
-              (b) {
-                if (b == null) return false;
-                final slug = b['attributes']?['slug']?.toString();
-                return b['id']?.toString() == selectedCableOperator ||
-                    slug == selectedCableOperator;
-              },
-              orElse: () => null,
-            )?['id']?.toString() ??
-            selectedCableOperator,
-        'productSlug': selectedCablePackage,
-        'reference': Uuid().v4(),
-        'phoneNumber': phone,
-      });
+          'type': 'Television',
+          'accountId': userAccount!['data']['id'],
+          'accountType': userAccount!['data']['type'],
+          'smartCardNumber': cardNumberController.text,
+          'amount': amount * 100,
+          'provider': cableBillers
+              .cast<Map<String, dynamic>?>()
+              .firstWhere(
+                (b) {
+                  if (b == null) return false;
+                  final slug = b['attributes']?['slug']?.toString();
+                  return b['id']?.toString() == selectedCableOperator ||
+                      slug == selectedCableOperator;
+                },
+                orElse: () => null,
+              )?['id']?.toString() ??
+              selectedCableOperator,
+          'productSlug': selectedCablePackage,
+          'reference': Uuid().v4(),
+          'phoneNumber': phone,
+        },
+      );
       final rawData = result.data;
-      final response =
-          json.decode(json.encode(rawData)) as Map<String, dynamic>;
-      print('Buy Cable Response: $response');
+      final response = json.decode(json.encode(rawData)) as Map<String, dynamic>;
 
       final billData = response['data'] as Map<String, dynamic>?;
       if (billData == null) {
@@ -1008,11 +1008,8 @@ class _PayBillsPageState extends State<PayBillsPage> {
       return;
     }
 
-    // Verify PIN before proceeding
     final pinVerified = await verifyTransactionPin();
-    if (!pinVerified) {
-      return;
-    }
+    if (!pinVerified) return;
 
     setState(() => isLoadingElectricity = true);
     var cashbackUsed = 0.0;
@@ -1034,7 +1031,6 @@ class _PayBillsPageState extends State<PayBillsPage> {
         showSimpleDialog('Phone number not found', Colors.red);
         return;
       }
-      // Normalize phone number
       if (phone.startsWith('0')) {
         phone = '234${phone.substring(1)}';
       } else {
@@ -1052,7 +1048,6 @@ class _PayBillsPageState extends State<PayBillsPage> {
         cashbackUsed = selectedCashbackUsage;
       }
 
-      // Verify meter number first to get vendType (required by SafeHaven utility API)
       final verifyResult = await callCloudFunctionLogged(
         'safehavenVerifyVas',
         source: 'pay_bills.dart',
@@ -1082,9 +1077,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
       );
 
       final rawData = result.data;
-      final response =
-          json.decode(json.encode(rawData)) as Map<String, dynamic>;
-      print('Buy Electricity Response: $response');
+      final response = json.decode(json.encode(rawData)) as Map<String, dynamic>;
 
       final billData = response['data'] as Map<String, dynamic>?;
       if (billData == null) {
@@ -1221,7 +1214,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
                           id,
                       orElse: () => {'id': id},
                     );
-                    _fetchProducts(biller['id'] as String, 'data');
+                    await _fetchProducts(biller['id'] as String, 'data');
                   }
                 },
                 child: InputDecorator(
@@ -1251,7 +1244,6 @@ class _PayBillsPageState extends State<PayBillsPage> {
                         ),
                         const SizedBox(width: 8),
                       ],
-                      // let the name take up remaining space, then push arrow to end
                       Expanded(
                         child: Text(
                           dataBillers.firstWhere(
@@ -1276,7 +1268,6 @@ class _PayBillsPageState extends State<PayBillsPage> {
                   ),
                 ),
               ),
-
         const SizedBox(height: 16),
         Text(
           "Select Data Volume",
@@ -1343,7 +1334,6 @@ class _PayBillsPageState extends State<PayBillsPage> {
                 ),
               ),
         const SizedBox(height: 16),
-
         Text(
           "Recipient Mobile Number",
           style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.black54),
@@ -1547,7 +1537,7 @@ class _PayBillsPageState extends State<PayBillsPage> {
                           id,
                       orElse: () => {'id': id},
                     );
-                    _fetchProducts(biller['id'] as String, 'television');
+                    await _fetchProducts(biller['id'] as String, 'television');
                   }
                 },
                 child: InputDecorator(
@@ -1939,8 +1929,6 @@ class _PayBillsPageState extends State<PayBillsPage> {
                 ),
               ),
         const SizedBox(height: 16),
-
-        const SizedBox(height: 16),
         Text(
           "Meter Number",
           style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.black54),
@@ -2296,7 +2284,6 @@ class _PayBillsPageState extends State<PayBillsPage> {
         raw['dataSize']?.toString() ?? raw['size']?.toString() ?? raw['bundle']?.toString() ?? '';
     final amount = ((attrs['price']?['minimumAmount'] as num?) ?? 0) / 100;
 
-    // SafeHaven often returns the full human-readable plan in validity.
     if (validity.isNotEmpty) {
       return validity;
     }
@@ -2331,10 +2318,6 @@ class _PayBillsPageState extends State<PayBillsPage> {
     return _iconForId(identifier);
   }
 
-  /// Utility to return a widget representing a network/cable/airtime icon
-  /// based on a given identifier string.  This mirrors the logic used in
-  /// [_showSelectionBottomSheet] so that we can show the same image in the
-  /// dropdowns themselves.
   Widget _iconForId(String id) {
     final netLogo = _getNetworkLogo(id);
     if (netLogo.isNotEmpty) {
@@ -2358,7 +2341,6 @@ class _PayBillsPageState extends State<PayBillsPage> {
         errorBuilder: (_, __, ___) => const Icon(Icons.image, size: 24),
       );
     }
-    // Fall back to local assets by checking the lowercase string.
     final lower = id.toLowerCase();
     if (lower.contains('mtn')) {
       return SvgPicture.asset(
@@ -2416,4 +2398,3 @@ class _PayBillsPageState extends State<PayBillsPage> {
     super.dispose();
   }
 }
-

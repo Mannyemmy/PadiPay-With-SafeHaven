@@ -4,6 +4,7 @@ import 'package:card_app/cashback/cashback_service.dart';
 import 'package:card_app/ui/success_bottom_sheet.dart';
 import 'package:card_app/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -38,11 +39,10 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
   double cashbackBalance = 0;
   bool useCashback = false;
 
-  double get _cashbackPreview {
-    final amount = double.tryParse(amountController.text.trim()) ?? 0;
-    if (amount <= 0) return 0;
-    return CashbackService.calculateCashback(amount);
-  }
+  // ── Cached user data ─────────────────────────────────────────────────────
+  Map<String, dynamic>? _cachedUserDoc;
+  double? _cachedBalance;
+  bool _isFetchingBalance = false;
 
   @override
   void initState() {
@@ -51,25 +51,62 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
       numberController.text = widget.initialPhone!;
     if (widget.initialAmount != null)
       amountController.text = widget.initialAmount!;
-    _fetchUserAccount();
+    _initAllParallel();
   }
 
-  Future<void> _fetchUserAccount() async {
+  Future<void> _initAllParallel() async {
+    await Future.wait([
+      _prefetchUserDocAndBalance(),
+      _fetchBillers(),
+    ]);
+  }
+
+  Future<void> _prefetchUserDocAndBalance() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
-
-    final userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .get();
-    if (userDoc.exists) {
-      setState(() {
-        userAccount = userDoc.data()?['safehavenData']?['virtualAccount'];
-        cashbackBalance =
-            (userDoc.data()?['cashback']?['balance'] as num?)?.toDouble() ?? 0;
-      });
-      _fetchBillers();
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      _cachedUserDoc = doc.data();
+      userAccount = _cachedUserDoc?['safehavenData']?['virtualAccount'];
+      cashbackBalance =
+          (_cachedUserDoc?['cashback']?['balance'] as num?)?.toDouble() ?? 0;
+      _fetchAndCacheBalance();
+    } catch (e) {
+      debugPrint('_prefetchUserDocAndBalance error: $e');
     }
+  }
+
+  Future<void> _fetchAndCacheBalance() async {
+    if (_isFetchingBalance) return;
+    _isFetchingBalance = true;
+    try {
+      final accountId =
+          _cachedUserDoc?['safehavenData']?['virtualAccount']?['data']?['id']
+              ?.toString();
+      if (accountId == null || accountId.isEmpty) return;
+
+      final callable = FirebaseFunctions.instance.httpsCallable(
+        'safehavenFetchAccountBalance',
+      );
+      final result = await callable.call({'accountId': accountId});
+      final balanceKobo =
+          (result.data['data']['availableBalance'] as num?)?.toDouble() ?? 0.0;
+      _cachedBalance = balanceKobo / 100;
+      debugPrint('✅ Airtime balance pre-fetched: ₦$_cachedBalance');
+    } catch (e) {
+      debugPrint('_fetchAndCacheBalance error: $e');
+    } finally {
+      _isFetchingBalance = false;
+    }
+  }
+
+  Future<double> _getBalance() async {
+    if (_cachedBalance != null) return _cachedBalance!;
+    await _fetchAndCacheBalance();
+    return _cachedBalance ?? 0.0;
   }
 
   Future<void> _refreshCashbackBalance() async {
@@ -79,11 +116,14 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
     if (!mounted) return;
     setState(() {
       cashbackBalance = balance;
+      if (_cachedUserDoc != null) {
+        _cachedUserDoc?['cashback'] = {'balance': balance};
+      }
     });
   }
 
   Future<void> _fetchBillers() async {
-    setState(() => isFetchingBillers = true);
+    if (mounted) setState(() => isFetchingBillers = true);
     try {
       final docRef = FirebaseFirestore.instance
           .collection('billers')
@@ -101,7 +141,6 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
           payload: {'category': 'airtime'},
         );
         final response = Map<String, dynamic>.from(result.data);
-        print('Airtime Billers Response: $response');
         if (response['data'] is List) {
           billerList = (response['data'] as List)
               .map((item) => Map<String, dynamic>.from(item))
@@ -109,37 +148,34 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
           await docRef.set({'data': billerList});
         }
       }
-      setState(() {
-        airtimeBillers = billerList;
-        selectedProvider = airtimeBillers.isNotEmpty
-            ? (airtimeBillers[0]['id']?.toString() ??
-                  airtimeBillers[0]['attributes']['slug'] as String)
-            : null;
-        // Auto-select network from MyPadi if provided
-        if (widget.initialNetwork != null && airtimeBillers.isNotEmpty) {
-          final net = widget.initialNetwork!.toLowerCase();
-          final matched = airtimeBillers
-              .cast<Map<String, dynamic>?>()
-              .firstWhere(
-                (b) =>
-                    (b!['attributes']['name'] as String).toLowerCase().contains(
-                      net,
-                    ) ||
-                    (b['attributes']['slug'] as String).toLowerCase().contains(
-                      net,
-                    ),
-                orElse: () => null,
-              );
-          if (matched != null) {
-            selectedProvider = matched['id']?.toString() ??
-                matched['attributes']['slug'] as String;
-          }
+      String? autoSelected;
+      if (widget.initialNetwork != null && billerList.isNotEmpty) {
+        final net = widget.initialNetwork!.toLowerCase();
+        final matched = billerList.cast<Map<String, dynamic>?>().firstWhere(
+          (b) =>
+              (b!['attributes']['name'] as String).toLowerCase().contains(net) ||
+              (b['attributes']['slug'] as String).toLowerCase().contains(net),
+          orElse: () => null,
+        );
+        if (matched != null) {
+          autoSelected = matched['id']?.toString() ??
+              matched['attributes']['slug'] as String;
         }
-        isFetchingBillers = false;
-      });
+      }
+      if (mounted) {
+        setState(() {
+          airtimeBillers = billerList;
+          selectedProvider = autoSelected ??
+              (airtimeBillers.isNotEmpty
+                  ? (airtimeBillers[0]['id']?.toString() ??
+                      airtimeBillers[0]['attributes']['slug'] as String)
+                  : null);
+          isFetchingBillers = false;
+        });
+      }
     } catch (e) {
-      print('Error fetching airtime billers: $e');
-      setState(() => isFetchingBillers = false);
+      debugPrint('Error fetching airtime billers: $e');
+      if (mounted) setState(() => isFetchingBillers = false);
     }
   }
 
@@ -163,7 +199,6 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Header with close button
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 20,
@@ -194,7 +229,6 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                   ),
                 ),
                 const Divider(height: 1),
-                // List of providers
                 Expanded(
                   child: ListView.builder(
                     itemCount: airtimeBillers.length,
@@ -205,9 +239,8 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                           biller['attributes']?['name'] as String? ?? 'Unknown';
                       final slug =
                           biller['attributes']?['slug'] as String? ?? '';
-                        final providerId =
-                          biller['id']?.toString() ?? slug;
-                        final isSelected = selectedProvider == providerId;
+                      final providerId = biller['id']?.toString() ?? slug;
+                      final isSelected = selectedProvider == providerId;
 
                       return GestureDetector(
                         onTap: () {
@@ -238,14 +271,10 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                           ),
                           child: Row(
                             children: [
-                              // provider icon
                               Builder(
                                 builder: (context) {
                                   Widget iconWidget = const SizedBox.shrink();
                                   final lower = slug.toLowerCase();
-                                  print(
-                                    'Determining icon for provider slug: $lower',
-                                  );
                                   if (lower.contains('mtn')) {
                                     iconWidget = SvgPicture.asset(
                                       'assets/airtime_providers/mtn.svg',
@@ -310,6 +339,12 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
     );
   }
 
+  double get _cashbackPreview {
+    final amount = double.tryParse(amountController.text.trim()) ?? 0;
+    if (amount <= 0) return 0;
+    return CashbackService.calculateCashback(amount);
+  }
+
   Future<void> _buyAirtime() async {
     if (numberController.text.isEmpty ||
         amountController.text.isEmpty ||
@@ -319,11 +354,8 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
       return;
     }
 
-    // Verify PIN before proceeding
     final pinVerified = await verifyTransactionPin();
-    if (!pinVerified) {
-      return;
-    }
+    if (!pinVerified) return;
 
     setState(() => isLoading = true);
 
@@ -367,18 +399,17 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
         'safehavenPurchaseVas',
         source: 'buy_airtime.dart',
         payload: {
-        'type': 'Airtime',
-        'accountId': userAccount!['data']['id'],
-        'accountType': userAccount!['data']['type'],
-        'phoneNumber': formattedPhone,
-        'amount': amount * 100,
-        'provider': selectedProvider,
-        'reference': Uuid().v4(),
-      });
+          'type': 'Airtime',
+          'accountId': userAccount!['data']['id'],
+          'accountType': userAccount!['data']['type'],
+          'phoneNumber': formattedPhone,
+          'amount': amount * 100,
+          'provider': selectedProvider,
+          'reference': Uuid().v4(),
+        },
+      );
       final rawData = result.data;
-      final response =
-          json.decode(json.encode(rawData)) as Map<String, dynamic>;
-      print('Buy Airtime Response: $response');
+      final response = json.decode(json.encode(rawData)) as Map<String, dynamic>;
 
       final billData = response['data'] as Map<String, dynamic>?;
       if (billData == null) {
@@ -389,9 +420,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
       final status = (attributes['status'] as String? ?? '').toUpperCase();
       final isCompleted = status == 'COMPLETED' || status == 'SUCCESSFUL';
       final isPending =
-          status == 'PENDING' ||
-          status == 'PROCESSING' ||
-          status == 'IN_PROGRESS';
+          status == 'PENDING' || status == 'PROCESSING' || status == 'IN_PROGRESS';
       final isSuccessEquivalent = isCompleted || isPending;
 
       if (isSuccessEquivalent) {
@@ -404,7 +433,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
               sourceReference: billData['id'].toString(),
             );
           } catch (cashbackSpendError) {
-            print('Cashback spend recording failed: $cashbackSpendError');
+            debugPrint('Cashback spend recording failed: $cashbackSpendError');
             try {
               await CashbackService.rollbackCashbackFunding(
                 fromAccountId: userAccount!['data']['id'].toString(),
@@ -413,7 +442,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
               );
               cashbackUsed = 0;
             } catch (rollbackError) {
-              print('Cashback rollback failed: $rollbackError');
+              debugPrint('Cashback rollback failed: $rollbackError');
             }
           }
         }
@@ -428,7 +457,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
               sourceReference: billData['id'].toString(),
             );
           } catch (cashbackEarnError) {
-            print('Cashback earn recording failed: $cashbackEarnError');
+            debugPrint('Cashback earn recording failed: $cashbackEarnError');
           }
         }
 
@@ -481,7 +510,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
               narration: 'Cashback rollback for failed airtime purchase',
             );
           } catch (rollbackError) {
-            print('Cashback rollback on failed payment error: $rollbackError');
+            debugPrint('Cashback rollback on failed payment error: $rollbackError');
           }
         }
         showSimpleDialog(
@@ -499,15 +528,13 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
           );
           cashbackUsed = 0;
         } catch (rollbackError) {
-          print(
-            'Cashback rollback on airtime exception failed: $rollbackError',
-          );
+          debugPrint('Cashback rollback on airtime exception failed: $rollbackError');
         }
       }
-      print(e);
+      debugPrint('Error purchasing airtime: $e');
       showSimpleDialog('Error purchasing airtime: $e', Colors.red);
     } finally {
-      setState(() => isLoading = false);
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
@@ -519,10 +546,8 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
         surfaceTintColor: Colors.white,
         backgroundColor: Colors.white,
         leading: GestureDetector(
-          onTap: () {
-            Navigator.of(context).pop();
-          },
-          child: Icon(Icons.arrow_back_ios, color: Colors.black54, size: 20),
+          onTap: () => Navigator.of(context).pop(),
+          child: const Icon(Icons.arrow_back_ios, color: Colors.black54, size: 20),
         ),
         centerTitle: true,
         title: Text(
@@ -534,7 +559,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
         bottom: true,
         child: SingleChildScrollView(
           child: Padding(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             child: Column(
               children: [
                 Row(
@@ -549,7 +574,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                     ),
                   ],
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 isFetchingBillers
                     ? Center(
                         child: CircularProgressIndicator(color: primaryColor),
@@ -585,35 +610,33 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                                 child: Text(
                                   selectedProvider != null
                                       ? (airtimeBillers
-                                                .where(
-                                                  (b) =>
-                                              b['id']?.toString() ==
-                                              selectedProvider ||
-                                              b['attributes']['slug'] ==
-                                                selectedProvider,
-                                                )
-                                                .isNotEmpty
-                                            ? airtimeBillers
                                                   .where(
                                                     (b) =>
-                                              b['id']?.toString() ==
-                                                selectedProvider ||
-                                              b['attributes']['slug'] ==
-                                                selectedProvider,
+                                                        b['id']?.toString() ==
+                                                            selectedProvider ||
+                                                        b['attributes']['slug'] ==
+                                                            selectedProvider,
                                                   )
-                                                  .first['attributes']['name']
-                                            : selectedProvider)
+                                                  .isNotEmpty
+                                              ? airtimeBillers
+                                                  .firstWhere(
+                                                    (b) =>
+                                                        b['id']?.toString() ==
+                                                            selectedProvider ||
+                                                        b['attributes']['slug'] ==
+                                                            selectedProvider,
+                                                  )['attributes']['name']
+                                              : selectedProvider!)
                                       : 'Select provider',
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              Icon(Icons.arrow_drop_down),
+                              const Icon(Icons.arrow_drop_down),
                             ],
                           ),
                         ),
                       ),
-                SizedBox(height: 20),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 Row(
                   children: [
                     Text(
@@ -626,7 +649,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                     ),
                   ],
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 TextField(
                   controller: numberController,
                   maxLength: 11,
@@ -654,7 +677,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                     ),
                   ),
                 ),
-                SizedBox(height: 30),
+                const SizedBox(height: 30),
                 Row(
                   children: [
                     Text(
@@ -667,13 +690,13 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                     ),
                   ],
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 GridView.count(
                   crossAxisCount: 3,
                   crossAxisSpacing: 5,
                   mainAxisSpacing: 5,
                   shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
+                  physics: const NeverScrollableScrollPhysics(),
                   childAspectRatio: 1.5,
                   children: [
                     _buildAmountButton('100'),
@@ -684,7 +707,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                     _buildAmountButton('10000'),
                   ],
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 TextField(
                   controller: amountController,
                   style: GoogleFonts.inter(fontSize: 15),
@@ -711,7 +734,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                     ),
                   ),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 Row(
                   children: [
                     Text(
@@ -721,7 +744,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(width: 10),
+                    const SizedBox(width: 10),
                     Text(
                       "Minimum Airtime purchase is ₦10",
                       style: GoogleFonts.inter(
@@ -731,9 +754,9 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                     ),
                   ],
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 Container(
-                  padding: EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(20),
@@ -760,7 +783,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                           ),
                         ],
                       ),
-                      SizedBox(height: 15),
+                      const SizedBox(height: 15),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -784,7 +807,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                     ],
                   ),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
@@ -899,7 +922,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                     ],
                   ),
                 ),
-                SizedBox(height: 40),
+                const SizedBox(height: 40),
                 SizedBox(
                   width: double.infinity,
                   height: 50,
@@ -912,7 +935,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                       ),
                     ),
                     child: isLoading
-                        ? SizedBox(
+                        ? const SizedBox(
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(
@@ -949,7 +972,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
       },
       child: Container(
         alignment: Alignment.center,
-        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           color: isSelected
@@ -971,7 +994,7 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
                 color: isSelected ? Colors.white : primaryColor,
               ),
             ),
-            SizedBox(height: 5),
+            const SizedBox(height: 5),
             Text(
               "(Pay ₦$amount)",
               style: GoogleFonts.inter(
@@ -995,4 +1018,3 @@ class _BuyAirtimePageState extends State<BuyAirtimePage> {
     super.dispose();
   }
 }
-

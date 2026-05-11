@@ -22,9 +22,11 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -47,6 +49,9 @@ class _HomePageState extends State<HomePage> {
   bool _showBalance = true;
   bool _isLoadingBalance = false;
   String tag = "";
+  static const String _kBiometricNotNowTimestamp =
+      'biometric_not_now_timestamp';
+  static const Duration _kBiometricNotNowCooldown = Duration(minutes: 30);
   List<Map<String, dynamic>> _requiredDocuments = [];
   bool _hasPendingDocuments = false;
   bool _hasRequiredDocuments = false;
@@ -58,7 +63,7 @@ class _HomePageState extends State<HomePage> {
   String _kycBannerButtonText = "Submit Documents";
   String _kycBannerTitle = "";
   String _kycBannerBody = "";
-
+  static const _kBiometricPromptDismissed = 'biometric_prompt_dismissed';
   // Unread notifications
   int _unreadNotifCount = 0;
   StreamSubscription<QuerySnapshot>? _notifSub;
@@ -72,7 +77,8 @@ class _HomePageState extends State<HomePage> {
   StreamSubscription<QuerySnapshot>? _cardTxSub;
   bool _isLoadingTransactions = true;
   bool _autoCreateAttempted = false;
-
+  final _storage = const FlutterSecureStorage();
+  final _localAuth = LocalAuthentication();
   @override
   void initState() {
     super.initState();
@@ -90,10 +96,75 @@ class _HomePageState extends State<HomePage> {
 
     saveToken();
     fetchAccount();
+
     _setupNotifStream();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       createSudoCustomer();
+      _maybeShowBiometricPrompt(); // ← add this
     });
+  }
+
+  Future<void> _maybeShowBiometricPrompt() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // Already dismissed permanently
+    if (prefs.getBool(_kBiometricPromptDismissed) == true) return;
+
+    // Already enabled — nothing to prompt
+    final alreadyEnabled = prefs.getString('biometric_enabled') == 'true';
+    if (alreadyEnabled) return;
+
+    // Check if "Not now" was tapped within the last 30 minutes
+    final notNowTimestamp = prefs.getInt(_kBiometricNotNowTimestamp);
+    if (notNowTimestamp != null) {
+      final elapsed = DateTime.now().millisecondsSinceEpoch - notNowTimestamp;
+      if (elapsed < _kBiometricNotNowCooldown.inMilliseconds) {
+        return; // Still within cooldown period
+      }
+      // Cooldown expired -> clear the timestamp so we can show again
+      await prefs.remove(_kBiometricNotNowTimestamp);
+    }
+
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _BiometricPromptSheet(
+        onEnable: () async {
+          Navigator.of(context).pop();
+          final canCheck = await _localAuth.canCheckBiometrics;
+          final isSupported = await _localAuth.isDeviceSupported();
+          if (!canCheck || !isSupported) {
+            showSimpleDialog(
+              'Biometrics not available on this device',
+              Colors.red,
+            );
+            return;
+          }
+          await _storage.write(key: 'biometric_enabled', value: 'true');
+          // Clear "not now" timestamp once user enables biometrics
+          final prefs2 = await SharedPreferences.getInstance();
+          await prefs2.remove(_kBiometricNotNowTimestamp);
+          showSimpleDialog('Touch ID / Face ID login enabled', Colors.green);
+        },
+        onNotNow: () async {
+          Navigator.of(context).pop();
+          final prefs2 = await SharedPreferences.getInstance();
+          await prefs2.setInt(
+            _kBiometricNotNowTimestamp,
+            DateTime.now().millisecondsSinceEpoch,
+          );
+        },
+        onDoNotShow: () async {
+          await prefs.setBool(_kBiometricPromptDismissed, true);
+          // Also clear "not now" timestamp (optional)
+          await prefs.remove(_kBiometricNotNowTimestamp);
+          if (mounted) Navigator.of(context).pop();
+        },
+      ),
+    );
   }
 
   Future<void> _maybeAutoCreateVirtualAccount(Map<String, dynamic> data) async {
@@ -113,7 +184,8 @@ class _HomePageState extends State<HomePage> {
       final tierStr = tierRaw.toString();
       final tier = int.tryParse(tierStr) ?? 0;
 
-      final customerId = safehavenData['customerCreation']?['data']?['id']?.toString();
+      final customerId = safehavenData['customerCreation']?['data']?['id']
+          ?.toString();
       if (customerId == null || customerId.isEmpty) return;
 
       final firstName = data['firstName']?.toString() ?? '';
@@ -124,13 +196,16 @@ class _HomePageState extends State<HomePage> {
       final address = (data['address'] as Map<String, dynamic>?) ?? {};
       final street = address['street']?.toString() ?? '';
       final city = address['city']?.toString() ?? '';
-      final state = address['state']?.toString() ?? data['state']?.toString() ?? '';
+      final state =
+          address['state']?.toString() ?? data['state']?.toString() ?? '';
       final postalCode = address['postalCode']?.toString() ?? '';
 
       String customerTypeForAccount = 'IndividualCustomer';
       try {
-        final custType = safehavenData['customerCreation']?['data']?['type']?.toString();
-        if (custType != null && custType.isNotEmpty) customerTypeForAccount = custType;
+        final custType = safehavenData['customerCreation']?['data']?['type']
+            ?.toString();
+        if (custType != null && custType.isNotEmpty)
+          customerTypeForAccount = custType;
       } catch (_) {}
 
       final idempotencyKey = Uuid().v4();
@@ -154,7 +229,9 @@ class _HomePageState extends State<HomePage> {
       print('Auto-create safehavenCreateSubAccount payload: $payload');
 
       try {
-        final callable = FirebaseFunctions.instance.httpsCallable('safehavenCreateSubAccount');
+        final callable = FirebaseFunctions.instance.httpsCallable(
+          'safehavenCreateSubAccount',
+        );
         final res = await callable.call(payload);
         print('Auto-create safehavenCreateSubAccount response: ${res.data}');
 
@@ -164,7 +241,9 @@ class _HomePageState extends State<HomePage> {
         try {
           final uid = FirebaseAuth.instance.currentUser?.uid;
           if (uid != null) {
-            final userDocRef = FirebaseFirestore.instance.collection('users').doc(uid);
+            final userDocRef = FirebaseFirestore.instance
+                .collection('users')
+                .doc(uid);
             await userDocRef.update({
               'safehavenData.virtualAccount': res.data,
               'safehavenData.tier': safehavenData['tier'] ?? tierStr,
@@ -176,7 +255,9 @@ class _HomePageState extends State<HomePage> {
             try {
               final vaRaw = res.data;
               final vaData = vaRaw is Map ? vaRaw['data'] : null;
-              final String? vaAccountId = vaData is Map ? vaData['id']?.toString() : null;
+              final String? vaAccountId = vaData is Map
+                  ? vaData['id']?.toString()
+                  : null;
               if (vaAccountId != null && vaAccountId.isNotEmpty) {
                 try {
                   final fetchRes = await FirebaseFunctions.instance
@@ -184,30 +265,39 @@ class _HomePageState extends State<HomePage> {
                       .call({'accountId': vaAccountId});
                   final dynamic resp = fetchRes.data;
                   if (resp is Map) {
-                    final String? an = resp['accountNumber']?.toString() ?? resp['data']?['attributes']?['accountNumber']?.toString();
-                    final dynamic bank = resp['bank'] ?? resp['data']?['attributes']?['bank'];
+                    final String? an =
+                        resp['accountNumber']?.toString() ??
+                        resp['data']?['attributes']?['accountNumber']
+                            ?.toString();
+                    final dynamic bank =
+                        resp['bank'] ?? resp['data']?['attributes']?['bank'];
                     if (an != null && an.isNotEmpty) vaAccountNumber = an;
                     if (bank != null) bankObj = bank;
 
                     // Persist resolved values to Firestore
                     final Map<String, dynamic> resolved = {};
                     if (an != null && an.isNotEmpty) {
-                      resolved['safehavenData.virtualAccount.data.attributes.accountNumber'] = an;
+                      resolved['safehavenData.virtualAccount.data.attributes.accountNumber'] =
+                          an;
                     }
                     if (bank != null) {
-                      resolved['safehavenData.virtualAccount.data.attributes.bank'] = bank is Map ? bank : {'name': bank?.toString()};
+                      resolved['safehavenData.virtualAccount.data.attributes.bank'] =
+                          bank is Map ? bank : {'name': bank?.toString()};
                     }
                     if (resolved.isNotEmpty) {
                       await userDocRef.update(resolved);
                     }
                   }
                 } catch (fetchErr) {
-                  print('safehavenFetchAccountNumber error (will use masked value): $fetchErr');
+                  print(
+                    'safehavenFetchAccountNumber error (will use masked value): $fetchErr',
+                  );
                 }
               } else {
                 final vaAttrs = vaData is Map ? vaData['attributes'] : null;
                 if (vaAttrs is Map) {
-                  vaAccountNumber = vaAttrs['accountNumber']?.toString() ?? vaAccountNumber;
+                  vaAccountNumber =
+                      vaAttrs['accountNumber']?.toString() ?? vaAccountNumber;
                   bankObj = vaAttrs['bank'] ?? bankObj;
                 }
               }
@@ -241,15 +331,20 @@ class _HomePageState extends State<HomePage> {
                 } else if (accNumber != null && accNumber.isNotEmpty) {
                   _accountNumber = accNumber;
                 }
-                if (accName != null && accName.isNotEmpty) _accountName = accName;
+                if (accName != null && accName.isNotEmpty)
+                  _accountName = accName;
               });
             }
 
             // Send virtual account ready email (best-effort)
             try {
               final String userEmail = data['email']?.toString() ?? '';
-              final String userFirstName = data['firstName']?.toString() ?? 'User';
-              final String vaNumberForEmail = (vaAccountNumber.isNotEmpty && vaAccountNumber != 'N/A') ? vaAccountNumber : (_accountNumber ?? 'N/A');
+              final String userFirstName =
+                  data['firstName']?.toString() ?? 'User';
+              final String vaNumberForEmail =
+                  (vaAccountNumber.isNotEmpty && vaAccountNumber != 'N/A')
+                  ? vaAccountNumber
+                  : (_accountNumber ?? 'N/A');
               if (userEmail.isNotEmpty) {
                 await FirebaseFunctions.instance.httpsCallable('sendEmail').call({
                   'to': userEmail,
@@ -269,7 +364,7 @@ class _HomePageState extends State<HomePage> {
             try {
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Virtual account created')), 
+                  SnackBar(content: Text('Virtual account created')),
                 );
               }
             } catch (_) {}
@@ -528,13 +623,16 @@ class _HomePageState extends State<HomePage> {
             (data['cashback']?['balance'] as num?)?.toDouble() ?? 0.0;
         final tierRaw = data['safehavenData']?['tier'];
         final tierText = tierRaw?.toString().trim();
-        fetchedTier = (tierText == null || tierText.isEmpty || tierText == 'null')
+        fetchedTier =
+            (tierText == null || tierText.isEmpty || tierText == 'null')
             ? '0'
             : tierText;
         fetchedAccountName =
-            data['safehavenData']?['virtualAccount']?['data']?['attributes']?['accountName']?.toString();
+            data['safehavenData']?['virtualAccount']?['data']?['attributes']?['accountName']
+                ?.toString();
         fetchedAccountNumber =
-            data['safehavenData']?['virtualAccount']?['data']?['attributes']?['accountNumber']?.toString();
+            data['safehavenData']?['virtualAccount']?['data']?['attributes']?['accountNumber']
+                ?.toString();
 
         // Check for required documents
         final requiredDocs =
@@ -615,11 +713,14 @@ class _HomePageState extends State<HomePage> {
 
         safehavenFetchAccountBalance();
         setState(() {
-          final fallbackName = [fetchedFirstName, fetchedLastName]
-              .where((part) => part?.isNotEmpty == true)
-              .join(' ')
-              .trim();
-          _userName = data['firstName']!.toString() + " " + data['lastName']!.toString();
+          final fallbackName = [
+            fetchedFirstName,
+            fetchedLastName,
+          ].where((part) => part?.isNotEmpty == true).join(' ').trim();
+          _userName =
+              data['firstName']!.toString() +
+              " " +
+              data['lastName']!.toString();
           _cashbackBalance = cashbackBalance;
           _accountName = fetchedAccountName;
           _accountNumber = fetchedAccountNumber;
@@ -783,7 +884,7 @@ class _HomePageState extends State<HomePage> {
     DocumentReference userDocRef,
   ) async {
     try {
-      //  Step 1: safehavenFetchDepositAccount â†’ bank.id only 
+      //  Step 1: safehavenFetchDepositAccount â†’ bank.id only
       print('Calling safehavenFetchDepositAccount for accountId: $accountId');
       final depositResult = await FirebaseFunctions.instance
           .httpsCallable('safehavenFetchDepositAccount')
@@ -806,7 +907,7 @@ class _HomePageState extends State<HomePage> {
         );
       }
 
-      //  Step 2: safehavenFetchAccountNumber â†’ real accountNumber + bankName 
+      //  Step 2: safehavenFetchAccountNumber â†’ real accountNumber + bankName
       String? accountNumber;
       String? bankName;
       try {
@@ -836,7 +937,7 @@ class _HomePageState extends State<HomePage> {
         print('safehavenFetchAccountNumber failed (non-fatal): $e');
       }
 
-      //  Step 3: Persist to Firestore 
+      //  Step 3: Persist to Firestore
       final updates = <String, dynamic>{};
       if (bankId != null) {
         updates['safehavenData.virtualAccount.data.attributes.bank'] = {
@@ -1000,8 +1101,11 @@ class _HomePageState extends State<HomePage> {
           children: [
             const SizedBox(height: 90),
             Text(
-              "Welcome, ${ _userName ?? 'PadiPay User'}",
-              style: GoogleFonts.inter(fontSize: 14, color: Colors.grey.shade700),
+              "Welcome, ${_userName ?? 'PadiPay User'}",
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: Colors.grey.shade700,
+              ),
             ),
             Padding(
               padding: const EdgeInsets.only(right: 0.0, top: 10),
@@ -1049,12 +1153,16 @@ class _HomePageState extends State<HomePage> {
                                 text: "Account Number    ",
                                 style: GoogleFonts.inter(
                                   fontWeight: FontWeight.w700,
+                                  fontSize: 12,
                                   color: Colors.white,
                                 ),
                               ),
                               TextSpan(
                                 text: "|    $_displayAccountNumber",
-                                style: GoogleFonts.inter(color: Colors.white),
+                                style: GoogleFonts.inter(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                ),
                               ),
                             ],
                           ),
@@ -1098,12 +1206,16 @@ class _HomePageState extends State<HomePage> {
                                 text: "Padi-Tag  |  ",
                                 style: GoogleFonts.inter(
                                   fontWeight: FontWeight.w700,
+                                  fontSize: 12,
                                   color: Colors.white,
                                 ),
                               ),
                               TextSpan(
                                 text: "@$tag",
-                                style: GoogleFonts.inter(color: Colors.white),
+                                style: GoogleFonts.inter(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                ),
                               ),
                             ],
                           ),
@@ -1147,7 +1259,7 @@ class _HomePageState extends State<HomePage> {
                               _showBalance ? _balance : "****",
                               style: GoogleFonts.inter(
                                 fontWeight: FontWeight.bold,
-                                fontSize: _isLoadingBalance ? 15 : 24,
+                                fontSize: _isLoadingBalance ? 15 : 20,
                                 color: Colors.white,
                               ),
                             ),
@@ -1155,7 +1267,7 @@ class _HomePageState extends State<HomePage> {
                         onTap: () =>
                             setState(() => _showBalance = !_showBalance),
                         child: Container(
-                          padding: EdgeInsets.all(10),
+                          padding: EdgeInsets.all(8),
                           margin: EdgeInsets.only(right: 16),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.1),
@@ -1166,72 +1278,84 @@ class _HomePageState extends State<HomePage> {
                                 ? Icons.visibility_off
                                 : Icons.visibility,
                             color: Colors.white,
-                            size: 20,
+                            size: 18,
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  InkWell(
-                    onTap: () {
-                      navigateTo(
-                        context,
-                        CashbackHistoryPage(initialBalance: _cashbackBalance),
-                        type: NavigationType.push,
-                      );
-                    },
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.18),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.savings_outlined,
-                            color: Colors.white,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              _showBalance
-                                  ? 'Cashback Balance: ₦${NumberFormat('#,##0.00').format(_cashbackBalance)}'
-                                  : 'Cashback Balance: ****',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                          const Icon(
-                            Icons.chevron_right,
-                            color: Colors.white,
-                            size: 18,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 10),
+                  SizedBox(height: 15),
                   InkWell(
                     onTap: () {
                       if (_tier == "0") {
-                        showSimpleDialog(
-                          "Please upgrade your account to access this feature.",
-                          Colors.red,
+                        showModalBottomSheet(
+                          context: context,
+                          backgroundColor: Colors.transparent,
+                          isDismissible: true,
+                          builder: (ctx) {
+                            return SafeArea(
+                              bottom: true,
+                              child: Container(
+                                margin: const EdgeInsets.all(16.0),
+                                padding: const EdgeInsets.all(20.0),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(16.0),
+                                  border: Border.all(
+                                    color: Colors.red.withValues(alpha: 0.3),
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      "Please upgrade your account to access this feature",
+                                      maxLines: 10,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: GoogleFonts.inter(
+                                        color: Colors.red,
+                                        fontSize: 16.0,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    const SizedBox(height: 20.0),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      height: 48.0,
+                                      child: ElevatedButton(
+                                        onPressed: () {
+                                          navigateTo(
+                                            context,
+                                            ChooseUpgradeTier(tier: "0"),
+                                          );
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.red,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              12.0,
+                                            ),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          'OK',
+                                          style: GoogleFonts.inter(
+                                            color: Colors.white,
+                                            fontSize: 16.0,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
                         );
+
                         return;
                       }
                       navigateTo(context, TopUpWallet());
@@ -1395,7 +1519,7 @@ class _HomePageState extends State<HomePage> {
               ),
             if (_tier == "0")
               Padding(
-                padding: const EdgeInsets.only(top: 10.0),
+                padding: const EdgeInsets.only(top: 20.0),
                 child: Container(
                   padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -1407,15 +1531,15 @@ class _HomePageState extends State<HomePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
-                        padding: EdgeInsets.all(14),
+                        padding: EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(10),
                           color: primaryColor.withValues(alpha: 0.1),
                         ),
                         child: Icon(
                           Icons.trending_up,
                           color: primaryColor,
-                          size: 20,
+                          size: 16,
                         ),
                       ),
                       SizedBox(width: 10),
@@ -1426,7 +1550,7 @@ class _HomePageState extends State<HomePage> {
                             "Upgrade Your Account",
                             style: GoogleFonts.inter(
                               fontWeight: FontWeight.w600,
-                              fontSize: 15,
+                              fontSize: 13,
                             ),
                           ),
                           SizedBox(height: 5),
@@ -1456,7 +1580,7 @@ class _HomePageState extends State<HomePage> {
                               alignment: AlignmentGeometry.center,
                               width: MediaQuery.of(context).size.width * 0.6,
                               padding: EdgeInsets.symmetric(
-                                vertical: 12,
+                                vertical: 10,
                                 horizontal: 16,
                               ),
                               decoration: BoxDecoration(
@@ -1467,7 +1591,7 @@ class _HomePageState extends State<HomePage> {
                                 "Continue Verification",
                                 style: GoogleFonts.inter(
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 14,
+                                  fontSize: 12,
                                   color: Colors.white,
                                 ),
                               ),
@@ -1480,7 +1604,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             SizedBox(height: 30),
-            ActionGrid(tier: _tier),
+            ActionGrid(tier: _tier, cashbackBalance: _cashbackBalance),
             const SizedBox(height: 20),
             _buildRecentTransactionsSection(),
             const SizedBox(height: 150),
@@ -1530,7 +1654,7 @@ class _HomePageState extends State<HomePage> {
             Text(
               'Transaction History',
               style: GoogleFonts.inter(
-                fontSize: 16,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
                 color: Colors.black87,
               ),
@@ -1602,7 +1726,7 @@ class _HomePageState extends State<HomePage> {
                             name.split(' ').first,
                             textAlign: TextAlign.center,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               fontSize: 11,
                               color: Colors.black54,
                             ),
@@ -1639,7 +1763,10 @@ class _HomePageState extends State<HomePage> {
                 const SizedBox(height: 8),
                 Text(
                   'No transactions yet',
-                  style: GoogleFonts.inter(color: Colors.grey.shade500, fontSize: 13),
+                  style: GoogleFonts.inter(
+                    color: Colors.grey.shade500,
+                    fontSize: 13,
+                  ),
                 ),
               ],
             ),
@@ -1725,11 +1852,11 @@ class _HomePageState extends State<HomePage> {
 
               final name = isCardTx
                   ? (data['merchant'] ?? 'Card Transaction')
-                : data['senderName'] ??
-                  data['debitAccountName'] ??
-                  data['originatorAccountName'] ??
-                  data['counterParty']?['accountName'] ??
-                  data['recipientName'] ??
+                  : data['senderName'] ??
+                        data['debitAccountName'] ??
+                        data['originatorAccountName'] ??
+                        data['counterParty']?['accountName'] ??
+                        data['recipientName'] ??
                         data['phoneNumber'] ??
                         data['meterNumber'] ??
                         data['smartcard_number'] ??
@@ -1752,13 +1879,35 @@ class _HomePageState extends State<HomePage> {
               } else {
                 statusColor = _getStatusColor(status);
               }
-              final Color amountColor = isCardTx
-                  ? (type == 'card_refund'
-                        ? Colors.green
-                        : type == 'card_declined'
-                        ? Colors.grey.shade600
-                        : Colors.red)
-                  : statusColor;
+              // amount text color rules:
+              // - failed/declined => red
+              // - pending => orange
+              // - otherwise decide from displayed sign: '+' => green, '-' => gray
+              Color amountColor;
+              final statusForColor = _getStatus(data);
+              final isFailedStatus = ['failed', 'unsuccessful', 'declined']
+                  .contains(statusForColor);
+              final isPendingStatus = ['pending', 'to be paid']
+                  .contains(statusForColor);
+              if (isFailedStatus) {
+                amountColor = Colors.red;
+              } else if (isPendingStatus) {
+                amountColor = Colors.orange;
+              } else {
+                if (type == 'card_declined') {
+                  amountColor = Colors.grey.shade600;
+                } else if (type == 'card_refund') {
+                  amountColor = Colors.green;
+                } else {
+                  if (amountSign.startsWith('+')) {
+                    amountColor = Colors.green;
+                  } else if (amountSign.startsWith('-')) {
+                    amountColor = Colors.grey.shade600;
+                  } else {
+                    amountColor = Colors.grey.shade600;
+                  }
+                }
+              }
               final statusDisplay = isCardTx
                   ? (type == 'card_debit'
                         ? 'Successful'
@@ -1809,8 +1958,10 @@ void _showChooseTransferTypeBottomSheet(BuildContext context) {
 
 class ActionGrid extends StatelessWidget {
   final String? tier;
+  final double _cashbackBalance;
 
-  const ActionGrid({super.key, this.tier});
+  const ActionGrid({super.key, this.tier, required double cashbackBalance})
+    : _cashbackBalance = cashbackBalance;
 
   @override
   Widget build(BuildContext context) {
@@ -1856,6 +2007,14 @@ class ActionGrid extends StatelessWidget {
         'borderColor': const Color(0xFFAD1457),
       },
       {
+        'title': 'Cashback',
+        'subtitle': 'View and use your bonuses',
+        'icon': "piggy",
+        'color': const Color.fromARGB(255, 12, 231, 16),
+        'circle': const Color.fromARGB(255, 24, 140, 20),
+        'borderColor': const Color.fromARGB(255, 97, 214, 30),
+      },
+      {
         'title': 'MyPadi',
         'subtitle': 'Perform financial tasks easily',
         'icon': "assets/padi_ai.png",
@@ -1884,10 +2043,72 @@ class ActionGrid extends StatelessWidget {
         return InkWell(
           onTap: () {
             if (tier == "0") {
-              showSimpleDialog(
-                "Please upgrade your account to access this feature.",
-                Colors.red,
+              showModalBottomSheet(
+                context: context,
+                backgroundColor: Colors.transparent,
+                isDismissible: true,
+                builder: (ctx) {
+                  return SafeArea(
+                    bottom: true,
+                    child: Container(
+                      margin: const EdgeInsets.all(16.0),
+                      padding: const EdgeInsets.all(20.0),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16.0),
+                        border: Border.all(
+                          color: Colors.red.withValues(alpha: 0.3),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            "Please upgrade your account to access this feature",
+                            maxLines: 10,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.inter(
+                              color: Colors.red,
+                              fontSize: 16.0,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 20.0),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48.0,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                navigateTo(
+                                  context,
+                                  ChooseUpgradeTier(tier: "0"),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12.0),
+                                ),
+                              ),
+                              child: Text(
+                                'OK',
+                                style: GoogleFonts.inter(
+                                  color: Colors.white,
+                                  fontSize: 16.0,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               );
+
               return;
             }
             switch (item['title']) {
@@ -1909,6 +2130,11 @@ class ActionGrid extends StatelessWidget {
               case "Give-Away":
                 navigateTo(context, GiveAwayPage());
                 break;
+              case "Cashback":
+                navigateTo(
+                  context,
+                  CashbackHistoryPage(initialBalance: _cashbackBalance),
+                );
               case "MyPadi":
                 navigateTo(context, const MyPadiPage());
                 break;
@@ -1937,7 +2163,13 @@ class ActionGrid extends StatelessWidget {
                           shape: BoxShape.circle,
                           color: Colors.white,
                         ),
-                        child: Image.asset(item['icon'], width: 20, height: 20),
+                        child: item["icon"] == "piggy"
+                            ? Icon(
+                                Icons.savings_outlined,
+                                size: 20,
+                                color: Color.fromARGB(255, 12, 231, 16),
+                              )
+                            : Image.asset(item['icon'], width: 20, height: 20),
                       ),
                       Transform.translate(
                         offset: const Offset(25, -25),
@@ -1962,18 +2194,18 @@ class ActionGrid extends StatelessWidget {
                       children: [
                         Text(
                           item['title'],
-                          style: TextStyle(
-                            fontSize: 14,
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
                             color: Colors.black54,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         Text(
                           item['subtitle'],
-                          style: TextStyle(
-                            fontSize: 12,
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
                             color: Colors.black38,
-                            fontWeight: FontWeight.w300,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
@@ -1989,3 +2221,143 @@ class ActionGrid extends StatelessWidget {
   }
 }
 
+class _BiometricPromptSheet extends StatelessWidget {
+  final VoidCallback onEnable;
+  final VoidCallback onNotNow;
+  final VoidCallback onDoNotShow;
+
+  const _BiometricPromptSheet({
+    required this.onEnable,
+    required this.onNotNow,
+    required this.onDoNotShow,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      bottom: true,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Drag handle
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.fingerprint,
+                    size: 26,
+                    color: Colors.blue,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Enable biometric login',
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Text(
+                        'Sign in faster with Touch ID or Face ID',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Skip entering your passcode every time. Use your fingerprint or face to log in quickly and securely.',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: Colors.grey.shade600,
+                height: 1.55,
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: onEnable,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text(
+                  'Enable biometrics',
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton(
+                  onPressed: onNotNow,
+                  child: Text(
+                    'Not now',
+                    style: GoogleFonts.inter(
+                      color: Colors.grey.shade500,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                Text(
+                  '·',
+                  style: GoogleFonts.inter(color: Colors.grey.shade400),
+                ),
+                TextButton(
+                  onPressed: onDoNotShow,
+                  child: Text(
+                    "Don't show again",
+                    style: GoogleFonts.inter(
+                      color: Colors.grey.shade500,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+}

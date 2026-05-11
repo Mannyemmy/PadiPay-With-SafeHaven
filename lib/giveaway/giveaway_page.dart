@@ -20,19 +20,15 @@ class ThousandsFormatter extends TextInputFormatter {
     TextEditingValue newValue,
   ) {
     final newText = newValue.text.replaceAll(',', '');
-    if (newText.isEmpty) {
-      return newValue.copyWith(text: '');
-    }
+    if (newText.isEmpty) return newValue.copyWith(text: '');
     final buffer = StringBuffer();
     int count = 0;
     for (int i = newText.length - 1; i >= 0; i--) {
       buffer.write(newText[i]);
       count++;
-      if (count % 3 == 0 && i > 0) {
-        buffer.write(',');
-      }
+      if (count % 3 == 0 && i > 0) buffer.write(',');
     }
-    final formattedText = buffer.toString().split('').reversed.join('');
+    final formattedText = buffer.toString().split('').reversed.join();
     return newValue.copyWith(
       text: formattedText,
       selection: TextSelection.collapsed(offset: formattedText.length),
@@ -85,15 +81,212 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
   final TextEditingController promoCodeController = TextEditingController();
   final TextEditingController customCodeController = TextEditingController();
 
+  // ── Cached data for performance ─────────────────────────────────────────
+  Map<String, dynamic>? _cachedUserDoc;
+  double? _cachedBalance;
+  bool _isFetchingBalance = false;
+  Map<String, dynamic>? _cachedCompanyVa;
+
   @override
   void initState() {
     super.initState();
-    _safehavenFetchAccountBalance();
-    _fetchCompanyVirtualAccount();
     totalAmountController.addListener(_updateCalculations);
     numPeoplePoolController.addListener(_updateCalculations);
     amountPerPersonController.addListener(_updateCalculations);
     numPeopleIndividualController.addListener(_updateCalculations);
+    _initAllParallel();
+  }
+
+  Future<void> _initAllParallel() async {
+    await Future.wait([
+      _prefetchUserDataAndBalance(),
+      _prefetchCompanyVirtualAccount(),
+    ]);
+  }
+
+  Future<void> _prefetchUserDataAndBalance() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      if (!doc.exists) return;
+      _cachedUserDoc = doc.data();
+
+      final safehavenData =
+          _cachedUserDoc?['safehavenData'] as Map<String, dynamic>?;
+      final accountData =
+          safehavenData?['virtualAccount']?['data'] as Map<String, dynamic>?;
+
+      String? resolvedAccountId = accountData?['id']?.toString();
+      String? resolvedAccountType = accountData?['type']?.toString();
+      String? resolvedAccountNumber =
+          accountData?['attributes']?['accountNumber']?.toString();
+      String? resolvedAccountName = accountData?['attributes']?['accountName']
+          ?.toString();
+      String? resolvedBankName = accountData?['attributes']?['bank']?['name']
+          ?.toString();
+      String? rawBankId = accountData?['attributes']?['bank']?['id']
+          ?.toString();
+
+      // Fallback to safehavenUserSetup when safehavenData is unavailable
+      if (resolvedAccountId == null) {
+        final setupDoc = await FirebaseFirestore.instance
+            .collection('safehavenUserSetup')
+            .doc(user.uid)
+            .get();
+        if (setupDoc.exists) {
+          final setup = setupDoc.data()!;
+          resolvedAccountId = setup['accountId']?.toString();
+          resolvedAccountNumber = setup['safehavenAccountNumber']?.toString();
+          resolvedAccountName = setup['safehavenAccountName']?.toString();
+          resolvedBankName = setup['safehavenBankName']?.toString();
+          rawBankId = setup['safehavenBankCode']?.toString();
+        }
+      }
+
+      if (resolvedAccountId == null) {
+        debugPrint('Virtual account not found for giveaway');
+        return;
+      }
+
+      final resolvedBankId = await resolveBankId(
+        bankId: rawBankId,
+        bankName: resolvedBankName,
+      );
+      if (resolvedBankId == null)
+        debugPrint('Failed to resolve bank id for giveaway account');
+
+      setState(() {
+        accountId = resolvedAccountId;
+        accountType = resolvedAccountType;
+        bankId = resolvedBankId;
+        accountNumber = resolvedAccountNumber;
+        accountName = resolvedAccountName;
+        bankName = resolvedBankName;
+      });
+
+      _fetchAndCacheBalance();
+    } catch (e) {
+      debugPrint('_prefetchUserDataAndBalance error: $e');
+    }
+  }
+
+  Future<void> _fetchAndCacheBalance() async {
+    if (_isFetchingBalance) return;
+    _isFetchingBalance = true;
+    try {
+      if (accountId == null) return;
+      final result = await callCloudFunctionLogged(
+        'safehavenFetchAccountBalance',
+        source: 'giveaway_page.dart',
+        payload: {'accountId': accountId},
+      );
+      final balanceKobo =
+          result.data['data']['availableBalance']?.toDouble() ?? 0.0;
+      final balanceNaira = balanceKobo / 100;
+      _cachedBalance = balanceNaira;
+      setState(() {
+        balance = '₦ ${NumberFormat('#,##0.00').format(balanceNaira)}';
+      });
+      debugPrint('✅ Giveaway balance pre-fetched: ₦$_cachedBalance');
+    } catch (e) {
+      debugPrint('_fetchAndCacheBalance error: $e');
+    } finally {
+      _isFetchingBalance = false;
+    }
+  }
+
+  Future<double> _getBalance() async {
+    if (_cachedBalance != null) return _cachedBalance!;
+    await _fetchAndCacheBalance();
+    return _cachedBalance ?? 0.0;
+  }
+
+  Future<void> _prefetchCompanyVirtualAccount() async {
+    try {
+      final result = await callCloudFunctionLogged(
+        'fetchCompanySafehavenAccounts',
+        source: 'giveaway_page.dart',
+        payload: {'isSubAccount': false, 'page': 0, 'limit': 100},
+      );
+
+      final data = result.data;
+      final companyAccount = data['companyAccount'];
+
+      if (companyAccount != null) {
+        setState(() {
+          _cachedCompanyVa = {
+            'uid': 'company',
+            'id': companyAccount['id'],
+            'type': 'BankAccount',
+            'bankId': '090286',
+            'bankName': 'SAFE HAVEN MICROFINANCE BANK',
+            'accountNumber': companyAccount['accountNumber'],
+            'accountName': companyAccount['accountName'] ?? 'PadiPay Limited',
+          };
+          companyVa = _cachedCompanyVa;
+        });
+        debugPrint(
+          'Fetched company account: ${companyAccount['accountNumber']}',
+        );
+        return;
+      }
+
+      // Fallback: try to get default account
+      final defaultAccount = data['defaultAccount'];
+      if (defaultAccount != null) {
+        setState(() {
+          _cachedCompanyVa = {
+            'uid': 'company',
+            'id': defaultAccount['id'],
+            'type': 'BankAccount',
+            'bankId': '090286',
+            'bankName': 'SAFE HAVEN MICROFINANCE BANK',
+            'accountNumber': defaultAccount['accountNumber'],
+            'accountName': defaultAccount['accountName'] ?? 'PadiPay Limited',
+          };
+          companyVa = _cachedCompanyVa;
+        });
+        return;
+      }
+
+      // Final fallback – Firestore cache
+      final doc = await FirebaseFirestore.instance
+          .collection('company')
+          .doc('safehavenAccountDetails')
+          .get();
+      if (doc.exists) {
+        final dataFallback = doc.data() ?? <String, dynamic>{};
+        final companyAccountNumber =
+            dataFallback['safehavenAccountNumber']?.toString() ?? '';
+        if (companyAccountNumber.isNotEmpty) {
+          setState(() {
+            _cachedCompanyVa = {
+              'uid': doc.id,
+              'id': dataFallback['safehavenAccountId']?.toString() ?? '',
+              'type':
+                  dataFallback['safehavenAccountType']?.toString() ??
+                  'BankAccount',
+              'bankId':
+                  dataFallback['safehavenBankCode']?.toString() ?? '090286',
+              'bankName':
+                  dataFallback['safehavenBankName']?.toString() ??
+                  'SAFE HAVEN MICROFINANCE BANK',
+              'accountNumber': companyAccountNumber,
+              'accountName':
+                  dataFallback['safehavenAccountName']?.toString() ??
+                  'PadiPay Limited',
+            };
+            companyVa = _cachedCompanyVa;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching company virtual account: $e');
+    }
   }
 
   double getTotalAmount() {
@@ -131,179 +324,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
     return getDistributeTotal() / num;
   }
 
-  Future<void> _safehavenFetchAccountBalance() async {
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        showSimpleDialog('No authenticated user', Colors.red);
-        return;
-      }
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
-      if (!userDoc.exists) {
-        showSimpleDialog('User document not found', Colors.red);
-        return;
-      }
-      final data = userDoc.data()!;
-      final safehavenData = data['safehavenData'] as Map<String, dynamic>?;
-      final accountData =
-          safehavenData?['virtualAccount']?['data'] as Map<String, dynamic>?;
-
-      String? resolvedAccountId = accountData?['id']?.toString();
-      String? resolvedAccountType = accountData?['type']?.toString();
-      String? resolvedAccountNumber =
-          accountData?['attributes']?['accountNumber']?.toString();
-      String? resolvedAccountName = accountData?['attributes']?['accountName']
-          ?.toString();
-      String? resolvedBankName = accountData?['attributes']?['bank']?['name']
-          ?.toString();
-      String? rawBankId = accountData?['attributes']?['bank']?['id']
-          ?.toString();
-
-      // Fallback to safehavenUserSetup when safehavenData is unavailable
-      if (resolvedAccountId == null) {
-        final setupDoc = await FirebaseFirestore.instance
-            .collection('safehavenUserSetup')
-            .doc(user.uid)
-            .get();
-        if (!setupDoc.exists) {
-          showSimpleDialog(
-            'Account not set up. Please complete onboarding.',
-            Colors.red,
-          );
-          return;
-        }
-        final setup = setupDoc.data()!;
-        resolvedAccountId = setup['accountId']?.toString();
-        resolvedAccountNumber = setup['safehavenAccountNumber']?.toString();
-        resolvedAccountName = setup['safehavenAccountName']?.toString();
-        resolvedBankName = setup['safehavenBankName']?.toString();
-        rawBankId = setup['safehavenBankCode']?.toString();
-      }
-
-      if (resolvedAccountId == null) {
-        showSimpleDialog(
-          'Virtual account not found. Please contact support.',
-          Colors.red,
-        );
-        return;
-      }
-      final resolvedBankId = await resolveBankId(
-        bankId: rawBankId,
-        bankName: resolvedBankName,
-      );
-      if (resolvedBankId == null)
-        debugPrint('Failed to resolve bank id for giveaway account');
-
-      setState(() {
-        accountId = resolvedAccountId;
-        accountType = resolvedAccountType;
-        bankId = resolvedBankId;
-        accountNumber = resolvedAccountNumber;
-        accountName = resolvedAccountName;
-        bankName = resolvedBankName;
-      });
-      final result = await callCloudFunctionLogged(
-        'safehavenFetchAccountBalance',
-        source: 'giveaway_page.dart',
-        payload: {'accountId': accountId},
-      );
-      final balanceKobo =
-          result.data['data']['availableBalance']?.toDouble() ?? 0.0;
-      final balanceNaira = balanceKobo / 100;
-      setState(() {
-        balance = '₦ ${NumberFormat('#,##0.00').format(balanceNaira)}';
-      });
-    } catch (e) {
-      debugPrint('Error fetching account balance: $e');
-      showSimpleDialog('Failed to fetch account balance', Colors.red);
-    }
-  }
-
-  Future<void> _fetchCompanyVirtualAccount() async {
-    try {
-      // Call the Cloud Function to fetch company accounts directly from SafeHaven API
-      final result = await callCloudFunctionLogged(
-        'fetchCompanySafehavenAccounts',
-        source: 'giveaway_page.dart',
-        payload: {'isSubAccount': false, 'page': 0, 'limit': 100},
-      );
-
-      final data = result.data;
-      final companyAccount = data['companyAccount'];
-
-      if (companyAccount != null) {
-        setState(() {
-          companyVa = {
-            'uid': 'company',
-            'id': companyAccount['id'],
-            'type': 'BankAccount',
-            'bankId': '090286', // Safe Haven MFB code
-            'bankName': 'SAFE HAVEN MICROFINANCE BANK',
-            'accountNumber': companyAccount['accountNumber'],
-            'accountName': companyAccount['accountName'] ?? 'PadiPay Limited',
-          };
-        });
-        print(
-          'Fetched company account: ${companyAccount['accountNumber']} - ${companyAccount['accountName']}',
-        );
-      } else {
-        // Fallback: try to get default account
-        final defaultAccount = data['defaultAccount'];
-        if (defaultAccount != null) {
-          setState(() {
-            companyVa = {
-              'uid': 'company',
-              'id': defaultAccount['id'],
-              'type': 'BankAccount',
-              'bankId': '090286',
-              'bankName': 'SAFE HAVEN MICROFINANCE BANK',
-              'accountNumber': defaultAccount['accountNumber'],
-              'accountName': defaultAccount['accountName'] ?? 'PadiPay Limited',
-            };
-          });
-        } else {
-          throw Exception('No company account found');
-        }
-      }
-    } catch (e) {
-      debugPrint('Error fetching company virtual account: $e');
-      // Try fallback to Firestore cached data if API call fails
-      try {
-        final doc = await FirebaseFirestore.instance
-            .collection('company')
-            .doc('safehavenAccountDetails')
-            .get();
-        final data = doc.data() ?? <String, dynamic>{};
-        final companyAccountNumber =
-            data['safehavenAccountNumber']?.toString() ?? '';
-
-        if (companyAccountNumber.isNotEmpty) {
-          setState(() {
-            companyVa = {
-              'uid': doc.id,
-              'id': data['safehavenAccountId']?.toString() ?? '',
-              'type': data['safehavenAccountType']?.toString() ?? 'BankAccount',
-              'bankId': data['safehavenBankCode']?.toString() ?? '090286',
-              'bankName':
-                  data['safehavenBankName']?.toString() ??
-                  'SAFE HAVEN MICROFINANCE BANK',
-              'accountNumber': companyAccountNumber,
-              'accountName':
-                  data['safehavenAccountName']?.toString() ?? 'PadiPay Limited',
-            };
-          });
-        } else {
-          showSimpleDialog('Failed to fetch company account', Colors.red);
-        }
-      } catch (fallbackErr) {
-        debugPrint('Fallback error fetching company account: $fallbackErr');
-        showSimpleDialog('Failed to fetch company account', Colors.red);
-      }
-    }
-  }
+  void _updateCalculations() => setState(() {});
 
   Future<String> _generateUniqueCode() async {
     String code;
@@ -319,14 +340,8 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
       isUnique = snapshot.docs.isEmpty;
       attempts++;
     } while (!isUnique && attempts < maxAttempts);
-    if (!isUnique) {
-      throw Exception('Unable to generate unique giveaway code');
-    }
+    if (!isUnique) throw Exception('Unable to generate unique giveaway code');
     return code;
-  }
-
-  void _updateCalculations() {
-    setState(() {});
   }
 
   Future<void> _createGiveaway() async {
@@ -341,63 +356,40 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
       showSimpleDialog('Invalid amount or number of people', Colors.red);
       return;
     }
-    // if (companyVa == null) {
-    //   showSimpleDialog('Company account not configured', Colors.red);
-    //   return;
-    // }
+
+    final balanceValue = await _getBalance();
+    final transferAmount = getTransferAmount();
+    if (balanceValue < transferAmount) {
+      showSimpleDialog('Insufficient balance', Colors.red);
+      return;
+    }
+
+    final pinVerified = await verifyTransactionPin();
+    if (!pinVerified) return;
+
+    setState(() => isLoading = true);
     try {
-      final balanceValue =
-          double.tryParse(balance!.replaceAll('₦ ', '').replaceAll(',', '')) ??
-          0.0;
-      final transferAmount = getTransferAmount();
-      if (balanceValue < transferAmount) {
-        showSimpleDialog('Insufficient balance', Colors.red);
-        return;
-      }
-
-      // Verify PIN before proceeding
-      final pinVerified = await verifyTransactionPin();
-      if (!pinVerified) {
-        return;
-      }
-
-      setState(() => isLoading = true);
       final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        showSimpleDialog('No authenticated user', Colors.red);
-        setState(() => isLoading = false);
-        return;
-      }
+      if (user == null) throw Exception('Not authenticated');
+
       String code;
       if (isCustomCode) {
         code = customCodeController.text.trim().toUpperCase();
-        if (code.isEmpty) {
-          showSimpleDialog('Please enter a custom code', Colors.red);
-          setState(() => isLoading = false);
-          return;
-        }
+        if (code.isEmpty) throw Exception('Please enter a custom code');
         final snapshot = await FirebaseFirestore.instance
             .collection('giveaways')
             .where('code', isEqualTo: code)
             .get();
-        if (snapshot.docs.isNotEmpty) {
-          showSimpleDialog('Custom code already exists', Colors.red);
-          setState(() => isLoading = false);
-          return;
-        }
+        if (snapshot.docs.isNotEmpty)
+          throw Exception('Custom code already exists');
       } else {
         code = await _generateUniqueCode();
       }
+
       final companyDestination = (companyVa!['id']?.toString() ?? '').trim();
-      if (companyDestination.isEmpty) {
-        showSimpleDialog(
-          'Company SafeHaven account not configured',
-          Colors.red,
-        );
-        setState(() => isLoading = false);
-        return;
-      }
-      // Transfer to company account (book transfer)
+      if (companyDestination.isEmpty)
+        throw Exception('Company SafeHaven account not configured');
+
       final transferAmountKobo = transferAmount * 100;
       final transferResult = await callCloudFunctionLogged(
         'safehavenTransferIntra',
@@ -405,7 +397,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
         payload: {
           'fromAccountId': accountId,
           'toAccountId': companyDestination,
-          'toBankCode': companyVa!['bankId'] ?? '999240',
+          'toBankCode': companyVa!['bankId'] ?? '090286',
           'amount': transferAmountKobo,
           'currency': 'NGN',
           'narration': 'Giveaway Funding',
@@ -413,11 +405,9 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
         },
       );
       final status = transferResult.data['data']['attributes']['status'];
-      if (status == "FAILED") {
-        showSimpleDialog('Transfer to company account failed', Colors.red);
-        setState(() => isLoading = false);
-        return;
-      }
+      if (status == 'FAILED')
+        throw Exception('Transfer to company account failed');
+
       await FirebaseFirestore.instance.collection('giveaways').add({
         'code': code,
         'type': selectedGiveAwayType == 0 ? 'pool' : 'individual',
@@ -431,6 +421,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
         'createdAt': FieldValue.serverTimestamp(),
         'status': 'active',
       });
+
       await FirebaseFirestore.instance.collection('transactions').add({
         'userId': user.uid,
         'type': 'giveaway_create',
@@ -445,23 +436,32 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
         'bankName': companyVa!['bankName'],
         'timestamp': FieldValue.serverTimestamp(),
       });
+
       setState(() {
         generatedCode = code;
         codeGenerated = true;
       });
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        builder: (context) => GiveAwaySuccessBottomSheet(
-          code: generatedCode!,
-          title: "Successful",
-          description: "Giveaway created successfully.",
-        ),
-      );
-      _safehavenFetchAccountBalance();
+
+      // Refresh balance after creation
+      await _fetchAndCacheBalance();
+
+      if (mounted) {
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          builder: (context) => GiveAwaySuccessBottomSheet(
+            code: generatedCode!,
+            title: "Successful",
+            description: "Giveaway created successfully.",
+          ),
+        );
+      }
     } catch (e) {
       debugPrint('Error creating giveaway: $e');
-      showSimpleDialog('Failed to create giveaway', Colors.red);
+      showSimpleDialog(
+        'Failed to create giveaway: ${e.toString()}',
+        Colors.red,
+      );
     } finally {
       setState(() => isLoading = false);
     }
@@ -474,124 +474,79 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
       return;
     }
 
-    // Verify PIN before proceeding
     final pinVerified = await verifyTransactionPin();
-    if (!pinVerified) {
-      return;
-    }
+    if (!pinVerified) return;
 
     setState(() => isLoading = true);
     try {
       final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        showSimpleDialog('No authenticated user', Colors.red);
-        setState(() => isLoading = false);
-        return;
-      }
+      if (user == null) throw Exception('Not authenticated');
+
       final snapshot = await FirebaseFirestore.instance
           .collection('giveaways')
           .where('code', isEqualTo: code)
           .where('status', isEqualTo: 'active')
           .get();
-      if (snapshot.docs.isEmpty) {
-        showSimpleDialog('Invalid or expired giveaway code', Colors.red);
-        setState(() => isLoading = false);
-        return;
-      }
+      if (snapshot.docs.isEmpty)
+        throw Exception('Invalid or expired giveaway code');
+
       final giveaway = snapshot.docs.first;
       final giveawayData = giveaway.data();
-      if (giveawayData['creatorId'] == user.uid) {
-        showSimpleDialog('You cannot claim your own giveaway', Colors.red);
-        setState(() => isLoading = false);
-        return;
-      }
-      // For targeted giveaways, verify this user is on the allowed list
+      if (giveawayData['creatorId'] == user.uid)
+        throw Exception('You cannot claim your own giveaway');
+
       if (giveawayData['type'] == 'targeted') {
         final allowedUids = List<String>.from(
           giveawayData['allowedUids'] ?? [],
         );
-        if (!allowedUids.contains(user.uid)) {
-          showSimpleDialog(
-            'You are not on the recipient list for this giveaway',
-            Colors.red,
-          );
-          setState(() => isLoading = false);
-          return;
-        }
+        if (!allowedUids.contains(user.uid))
+          throw Exception('You are not on the recipient list');
       }
-      final recipients = List<String>.from(giveawayData['recipients'] ?? []);
-      if (recipients.contains(user.uid)) {
-        showSimpleDialog('You have already claimed this giveaway', Colors.red);
-        setState(() => isLoading = false);
-        return;
-      }
-      if (recipients.length >= giveawayData['numPeople']) {
-        showSimpleDialog(
-          'Giveaway has reached maximum participants',
-          Colors.red,
-        );
-        setState(() => isLoading = false);
-        return;
-      }
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
-      final userSetupDoc = await FirebaseFirestore.instance
-          .collection('safehavenUserSetup')
-          .doc(user.uid)
-          .get();
-      final Map<String, dynamic> userSetupData = userSetupDoc.data() ?? {};
 
-      final Map<String, dynamic>? safehavenVa =
+      final recipients = List<String>.from(giveawayData['recipients'] ?? []);
+      if (recipients.contains(user.uid))
+        throw Exception('You have already claimed this giveaway');
+      if (recipients.length >= giveawayData['numPeople'])
+        throw Exception('Giveaway has reached maximum participants');
+
+      // Explicit type declaration
+      final userDoc =
+          (_cachedUserDoc ??
+                  await FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(user.uid)
+                      .get())
+              as DocumentSnapshot<Map<String, dynamic>>;
+
+      final safehavenVa =
           userDoc.data()?['safehavenData']?['virtualAccount']?['data']
               as Map<String, dynamic>?;
 
       final recipientAccountId = safehavenVa?['id']?.toString();
+      final recipientBankId =
+          safehavenVa?['attributes']?['bank']?['id']?.toString() ?? '090286';
+      final recipientAccountName =
+          safehavenVa?['attributes']?['accountName']?.toString() ?? '';
+      final recipientBankName =
+          safehavenVa?['attributes']?['bank']?['name']?.toString() ??
+          'Safe Haven Microfinance Bank';
+      final recipientAccountNumber =
+          safehavenVa?['attributes']?['accountNumber']?.toString() ?? '';
 
-      // Prefer values from safehavenVa when present and non-empty, otherwise
-      // fall back to values from the safehavenUserSetup document.
-      final String? rawBankId =
-          safehavenVa?['attributes']?['bank']?['id'] as String?;
-      final recipientBankId = (rawBankId?.isNotEmpty ?? false)
-          ? rawBankId
-          : (userSetupData['safehavenBankCode']?.toString());
-
-      final String? rawAccountName =
-          safehavenVa?['attributes']?['accountName'] as String?;
-      final recipientAccountName = (rawAccountName?.isNotEmpty ?? false)
-          ? rawAccountName
-          : (userSetupData['safehavenAccountName']?.toString());
-
-      final String? rawBankName =
-          safehavenVa?['attributes']?['bank']?['name'] as String?;
-      final recipientBankName = (rawBankName?.isNotEmpty ?? false)
-          ? rawBankName
-          : (userSetupData['safehavenBankName']?.toString());
-
-      final String? rawAccountNumber =
-          safehavenVa?['attributes']?['accountNumber'] as String?;
-      final recipientAccountNumber = (rawAccountNumber?.isNotEmpty ?? false)
-          ? rawAccountNumber
-          : (userSetupData['safehavenAccountNumber']?.toString());
+      if (companyVa == null) throw Exception('Company account not configured');
       final resolvedRecipientDestination =
-          (recipientAccountId != null && recipientAccountId.isNotEmpty)
-          ? recipientAccountId
-          : (recipientAccountNumber ?? '').trim();
-      if (companyVa == null || resolvedRecipientDestination.isEmpty) {
-        showSimpleDialog('Account configuration error', Colors.red);
-        setState(() => isLoading = false);
-        return;
-      }
-      // Transfer from company to recipient via SafeHaven book transfer.
-      final amountKobo = giveawayData['amountPerPerson'] * 100;
+          (recipientAccountId?.isNotEmpty ?? false)
+          ? recipientAccountId!
+          : recipientAccountNumber;
+
+      final amountKobo = (giveawayData['amountPerPerson'] * 100).toInt();
       final transferResult = await callCloudFunctionLogged(
         'safehavenTransferIntra',
         source: 'giveaway_page.dart',
         payload: {
           'fromAccountId': companyVa!['id'],
           'toAccountId': resolvedRecipientDestination,
-          'toBankCode': recipientBankId ?? '999240',
+          'toBankCode': recipientBankId,
           'amount': amountKobo,
           'currency': 'NGN',
           'narration': 'Giveaway Claim - $code',
@@ -599,21 +554,16 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
         },
       );
       final status = transferResult.data['data']['attributes']['status'];
-      if (status == "FAILED") {
-        showSimpleDialog('Transfer failed', Colors.red);
-        setState(() => isLoading = false);
-        return;
-      }
+      if (status == 'FAILED') throw Exception('Transfer failed');
+
       recipients.add(user.uid);
-      await FirebaseFirestore.instance
-          .collection('giveaways')
-          .doc(giveaway.id)
-          .update({
-            'recipients': recipients,
-            'status': recipients.length >= giveawayData['numPeople']
-                ? 'completed'
-                : 'active',
-          });
+      await giveaway.reference.update({
+        'recipients': recipients,
+        'status': recipients.length >= giveawayData['numPeople']
+            ? 'completed'
+            : 'active',
+      });
+
       await FirebaseFirestore.instance.collection('transactions').add({
         'userId': user.uid,
         'type': 'giveaway_claim',
@@ -628,26 +578,29 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
         'bankName': recipientBankName,
         'timestamp': FieldValue.serverTimestamp(),
       });
-      showModalBottomSheet(
-        context: context,
-        builder: (context) => PaymentSuccessfulPage(
-          amount: NumberFormat(
-            '#,##0.00',
-          ).format(giveawayData['amountPerPerson']),
-          actionText: "Done",
-          title: "Giveaway Claimed",
-          description: "You have successfully claimed the giveaway.",
-          recipientName: recipientAccountName!,
-          bankName: recipientBankName ?? 'Unknown Bank',
-          bankCode: recipientBankId ?? '',
-          accountNumber: recipientAccountNumber!,
-          reference: transferResult.data['data']['id'] ?? "",
-        ),
-        isScrollControlled: true,
-      );
+
+      if (mounted) {
+        showModalBottomSheet(
+          context: context,
+          builder: (context) => PaymentSuccessfulPage(
+            amount: NumberFormat(
+              '#,##0.00',
+            ).format(giveawayData['amountPerPerson']),
+            actionText: "Done",
+            title: "Giveaway Claimed",
+            description: "You have successfully claimed the giveaway.",
+            recipientName: recipientAccountName,
+            bankName: recipientBankName,
+            bankCode: recipientBankId,
+            accountNumber: recipientAccountNumber,
+            reference: transferResult.data['data']['id'] ?? "",
+          ),
+          isScrollControlled: true,
+        );
+      }
     } catch (e) {
       debugPrint('Error claiming giveaway: $e');
-      showSimpleDialog('Failed to claim giveaway', Colors.red);
+      showSimpleDialog('Failed to claim giveaway: ${e.toString()}', Colors.red);
     } finally {
       setState(() => isLoading = false);
     }
@@ -678,14 +631,16 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
         backgroundColor: Colors.white,
         centerTitle: true,
         leading: GestureDetector(
-          onTap: () {
-            Navigator.of(context).pop();
-          },
-          child: Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20),
+          onTap: () => Navigator.of(context).pop(),
+          child: const Icon(
+            Icons.arrow_back_ios,
+            color: Colors.black87,
+            size: 20,
+          ),
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.history, color: Colors.black87),
+            icon: const Icon(Icons.history, color: Colors.black87),
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
@@ -709,17 +664,13 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               Row(
                 children: [
                   InkWell(
-                    onTap: () {
-                      setState(() {
-                        sendOrReceiveGiveAway = 0;
-                      });
-                    },
+                    onTap: () => setState(() => sendOrReceiveGiveAway = 0),
                     child: Container(
-                      padding: EdgeInsets.symmetric(
+                      padding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 12,
                       ),
@@ -741,15 +692,11 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                       ),
                     ),
                   ),
-                  SizedBox(width: 10),
+                  const SizedBox(width: 10),
                   InkWell(
-                    onTap: () {
-                      setState(() {
-                        sendOrReceiveGiveAway = 1;
-                      });
-                    },
+                    onTap: () => setState(() => sendOrReceiveGiveAway = 1),
                     child: Container(
-                      padding: EdgeInsets.symmetric(
+                      padding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 12,
                       ),
@@ -773,15 +720,15 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                   ),
                 ],
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               if (sendOrReceiveGiveAway == 1)
                 Container(
-                  padding: EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     boxShadow: [
                       BoxShadow(
                         color: Colors.grey.shade100,
-                        offset: Offset(1, 1.5),
+                        offset: const Offset(1, 1.5),
                       ),
                     ],
                     color: Colors.grey.shade50,
@@ -799,7 +746,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                           fontSize: 16,
                         ),
                       ),
-                      SizedBox(height: 10),
+                      const SizedBox(height: 10),
                       Text(
                         "Enter your promo code to claim your giveaway funds",
                         style: GoogleFonts.inter(
@@ -808,7 +755,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                           fontWeight: FontWeight.w200,
                         ),
                       ),
-                      SizedBox(height: 20),
+                      const SizedBox(height: 20),
                       Text(
                         "Promo Code",
                         style: GoogleFonts.inter(
@@ -817,7 +764,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      SizedBox(height: 10),
+                      const SizedBox(height: 10),
                       TextField(
                         textCapitalization: TextCapitalization.characters,
                         controller: promoCodeController,
@@ -827,7 +774,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                         decoration: InputDecoration(
                           fillColor: Colors.white,
                           filled: true,
-                          contentPadding: EdgeInsets.symmetric(
+                          contentPadding: const EdgeInsets.symmetric(
                             horizontal: 4,
                             vertical: 15,
                           ),
@@ -844,25 +791,27 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: Colors.grey.shade300,
+                            borderSide: const BorderSide(
+                              color: primaryColor,
                               width: 1.5,
                             ),
                           ),
                         ),
                       ),
-                      SizedBox(height: 30),
+                      const SizedBox(height: 30),
                       GestureDetector(
                         onTap: isLoading ? null : _claimGiveaway,
                         child: Container(
                           alignment: Alignment.center,
-                          padding: EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             color: primaryColor,
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: isLoading
-                              ? CircularProgressIndicator(color: Colors.white)
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white,
+                                )
                               : Text(
                                   "Claim Reward",
                                   style: GoogleFonts.inter(color: Colors.white),
@@ -878,7 +827,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                     boxShadow: [
                       BoxShadow(
                         color: Colors.grey.shade100,
-                        offset: Offset(1, 1.5),
+                        offset: const Offset(1, 1.5),
                       ),
                     ],
                     color: Colors.grey.shade50,
@@ -889,11 +838,11 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        padding: EdgeInsets.all(20),
+                        padding: const EdgeInsets.all(20),
                         width: double.infinity,
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.only(
+                          borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(10),
                             topRight: Radius.circular(10),
                           ),
@@ -923,11 +872,11 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                         ),
                       ),
                       Padding(
-                        padding: EdgeInsets.all(15),
+                        padding: const EdgeInsets.all(15),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            SizedBox(height: 15),
+                            const SizedBox(height: 15),
                             Row(
                               children: [
                                 Text(
@@ -940,13 +889,13 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                 ),
                               ],
                             ),
-                            SizedBox(height: 15),
+                            const SizedBox(height: 15),
                             GestureDetector(
                               onTap: () {
                                 showModalBottomSheet<int?>(
                                   context: context,
                                   builder: (context) =>
-                                      ChooseGiveAwayTypeBottomSheet(),
+                                      const ChooseGiveAwayTypeBottomSheet(),
                                   isScrollControlled: true,
                                 ).then((value) {
                                   if (value == null) return;
@@ -958,15 +907,15 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                       ),
                                     );
                                   } else {
-                                    setState(() {
-                                      selectedGiveAwayType = value;
-                                    });
+                                    setState(
+                                      () => selectedGiveAwayType = value,
+                                    );
                                   }
                                 });
                               },
                               child: Container(
                                 width: double.infinity,
-                                padding: EdgeInsets.symmetric(
+                                padding: const EdgeInsets.symmetric(
                                   vertical: 15,
                                   horizontal: 10,
                                 ),
@@ -1008,7 +957,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                 ),
                               ),
                             ),
-                            SizedBox(height: 15),
+                            const SizedBox(height: 15),
                             if (selectedGiveAwayType == 0)
                               Column(
                                 children: [
@@ -1024,7 +973,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                       ),
                                     ],
                                   ),
-                                  SizedBox(height: 10),
+                                  const SizedBox(height: 10),
                                   TextField(
                                     controller: totalAmountController,
                                     keyboardType: TextInputType.number,
@@ -1033,10 +982,11 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                     decoration: InputDecoration(
                                       fillColor: Colors.white,
                                       filled: true,
-                                      contentPadding: EdgeInsets.symmetric(
-                                        horizontal: 0,
-                                        vertical: 15,
-                                      ),
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                            horizontal: 0,
+                                            vertical: 15,
+                                          ),
                                       hintStyle: GoogleFonts.inter(
                                         color: Colors.grey,
                                         fontSize: 12,
@@ -1061,14 +1011,14 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                       ),
                                       focusedBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(
-                                          color: Colors.grey.shade300,
+                                        borderSide: const BorderSide(
+                                          color: primaryColor,
                                           width: 1.5,
                                         ),
                                       ),
                                     ),
                                   ),
-                                  SizedBox(height: 15),
+                                  const SizedBox(height: 15),
                                   Row(
                                     children: [
                                       Text(
@@ -1081,7 +1031,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                       ),
                                     ],
                                   ),
-                                  SizedBox(height: 10),
+                                  const SizedBox(height: 10),
                                   TextField(
                                     controller: numPeoplePoolController,
                                     keyboardType: TextInputType.number,
@@ -1089,10 +1039,11 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                     decoration: InputDecoration(
                                       fillColor: Colors.white,
                                       filled: true,
-                                      contentPadding: EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 15,
-                                      ),
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 15,
+                                          ),
                                       hintStyle: GoogleFonts.inter(
                                         color: Colors.grey,
                                         fontSize: 12,
@@ -1113,8 +1064,8 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                       ),
                                       focusedBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(
-                                          color: Colors.grey.shade300,
+                                        borderSide: const BorderSide(
+                                          color: primaryColor,
                                           width: 1.5,
                                         ),
                                       ),
@@ -1137,7 +1088,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                       ),
                                     ],
                                   ),
-                                  SizedBox(height: 10),
+                                  const SizedBox(height: 10),
                                   TextField(
                                     controller: amountPerPersonController,
                                     keyboardType: TextInputType.number,
@@ -1146,11 +1097,14 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                     decoration: InputDecoration(
                                       fillColor: Colors.white,
                                       filled: true,
-                                      contentPadding: EdgeInsets.symmetric(
-                                        horizontal: 0,
-                                        vertical: 15,
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                            horizontal: 0,
+                                            vertical: 15,
+                                          ),
+                                      hintStyle: GoogleFonts.inter(
+                                        color: Colors.grey,
                                       ),
-                                      hintStyle: GoogleFonts.inter(color: Colors.grey),
                                       hintText: "Enter amount e.g 20,000",
                                       prefixText: " ₦ ",
                                       prefixStyle: GoogleFonts.inter(
@@ -1170,14 +1124,14 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                       ),
                                       focusedBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(
-                                          color: Colors.grey.shade300,
+                                        borderSide: const BorderSide(
+                                          color: primaryColor,
                                           width: 1.5,
                                         ),
                                       ),
                                     ),
                                   ),
-                                  SizedBox(height: 15),
+                                  const SizedBox(height: 15),
                                   Row(
                                     children: [
                                       Text(
@@ -1190,7 +1144,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                       ),
                                     ],
                                   ),
-                                  SizedBox(height: 10),
+                                  const SizedBox(height: 10),
                                   TextField(
                                     controller: numPeopleIndividualController,
                                     keyboardType: TextInputType.number,
@@ -1198,11 +1152,14 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                     decoration: InputDecoration(
                                       fillColor: Colors.white,
                                       filled: true,
-                                      contentPadding: EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 15,
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 15,
+                                          ),
+                                      hintStyle: GoogleFonts.inter(
+                                        color: Colors.grey,
                                       ),
-                                      hintStyle: GoogleFonts.inter(color: Colors.grey),
                                       hintText:
                                           "Enter number of recipients (e.g 200)",
                                       border: OutlineInputBorder(
@@ -1219,8 +1176,8 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                       ),
                                       focusedBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(
-                                          color: Colors.grey.shade300,
+                                        borderSide: const BorderSide(
+                                          color: primaryColor,
                                           width: 1.5,
                                         ),
                                       ),
@@ -1228,7 +1185,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                   ),
                                 ],
                               ),
-                            SizedBox(height: 20),
+                            const SizedBox(height: 20),
                             if (selectedGiveAwayType != null)
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1245,7 +1202,6 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                           fontSize: 14,
                                         ),
                                       ),
-
                                       FlutterSwitch(
                                         width: 50,
                                         height: 25,
@@ -1264,7 +1220,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                       ),
                                     ],
                                   ),
-                                  SizedBox(height: 20),
+                                  const SizedBox(height: 20),
                                   if (isCustomCode)
                                     TextField(
                                       textCapitalization:
@@ -1274,16 +1230,17 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                       inputFormatters: [
                                         FilteringTextInputFormatter.deny(
                                           RegExp(r'\s'),
-                                        ), // blocks spaces
+                                        ),
                                       ],
                                       style: GoogleFonts.inter(fontSize: 15),
                                       decoration: InputDecoration(
                                         fillColor: Colors.white,
                                         filled: true,
-                                        contentPadding: EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 15,
-                                        ),
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                              horizontal: 10,
+                                              vertical: 15,
+                                            ),
                                         hintStyle: GoogleFonts.inter(
                                           color: Colors.grey,
                                           fontSize: 12,
@@ -1310,14 +1267,14 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
-                                          borderSide: BorderSide(
-                                            color: Colors.grey.shade300,
+                                          borderSide: const BorderSide(
+                                            color: primaryColor,
                                             width: 1.5,
                                           ),
                                         ),
                                       ),
                                     ),
-                                  SizedBox(height: 15),
+                                  const SizedBox(height: 15),
                                   Text(
                                     "Who Pays the Fee?",
                                     style: GoogleFonts.inter(
@@ -1326,16 +1283,16 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                       fontSize: 14,
                                     ),
                                   ),
-                                  SizedBox(height: 10),
+                                  const SizedBox(height: 10),
                                   Row(
                                     children: [
                                       Expanded(
                                         child: InkWell(
-                                          onTap: () {
-                                            setState(() => whoPays = 'sender');
-                                          },
+                                          onTap: () => setState(
+                                            () => whoPays = 'sender',
+                                          ),
                                           child: Container(
-                                            padding: EdgeInsets.symmetric(
+                                            padding: const EdgeInsets.symmetric(
                                               vertical: 12,
                                               horizontal: 16,
                                             ),
@@ -1361,16 +1318,14 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                           ),
                                         ),
                                       ),
-                                      SizedBox(width: 10),
+                                      const SizedBox(width: 10),
                                       Expanded(
                                         child: InkWell(
-                                          onTap: () {
-                                            setState(
-                                              () => whoPays = 'receivers',
-                                            );
-                                          },
+                                          onTap: () => setState(
+                                            () => whoPays = 'receivers',
+                                          ),
                                           child: Container(
-                                            padding: EdgeInsets.symmetric(
+                                            padding: const EdgeInsets.symmetric(
                                               vertical: 12,
                                               horizontal: 16,
                                             ),
@@ -1398,9 +1353,9 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                       ),
                                     ],
                                   ),
-                                  SizedBox(height: 25),
+                                  const SizedBox(height: 25),
                                   Container(
-                                    padding: EdgeInsets.all(10),
+                                    padding: const EdgeInsets.all(10),
                                     decoration: BoxDecoration(
                                       border: Border.all(
                                         color: primaryColor,
@@ -1417,12 +1372,12 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                       children: [
                                         Row(
                                           children: [
-                                            Icon(
+                                            const Icon(
                                               Icons.calculate,
                                               color: primaryColor,
                                               size: 25,
                                             ),
-                                            SizedBox(width: 10),
+                                            const SizedBox(width: 10),
                                             Text(
                                               "Summary:",
                                               style: GoogleFonts.inter(
@@ -1433,21 +1388,21 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                             ),
                                           ],
                                         ),
-                                        SizedBox(height: 10),
+                                        const SizedBox(height: 10),
                                         Text(
                                           "Fee (${(feeRate * 100).toStringAsFixed(0)}%): ₦${numberFormat.format(getFee())}",
                                           style: GoogleFonts.inter(
                                             color: Colors.black87,
                                           ),
                                         ),
-                                        SizedBox(height: 5),
+                                        const SizedBox(height: 5),
                                         Text(
                                           "Total Transfer: ₦${numberFormat.format(getTransferAmount())}",
                                           style: GoogleFonts.inter(
                                             color: Colors.black87,
                                           ),
                                         ),
-                                        SizedBox(height: 5),
+                                        const SizedBox(height: 5),
                                         Text(
                                           "Each Receives: ₦${numberFormat.format(getAmountPerPerson())}",
                                           style: GoogleFonts.inter(
@@ -1457,7 +1412,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                       ],
                                     ),
                                   ),
-                                  SizedBox(height: 25),
+                                  const SizedBox(height: 25),
                                   Row(
                                     children: [
                                       Text(
@@ -1470,10 +1425,10 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                       ),
                                     ],
                                   ),
-                                  SizedBox(height: 5),
+                                  const SizedBox(height: 5),
                                   Container(
                                     width: double.infinity,
-                                    padding: EdgeInsets.symmetric(
+                                    padding: const EdgeInsets.symmetric(
                                       vertical: 15,
                                       horizontal: 10,
                                     ),
@@ -1505,14 +1460,14 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                       ],
                                     ),
                                   ),
-                                  SizedBox(height: 20),
+                                  const SizedBox(height: 20),
                                   if (codeGenerated)
                                     Row(
                                       children: [
                                         Expanded(
                                           child: Container(
                                             alignment: Alignment.center,
-                                            padding: EdgeInsets.symmetric(
+                                            padding: const EdgeInsets.symmetric(
                                               horizontal: 16,
                                               vertical: 12,
                                             ),
@@ -1531,9 +1486,9 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                             ),
                                           ),
                                         ),
-                                        SizedBox(width: 4),
+                                        const SizedBox(width: 4),
                                         Container(
-                                          padding: EdgeInsets.symmetric(
+                                          padding: const EdgeInsets.symmetric(
                                             horizontal: 5,
                                             vertical: 1,
                                           ),
@@ -1548,29 +1503,27 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                               Icons.content_copy,
                                               color: Colors.grey.shade600,
                                             ),
-                                            onPressed: () {
-                                              Clipboard.setData(
-                                                ClipboardData(
-                                                  text: generatedCode!,
-                                                ),
-                                              );
-                                            },
+                                            onPressed: () => Clipboard.setData(
+                                              ClipboardData(
+                                                text: generatedCode!,
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ],
                                     ),
-                                  SizedBox(height: 30),
+                                  const SizedBox(height: 30),
                                   GestureDetector(
                                     onTap: isLoading ? null : _createGiveaway,
                                     child: Container(
                                       alignment: Alignment.center,
-                                      padding: EdgeInsets.all(16),
+                                      padding: const EdgeInsets.all(16),
                                       decoration: BoxDecoration(
                                         color: primaryColor,
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: isLoading
-                                          ? CircularProgressIndicator(
+                                          ? const CircularProgressIndicator(
                                               color: Colors.white,
                                             )
                                           : Text(
@@ -1583,7 +1536,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                             ),
                                     ),
                                   ),
-                                  SizedBox(height: 20),
+                                  const SizedBox(height: 20),
                                   Text(
                                     textAlign: TextAlign.center,
                                     "You'll receive a unique code to share with recipients",
@@ -1594,13 +1547,13 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                   ),
                                 ],
                               ),
-                            SizedBox(height: 30),
+                            const SizedBox(height: 30),
                             if (selectedGiveAwayType == null)
                               Column(
                                 children: [
                                   Container(
                                     alignment: Alignment.center,
-                                    padding: EdgeInsets.all(16),
+                                    padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
                                       color: primaryColor.withValues(
@@ -1613,7 +1566,7 @@ class _GiveAwayPageState extends State<GiveAwayPage> {
                                       size: 30,
                                     ),
                                   ),
-                                  SizedBox(height: 20),
+                                  const SizedBox(height: 20),
                                   Text(
                                     textAlign: TextAlign.center,
                                     "Select a giveaway type above to get started",
@@ -1685,7 +1638,7 @@ class _ChooseGiveAwayTypeBottomSheetState
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 Row(
                   children: [
                     Text(
@@ -1703,13 +1656,11 @@ class _ChooseGiveAwayTypeBottomSheetState
                 Column(
                   children: [
                     InkWell(
-                      onTap: () {
-                        Navigator.of(context).pop(0);
-                      },
+                      onTap: () => Navigator.of(context).pop(0),
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Color(0xFFF5F4FC),
+                          color: const Color(0xFFF5F4FC),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Row(
@@ -1720,7 +1671,7 @@ class _ChooseGiveAwayTypeBottomSheetState
                                 borderRadius: BorderRadius.circular(5),
                               ),
                               padding: const EdgeInsets.all(8),
-                              child: Icon(
+                              child: const Icon(
                                 FontAwesomeIcons.peopleGroup,
                                 size: 20,
                                 color: Colors.white,
@@ -1755,13 +1706,11 @@ class _ChooseGiveAwayTypeBottomSheetState
                     ),
                     const SizedBox(height: 12),
                     InkWell(
-                      onTap: () {
-                        Navigator.of(context).pop(1);
-                      },
+                      onTap: () => Navigator.of(context).pop(1),
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Color(0xFFF5F4FC),
+                          color: const Color(0xFFF5F4FC),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Row(
@@ -1807,13 +1756,11 @@ class _ChooseGiveAwayTypeBottomSheetState
                     ),
                     const SizedBox(height: 12),
                     InkWell(
-                      onTap: () {
-                        Navigator.of(context).pop(2);
-                      },
+                      onTap: () => Navigator.of(context).pop(2),
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Color(0xFFF5F4FC),
+                          color: const Color(0xFFF5F4FC),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Row(
@@ -2000,7 +1947,10 @@ class GiveawaysHistoryPage extends StatelessWidget {
                         SizedBox(height: 4),
                         Text(
                           '$numPeople ppl',
-                          style: GoogleFonts.inter(color: Colors.grey, fontSize: 12),
+                          style: GoogleFonts.inter(
+                            color: Colors.grey,
+                            fontSize: 12,
+                          ),
                         ),
                       ],
                     ),

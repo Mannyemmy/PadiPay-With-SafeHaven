@@ -1,6 +1,7 @@
 import 'package:card_app/home_pages/home_page.dart';
 import 'package:card_app/ui/receipt_page.dart';
 import 'package:card_app/utils.dart';
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -38,6 +39,7 @@ class _PaymentSuccessfulPageState extends State<PaymentSuccessfulPage>
   late final AnimationController _controller;
   late final Animation<double> _circleAnimation;
   late final Animation<double> _checkScale;
+  late ConfettiController _confettiController; // new
 
   @override
   void initState() {
@@ -61,6 +63,10 @@ class _PaymentSuccessfulPageState extends State<PaymentSuccessfulPage>
         curve: const Interval(0.5, 1.0, curve: Curves.elasticOut),
       ),
     );
+    _confettiController = ConfettiController(
+      duration: const Duration(seconds: 3),
+    );
+    _confettiController.play(); // start immediately
 
     _controller.forward();
   }
@@ -68,6 +74,7 @@ class _PaymentSuccessfulPageState extends State<PaymentSuccessfulPage>
   @override
   void dispose() {
     _controller.dispose();
+    _confettiController.dispose(); // new
     super.dispose();
   }
 
@@ -85,141 +92,172 @@ class _PaymentSuccessfulPageState extends State<PaymentSuccessfulPage>
         navigateTo(context, HomePage(), type: NavigationType.clearStack);
       },
       child: Scaffold(
-        body: SafeArea(bottom: true,
-          child: SizedBox(
-            height: MediaQuery.of(context).size.height,
-            child: Container(
-              color: primaryColor,
-              child: SafeArea(bottom: true,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.max,
-                    children: [
-                      SizedBox(height: 40),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
+        body: Stack(
+          children: [
+             Align(
+              alignment: Alignment.topCenter,
+              child: ConfettiWidget(
+                confettiController: _confettiController,
+                blastDirectionality: BlastDirectionality.explosive,
+                shouldLoop: false,
+                colors: const [
+                  Colors.green,
+                  Colors.blue,
+                  Colors.pink,
+                  Colors.orange,
+                  Colors.purple,
+                ],
+                numberOfParticles: 30,
+                gravity: 0.2,
+              ),
+            ),
+            SafeArea(
+              bottom: true,
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height,
+                child: Container(
+                  color: primaryColor,
+                  child: SafeArea(
+                    bottom: true,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.max,
                         children: [
-                          InkWell(
-                            onTap: () {
-                              navigateTo(context, HomePage());
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text(
-                                "Done",
-                                style: GoogleFonts.inter(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),Spacer(),
-                      Center(
-                        child: SizedBox(
-                          width: size,
-                          height: size,
-                          child: Stack(
-                            alignment: Alignment.center,
+                          SizedBox(height: 40),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
                             children: [
-                              AnimatedBuilder(
-                                animation: _circleAnimation,
-                                builder: (context, child) {
-                                  return SizedBox(
-                                    width: size,
-                                    height: size,
-                                    child: CircularProgressIndicator(
-                                      value: _circleAnimation.value,
-                                      strokeWidth: 8,
-                                      valueColor:
-                                          const AlwaysStoppedAnimation<Color>(
-                                            Colors.white,
-                                          ),
-                                      backgroundColor: Colors.white24,
-                                    ),
-                                  );
+                              InkWell(
+                                onTap: () {
+                                  navigateTo(context, HomePage());
                                 },
-                              ),
-                              ScaleTransition(
-                                scale: _checkScale,
-                                child: const Icon(
-                                  Icons.verified,
-                                  color: Colors.white,
-                                  size: 120,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Text(
+                                    "Done",
+                                    style: GoogleFonts.inter(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        widget.title,
-                        style: GoogleFonts.inter(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 10),
-                      widget.amount == "0"
-                          ? Text(
-                              "₦${formatNumber(widget.amount)}",
-                              style: GoogleFonts.inter(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 30,
-                                color: Colors.white,
+                          Spacer(),
+                          Center(
+                            child: SizedBox(
+                              width: size,
+                              height: size,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  AnimatedBuilder(
+                                    animation: _circleAnimation,
+                                    builder: (context, child) {
+                                      return SizedBox(
+                                        width: size,
+                                        height: size,
+                                        child: CircularProgressIndicator(
+                                          value: _circleAnimation.value,
+                                          strokeWidth: 8,
+                                          valueColor:
+                                              const AlwaysStoppedAnimation<
+                                                Color
+                                              >(Colors.white),
+                                          backgroundColor: Colors.white24,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  ScaleTransition(
+                                    scale: _checkScale,
+                                    child: const Icon(
+                                      Icons.verified,
+                                      color: Colors.white,
+                                      size: 120,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            )
-                          : SizedBox.shrink(),
-                      SizedBox(height: 15),
-                      Text(
-                        widget.description,
-                        style: GoogleFonts.inter(color: Colors.white70),
-                        textAlign: TextAlign.center,
-                      ),
-
-                      const SizedBox(height: 40),
-                      ElevatedButton(
-                        onPressed: () {
-                          navigateTo(
-                            context,
-                            ReceiptPage(reference: widget.reference),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: primaryColor,
-                          minimumSize: const Size(double.infinity, 50),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(25),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.share, color: primaryColor, size: 22),
-                            SizedBox(width: 15),
-                            Text(
-                              "Share Receipt",
-                              style: GoogleFonts.inter(fontWeight: FontWeight.bold),
                             ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(height: 20),
+                          Text(
+                            widget.title,
+                            style: GoogleFonts.inter(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 10),
+                          widget.amount == "0"
+                              ? Text(
+                                  "₦${formatNumber(widget.amount)}",
+                                  style: GoogleFonts.inter(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 30,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : SizedBox.shrink(),
+                          SizedBox(height: 15),
+                          Text(
+                            widget.description,
+                            style: GoogleFonts.inter(color: Colors.white70),
+                            textAlign: TextAlign.center,
+                          ),
+
+                          const SizedBox(height: 40),
+                          ElevatedButton(
+                            onPressed: () {
+                              navigateTo(
+                                context,
+                                ReceiptPage(reference: widget.reference),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: primaryColor,
+                              minimumSize: const Size(double.infinity, 50),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(25),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.share,
+                                  color: primaryColor,
+                                  size: 22,
+                                ),
+                                SizedBox(width: 15),
+                                Text(
+                                  "Share Receipt",
+                                  style: GoogleFonts.inter(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Spacer(),
+                        ],
                       ),
-                      const SizedBox(height: 10),
-                      Spacer(),
-                    ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
+           
+          ],
         ),
       ),
     );

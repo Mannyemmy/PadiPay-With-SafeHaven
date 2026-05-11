@@ -30,7 +30,7 @@
 <uses-feature android:name="android.hardware.wifi.direct" android:required="false"/>
 
     <application
-        android:label="Padi Pay"
+        android:label="PadiPay"
           android:usesCleartextTraffic="false"
         android:name="${applicationName}"
         android:enableOnBackInvokedCallback="true"
@@ -42,33 +42,35 @@
         <meta-data
         android:name="firebase_appcheck_debug_provider"
         android:value="true" />
-        <service android:name="com.novice.flutter_nfc_hce.KHostApduService"
-  android:exported="true"
-  android:enabled="true"
-  android:permission="android.permission.BIND_NFC_SERVICE">
-  <intent-filter>
-    <action android:name="android.nfc.cardemulation.action.HOST_APDU_SERVICE"/>
-    <category android:name="android.intent.category.DEFAULT"/>
-  </intent-filter>
-  <meta-data android:name="android.nfc.cardemulation.host_apdu_service"
-    android:resource="@xml/apduservice"/>
+  
+
+     <!-- CloudCard payment service — highest priority -->
+<service
+    android:name="com.sudo.cloud_card.HCEService"
+    android:enabled="true"
+    android:exported="true"
+    android:permission="android.permission.BIND_NFC_SERVICE">
+    <intent-filter android:priority="1000">
+        <action android:name="android.nfc.cardemulation.action.HOST_APDU_SERVICE" />
+        <category android:name="android.intent.category.DEFAULT" />
+    </intent-filter>
+    <meta-data
+        android:name="android.nfc.cardemulation.host_apdu_service"
+        android:resource="@xml/cloudcard_apduservice" />
 </service>
 
-        <!-- Sudo Cloud Card: EMV HCE service for tap-to-pay at POS terminals -->
-        <service
-            android:name="com.sudo.cloud_card.HCEService"
-            android:enableOnBackInvokedCallback="true"
-            android:enabled="true"
-            android:exported="true"
-            android:permission="android.permission.BIND_NFC_SERVICE">
-            <intent-filter>
-                <action android:name="android.nfc.cardemulation.action.HOST_APDU_SERVICE" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-            <meta-data
-                android:name="android.nfc.cardemulation.host_apdu_service"
-                android:resource="@xml/cloudcard_apduservice" />
-        </service>
+<!-- NDEF HCE for peer-to-peer — lower priority, different AID category -->
+<service android:name="com.novice.flutter_nfc_hce.KHostApduService"
+    android:exported="true"
+    android:enabled="true"
+    android:permission="android.permission.BIND_NFC_SERVICE">
+    <intent-filter android:priority="100">
+        <action android:name="android.nfc.cardemulation.action.HOST_APDU_SERVICE"/>
+        <category android:name="android.intent.category.DEFAULT"/>
+    </intent-filter>
+    <meta-data android:name="android.nfc.cardemulation.host_apdu_service"
+        android:resource="@xml/apduservice"/>
+</service>
 
         <!-- Sudo Cloud Card: event receiver for NFC scan callbacks -->
         <receiver

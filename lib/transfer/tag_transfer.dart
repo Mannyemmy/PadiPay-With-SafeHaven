@@ -34,14 +34,152 @@ class _TagTransferPageState extends State<TagTransferPage> {
   bool _loadingRecents = false;
   int _currentPage = 0;
 
+  // ── Cached user data (loaded once at init) ──────────────────────────────
+  Map<String, dynamic>? _cachedUserDoc;
+  double? _cachedBalance;
+  bool _isFetchingBalance = false;
+  Map<String, dynamic>? _cachedCompanyVa;
+  String? _ownAccountNumber;
+
   @override
   void initState() {
     super.initState();
     amountController.addListener(_updateFee);
     usernameController.addListener(_debounceCheckUsername);
-    _loadRecentTagTransfers();
+    _initAllParallel();
   }
 
+  /// Kicks off all background loads simultaneously.
+  Future<void> _initAllParallel() async {
+    await Future.wait([
+      _prefetchUserDoc(),
+      _loadRecentTagTransfers(),
+    ]);
+  }
+
+  // ── User doc + balance: loaded ONCE ─────────────────────────────────────
+  Future<void> _prefetchUserDoc() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      _cachedUserDoc = doc.data();
+      _ownAccountNumber =
+          _cachedUserDoc?['safehavenData']?['virtualAccount']?['data']?['attributes']?['accountNumber']
+              ?.toString();
+
+      // Fetch balance in background
+      _fetchAndCacheBalance();
+
+      // Pre-fetch company VA
+      _cachedCompanyVa = await getCompanyVirtualAccount();
+    } catch (e) {
+      debugPrint('_prefetchUserDoc error: $e');
+    }
+  }
+
+  Future<void> _fetchAndCacheBalance() async {
+    if (_isFetchingBalance) return;
+    _isFetchingBalance = true;
+    try {
+      final accountId =
+          _cachedUserDoc?['safehavenData']?['virtualAccount']?['data']?['id']
+              ?.toString();
+      if (accountId == null || accountId.isEmpty) return;
+
+      final callable = FirebaseFunctions.instance.httpsCallable(
+        'safehavenFetchAccountBalance',
+      );
+      final result = await callable.call({'accountId': accountId});
+      final balanceKobo =
+          (result.data['data']['availableBalance'] as num?)?.toDouble() ?? 0.0;
+      _cachedBalance = balanceKobo / 100;
+      debugPrint('✅ Balance pre-fetched for tag transfer: ₦$_cachedBalance');
+    } catch (e) {
+      debugPrint('_fetchAndCacheBalance error: $e');
+    } finally {
+      _isFetchingBalance = false;
+    }
+  }
+
+  Future<double> _getBalance() async {
+    if (_cachedBalance != null) return _cachedBalance!;
+    await _fetchAndCacheBalance();
+    return _cachedBalance ?? 0.0;
+  }
+
+  Future<bool> _checkBalance(double amountNaira) async {
+    const fee = 0.0; // Tag transfers are free
+    final totalRequired = amountNaira + fee;
+    final balance = await _getBalance();
+    if (balance < totalRequired) {
+      showSimpleDialog(
+        'Insufficient balance. Balance: ₦${balance.toStringAsFixed(2)}. '
+        'Required: ₦${totalRequired.toStringAsFixed(2)} (no fee)',
+        Colors.red,
+      );
+      return false;
+    }
+    return true;
+  }
+
+  Future<Map<String, dynamic>?> getCompanyVirtualAccount() async {
+    if (_cachedCompanyVa != null) return _cachedCompanyVa;
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('company')
+          .doc('account_details')
+          .get();
+      if (!doc.exists) return null;
+      final data = doc.data() ?? <String, dynamic>{};
+      final rawCompanyId =
+          data['safehavenAccountId']?.toString() ??
+          data['safehaven_account_id']?.toString() ??
+          data['accountId']?.toString() ??
+          '';
+      final companyAccountNumber =
+          data['safehavenAccountNumber']?.toString() ??
+          data['safehaven_account_number']?.toString() ??
+          data['accountNumber']?.toString() ??
+          '';
+      final companyBankId =
+          data['safehavenBankCode']?.toString() ??
+          data['safehaven_bank_code']?.toString() ??
+          data['bankId']?.toString() ??
+          '090286';
+      final companyId =
+          (rawCompanyId.isNotEmpty &&
+              !rawCompanyId.toLowerCase().contains('anc_acc'))
+          ? rawCompanyId
+          : companyAccountNumber;
+      return {
+        'uid': doc.id,
+        'id': companyId,
+        'type':
+            data['safehavenAccountType']?.toString() ??
+            data['accountType']?.toString() ??
+            'BankAccount',
+        'bankId': companyBankId,
+        'bankName':
+            data['safehavenBankName']?.toString() ??
+            data['bankName']?.toString() ??
+            'SAFE HAVEN MICROFINANCE BANK',
+        'accountNumber': companyAccountNumber,
+        'accountName':
+            data['safehavenAccountName']?.toString() ??
+            data['accountName']?.toString() ??
+            '',
+      };
+    } catch (e) {
+      debugPrint('getCompanyVirtualAccount error: $e');
+      return null;
+    }
+  }
+
+  // ── Recent transfers (load once, then update on success) ────────────────
   Future<void> _loadRecentTagTransfers() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -102,15 +240,14 @@ class _TagTransferPageState extends State<TagTransferPage> {
 
   void _updateFee() {
     final amount = double.tryParse(amountController.text) ?? 0.0;
-    final fee = amount > 0 ? 0.0 : 0.0;
     setState(() {
-      feeText = "Fee: ₦${fee.toStringAsFixed(2)}";
+      feeText = amount > 0 ? "Free transfer" : "Free transfers";
     });
   }
 
   void _debounceCheckUsername() {
     _usernameDebounce?.cancel();
-    _usernameDebounce = Timer(Duration(milliseconds: 500), _checkUsername);
+    _usernameDebounce = Timer(const Duration(milliseconds: 500), _checkUsername);
   }
 
   Future<void> _checkUsername() async {
@@ -128,7 +265,6 @@ class _TagTransferPageState extends State<TagTransferPage> {
     setState(() => isCheckingUsername = true);
 
     try {
-      // Check the public `usernames` index first (fast, allowed without auth)
       final usernameDoc = await FirebaseFirestore.instance
           .collection('usernames')
           .doc(username)
@@ -162,7 +298,7 @@ class _TagTransferPageState extends State<TagTransferPage> {
 
       setState(() {
         isUsernameValid = userDoc.exists;
-        recipientData = userDoc.exists ? userDoc.data() : null;
+        recipientData = userDoc.data();
         receiverUid = userDoc.exists ? userDoc.id : null;
         isCheckingUsername = false;
       });
@@ -178,58 +314,6 @@ class _TagTransferPageState extends State<TagTransferPage> {
     }
   }
 
-  Future<Map<String, dynamic>?> getCompanyVirtualAccount() async {
-    try {
-      final doc = await FirebaseFirestore.instance
-          .collection('company')
-          .doc('account_details')
-          .get();
-      if (!doc.exists) return null;
-      final data = doc.data() ?? <String, dynamic>{};
-      final rawCompanyId =
-          data['safehavenAccountId']?.toString() ??
-          data['safehaven_account_id']?.toString() ??
-          data['accountId']?.toString() ??
-          '';
-      final companyAccountNumber =
-          data['safehavenAccountNumber']?.toString() ??
-          data['safehaven_account_number']?.toString() ??
-          data['accountNumber']?.toString() ??
-          '';
-      final companyBankId =
-          data['safehavenBankCode']?.toString() ??
-          data['safehaven_bank_code']?.toString() ??
-          data['bankId']?.toString() ??
-          '999240';
-      final companyId =
-          (rawCompanyId.isNotEmpty &&
-              !rawCompanyId.toLowerCase().contains('anc_acc'))
-          ? rawCompanyId
-          : companyAccountNumber;
-      return {
-        'uid': doc.id,
-        'id': companyId,
-        'type':
-            data['safehavenAccountType']?.toString() ??
-            data['accountType']?.toString() ??
-            'BankAccount',
-        'bankId': companyBankId,
-        'bankName':
-            data['safehavenBankName']?.toString() ??
-            data['bankName']?.toString() ??
-            'SAFE HAVEN MICROFINANCE BANK',
-        'accountNumber': companyAccountNumber,
-        'accountName':
-            data['safehavenAccountName']?.toString() ??
-            data['accountName']?.toString() ??
-            '',
-      };
-    } catch (e) {
-      debugPrint('getCompanyVirtualAccount error: $e');
-      return null;
-    }
-  }
-
   Future<void> _createCounterparty() async {
     if (recipientData == null || !isUsernameValid) {
       showSimpleDialog('Please verify recipient tag', Colors.red);
@@ -239,83 +323,49 @@ class _TagTransferPageState extends State<TagTransferPage> {
     setState(() => isLoading = true);
     try {
       final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        showSimpleDialog('No authenticated user found', Colors.red);
-        setState(() => isLoading = false);
-        return;
-      }
+      if (user == null) throw Exception('Not authenticated');
 
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
-      final accountId = userDoc
-          .data()?['safehavenData']?['virtualAccount']?['data']?['id'];
-      final accountType = userDoc
-          .data()?['safehavenData']?['virtualAccount']?['data']?['type'];
-      final bankIdRaw = userDoc
-          .data()?['safehavenData']?['virtualAccount']?['data']?['attributes']?['bank']?['id'];
-      final bankNameCandidate =
-          userDoc.data()?['safehavenData']?['virtualAccount']?['data']?['attributes']?['bank']?['name']
-              as String?;
+      final userVaData = _cachedUserDoc?['safehavenData']?['virtualAccount']?['data'];
+      final accountId = userVaData?['id']?.toString();
+      final accountType = userVaData?['type']?.toString();
+      final bankIdRaw = userVaData?['attributes']?['bank']?['id']?.toString();
+      final bankNameCandidate = userVaData?['attributes']?['bank']?['name']?.toString();
       final bankId = await resolveBankId(
-        bankId: bankIdRaw?.toString(),
+        bankId: bankIdRaw,
         bankName: bankNameCandidate,
       );
 
-      if (accountId == null) {
-        showSimpleDialog('Account ID not found', Colors.red);
-        setState(() => isLoading = false);
-        return;
-      }
-      if (bankId == null) {
-        showSimpleDialog('Bank ID not found', Colors.red);
-        setState(() => isLoading = false);
-        return;
-      }
-      if (accountType == null) {
-        showSimpleDialog('Account Type not found', Colors.red);
-        setState(() => isLoading = false);
-        return;
+      if (accountId == null || bankId == null || accountType == null) {
+        throw Exception('User account details incomplete');
       }
 
       final recipientAccountNumber =
-          recipientData!['safehavenData']?['virtualAccount']?['data']?['attributes']?['accountNumber'];
+          recipientData!['safehavenData']?['virtualAccount']?['data']?['attributes']?['accountNumber']
+              ?.toString();
       final recipientBankIdRaw =
           recipientData!['safehavenData']?['virtualAccount']?['data']?['attributes']?['bank']?['id'];
       final recipientBankName =
           recipientData!['safehavenData']?['virtualAccount']?['data']?['attributes']?['bank']?['name'];
       final recipientAccountName =
           recipientData!['safehavenData']?['virtualAccount']?['data']?['attributes']?['accountName'];
+
       final recipientBankId = await resolveBankId(
         bankId: recipientBankIdRaw?.toString(),
         bankName: recipientBankName,
       );
 
       if (recipientAccountNumber == null || recipientBankId == null) {
-        showSimpleDialog(
-          'Recipient doesn\'t have bank account details yet',
-          Colors.red,
-        );
+        throw Exception('Recipient missing bank details');
+      }
+
+      // Prevent self counterparty
+      if (_ownAccountNumber != null && _ownAccountNumber == recipientAccountNumber) {
+        showSimpleDialog('You cannot create a counterparty for your own account', Colors.red);
         setState(() => isLoading = false);
         return;
       }
 
-      // Prevent creating counterparty for own account
-      final ownAccountNumber = userDoc
-          .data()?['safehavenData']?['virtualAccount']?['data']?['attributes']?['accountNumber']
-          ?.toString();
-      if (ownAccountNumber != null &&
-          ownAccountNumber == recipientAccountNumber) {
-        showSimpleDialog(
-          'You cannot create a counterparty for your own account',
-          Colors.red,
-        );
-        setState(() => isLoading = false);
-        return;
-      }
-
-      // Check if counterparty already exists
+      // Check existing counterparty
       final query = await FirebaseFirestore.instance
           .collection('counterparties')
           .where('userId', isEqualTo: user.uid)
@@ -325,9 +375,7 @@ class _TagTransferPageState extends State<TagTransferPage> {
           .get();
 
       if (query.docs.isNotEmpty) {
-        setState(() {
-          counterpartyId = query.docs.first.id;
-        });
+        setState(() => counterpartyId = query.docs.first.id);
         setState(() => isLoading = false);
         return;
       }
@@ -343,10 +391,10 @@ class _TagTransferPageState extends State<TagTransferPage> {
             'accountNumber': recipientAccountNumber,
             'bankCode': recipientBankId,
           });
-      final counterpartyIdd = result.data['data']['id'];
+      final newId = result.data['data']['id'];
       await FirebaseFirestore.instance
           .collection('counterparties')
-          .doc(counterpartyIdd)
+          .doc(newId)
           .set({
             ...result.data,
             'userId': user.uid,
@@ -354,78 +402,54 @@ class _TagTransferPageState extends State<TagTransferPage> {
             'recipientBankCode': recipientBankId,
             'ownerAccountId': accountId,
           });
-
-      setState(() {
-        counterpartyId = counterpartyIdd;
-      });
+      setState(() => counterpartyId = newId);
     } catch (e) {
       debugPrint('createCounterparty error: $e');
       showSimpleDialog('Error creating counterparty', Colors.red);
+    } finally {
+      if (mounted) setState(() => isLoading = false);
     }
-    setState(() => isLoading = false);
   }
 
   Future<void> _safehavenTransferIntra() async {
-    if (recipientData == null || amountController.text.isEmpty) {
-      return;
-    }
+    if (recipientData == null || amountController.text.isEmpty) return;
 
-    // Verify PIN before proceeding
+    final amountToSend = double.parse(amountController.text);
+    if (!await _checkBalance(amountToSend)) return;
+
     final pinVerified = await verifyTransactionPin();
-    if (!pinVerified) {
-      return;
-    }
+    if (!pinVerified) return;
 
     setState(() => isLoading = true);
     try {
       final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        showSimpleDialog('No authenticated user found', Colors.red);
-        setState(() => isLoading = false);
-        return;
-      }
+      if (user == null) throw Exception('Not authenticated');
 
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
-      final userVaData = userDoc
-          .data()?['safehavenData']?['virtualAccount']?['data'];
+      final userVaData = _cachedUserDoc?['safehavenData']?['virtualAccount']?['data'];
       final fromAccountId = userVaData?['id']?.toString();
+      if (fromAccountId == null) throw Exception('User account ID missing');
 
-      if (fromAccountId == null) {
-        showSimpleDialog('Account details not found', Colors.red);
-        setState(() => isLoading = false);
-        return;
-      }
-
-      // Get recipient's SafeHaven account ID
-      final recipientVaData =
-          recipientData!['safehavenData']?['virtualAccount']?['data'];
+      final recipientVaData = recipientData!['safehavenData']?['virtualAccount']?['data'];
       final toAccountId = recipientVaData?['id']?.toString();
-      final recipientAccountNumber =
-          recipientVaData?['attributes']?['accountNumber']?.toString() ?? '';
+      final recipientAccountNumber = recipientVaData?['attributes']?['accountNumber']?.toString() ?? '';
 
       if (toAccountId == null || toAccountId.isEmpty) {
-        showSimpleDialog('Recipient account not found', Colors.red);
-        setState(() => isLoading = false);
-        return;
+        throw Exception('Recipient account not found');
       }
 
-      // Prevent sending to own account
-      if (receiverUid != null && receiverUid == user.uid) {
+      // Prevent self transfer
+      if (receiverUid == user.uid) {
         showSimpleDialog('You cannot send money to your own tag', Colors.red);
         setState(() => isLoading = false);
         return;
       }
 
-      final amountNaira = double.parse(amountController.text);
       final result = await FirebaseFunctions.instance
           .httpsCallable('safehavenTransferIntra')
           .call({
             'fromAccountId': fromAccountId,
             'toAccountId': toAccountId,
-            'amount': amountNaira * 100, // Convert to kobo
+            'amount': amountToSend * 100,
             'currency': 'NGN',
             'narration': remarkController.text.trim().isEmpty
                 ? 'Transfer to @${usernameController.text}'
@@ -434,58 +458,55 @@ class _TagTransferPageState extends State<TagTransferPage> {
           });
 
       final status = result.data['data']['attributes']['status'];
-      if (status == "FAILED") {
-        final failureReason =
-            result.data['data']['attributes']['failureReason'];
+      if (status == 'FAILED') {
+        final failureReason = result.data['data']['attributes']['failureReason'];
         showSimpleDialog('Transfer failed: $failureReason', Colors.red);
         setState(() => isLoading = false);
         return;
       }
 
-      final recipientAccountName =
-          recipientVaData?['attributes']?['accountName']?.toString() ?? '';
-      final recipientBankName =
-          recipientVaData?['attributes']?['bank']?['name']?.toString() ??
-          'Safe Haven MFB';
-      final recipientBankId =
-          recipientVaData?['attributes']?['bank']?['id']?.toString() ??
-          '090286';
+      final recipientAccountName = recipientVaData?['attributes']?['accountName']?.toString() ?? '';
+      final recipientBankName = recipientVaData?['attributes']?['bank']?['name']?.toString() ?? 'Safe Haven Microfinance Bank';
+      final recipientBankId = recipientVaData?['attributes']?['bank']?['id']?.toString() ?? '090286';
 
-      // Save transaction record
-      await FirebaseFirestore.instance.collection('transactions').add({
-        'userId': user.uid,
-        'receiverId': receiverUid ?? 'unknown',
-        'type': 'transfer',
-        'bank_code': recipientBankId,
-        'account_number': recipientAccountNumber,
-        'amount': amountNaira,
-        'reason': remarkController.text,
-        'currency': 'NGN',
-        'api_response': result.data,
-        'reference': result.data['data']['id'] ?? '',
-        'recipientName': recipientAccountName,
-        'bankName': recipientBankName,
-        'username': usernameController.text,
-        'timestamp': FieldValue.serverTimestamp(),
-      });
+      // Save transaction
+      // await FirebaseFirestore.instance.collection('transactions').add({
+      //   'userId': user.uid,
+      //   'receiverId': receiverUid ?? 'unknown',
+      //   'type': 'transfer',
+      //   'bank_code': recipientBankId,
+      //   'account_number': recipientAccountNumber,
+      //   'amount': amountToSend,
+      //   'reason': remarkController.text,
+      //   'currency': 'NGN',
+      //   'api_response': result.data,
+      //   'reference': result.data['data']['id'],
+      //   'recipientName': recipientAccountName,
+      //   'bankName': recipientBankName,
+      //   'username': usernameController.text,
+      //   'timestamp': FieldValue.serverTimestamp(),
+      // });
+
+      // Refresh recent transfers after success
+      _loadRecentTagTransfers();
 
       showModalBottomSheet(
         context: context,
         builder: (context) => PaymentSuccessfulPage(
           amount: amountController.text,
-          actionText: "Done",
-          title: "Payment Successful",
-          description: "Your transfer has been processed successfully.",
+          actionText: 'Done',
+          title: 'Payment Successful',
+          description: 'Your transfer has been processed successfully.',
           recipientName: recipientAccountName,
           bankName: recipientBankName,
           bankCode: recipientBankId,
           accountNumber: recipientAccountNumber,
-          reference: result.data['data']['id'] ?? "",
+          reference: result.data['data']['id'],
         ),
         isScrollControlled: true,
       );
 
-      // Clear form after successful transfer
+      // Clear form
       amountController.clear();
       remarkController.clear();
       setState(() {
@@ -497,234 +518,152 @@ class _TagTransferPageState extends State<TagTransferPage> {
       });
     } catch (e) {
       debugPrint('safehavenTransferIntra error: $e');
-      showSimpleDialog(
-        'Error processing transfer: ${e.toString()}',
-        Colors.red,
-      );
+      showSimpleDialog('Error processing transfer: ${e.toString()}', Colors.red);
     } finally {
-      setState(() => isLoading = false);
+      if (mounted) setState(() => isLoading = false);
     }
   }
-Future<void> _ghostTransfer() async {
-  if (recipientData == null || amountController.text.isEmpty) {
-    showSimpleDialog('Please complete all fields', Colors.red);
-    return;
-  }
 
-  // Verify PIN before proceeding
-  final pinVerified = await verifyTransactionPin();
-  if (!pinVerified) {
-    return;
-  }
-
-  setState(() => isLoading = true);
-  try {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      showSimpleDialog('No authenticated user found', Colors.red);
-      setState(() => isLoading = false);
+  Future<void> _ghostTransfer() async {
+    if (recipientData == null || amountController.text.isEmpty) {
+      showSimpleDialog('Please complete all fields', Colors.red);
       return;
     }
 
-    final userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .get();
-    final userVaData = userDoc
-        .data()?['safehavenData']?['virtualAccount']?['data'];
-    if (userVaData == null) {
-      showSimpleDialog('User account not found', Colors.red);
-      setState(() => isLoading = false);
-      return;
-    }
-    final userAccountId = userVaData['id']?.toString() ?? '';
-    final userAccountType = userVaData['type']?.toString() ?? '';
-    final userBankIdRaw = userVaData['attributes']?['bank']?['id']
-        ?.toString();
-    final userBankName = userVaData['attributes']?['bank']?['name']
-        ?.toString();
-    final userBankId =
-        (await resolveBankId(
-          bankId: userBankIdRaw,
-          bankName: userBankName,
-        )) ??
-        '';
-    if (userAccountId.isEmpty ||
-        userAccountType.isEmpty ||
-        userBankId.isEmpty) {
-      showSimpleDialog('User account details not found', Colors.red);
-      setState(() => isLoading = false);
-      return;
-    }
+    final amountToSend = double.parse(amountController.text);
+    if (!await _checkBalance(amountToSend)) return;
 
-    // Fetch company account details directly from SafeHaven API via Cloud Function
-    final companyResult = await FirebaseFunctions.instance
-        .httpsCallable('fetchCompanySafehavenAccounts')
-        .call({
-          'isSubAccount': false,
-          'page': 0,
-          'limit': 100,
-        });
-    
-    final companyData = companyResult.data;
-    final companyAccount = companyData['companyAccount'];
-    
-    if (companyAccount == null || companyAccount['id'] == null || companyAccount['accountNumber'] == null) {
-      showSimpleDialog('Company account not found. Please try again.', Colors.red);
-      setState(() => isLoading = false);
-      return;
-    }
-    
-    final companyVa = {
-      'id': companyAccount['id'],
-      'accountNumber': companyAccount['accountNumber'],
-      'accountName': companyAccount['accountName'] ?? 'PadiPay Limited',
-      'type': companyAccount['accountType'] ?? 'BankAccount',
-      'bankId': '090286',
-      'bankName': 'SAFE HAVEN MICROFINANCE BANK',
-      'uid': 'company',
-    };
+    final pinVerified = await verifyTransactionPin();
+    if (!pinVerified) return;
 
-    final recipientAccountNumber =
-        recipientData!['safehavenData']?['virtualAccount']?['data']?['attributes']?['accountNumber']
-            ?.toString() ??
-        '';
-    final recipientAccountId =
-        recipientData!['safehavenData']?['virtualAccount']?['data']?['id']
-            ?.toString();
-    final recipientBankIdRaw =
-        recipientData!['safehavenData']?['virtualAccount']?['data']?['attributes']?['bank']?['id'];
-    final recipientBankName =
-        recipientData!['safehavenData']?['virtualAccount']?['data']?['attributes']?['bank']?['name'];
-    final recipientAccountName =
-        recipientData!['safehavenData']?['virtualAccount']?['data']?['attributes']?['accountName'];
-    final recipientBankId = await resolveBankId(
-      bankId: recipientBankIdRaw?.toString(),
-      bankName: recipientBankName,
-    );
+    setState(() => isLoading = true);
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) throw Exception('Not authenticated');
 
-    if (recipientAccountNumber.isEmpty || recipientBankId == null) {
-      showSimpleDialog(
-        'Recipient doesn\'t have bank account details yet',
-        Colors.red,
+      // Use cached user data
+      final userVaData = _cachedUserDoc?['safehavenData']?['virtualAccount']?['data'];
+      if (userVaData == null) throw Exception('User account not found');
+      final userAccountId = userVaData['id']?.toString() ?? '';
+      final userAccountType = userVaData['type']?.toString() ?? '';
+      final userBankIdRaw = userVaData['attributes']?['bank']?['id']?.toString();
+      final userBankName = userVaData['attributes']?['bank']?['name']?.toString();
+      final userBankId = await resolveBankId(bankId: userBankIdRaw, bankName: userBankName) ?? '';
+      if (userAccountId.isEmpty || userAccountType.isEmpty || userBankId.isEmpty) {
+        throw Exception('User account details incomplete');
+      }
+
+      // Use cached company VA
+      final companyVa = _cachedCompanyVa ?? await getCompanyVirtualAccount();
+      if (companyVa == null || (companyVa['id'] as String).isEmpty) {
+        throw Exception('Company account not found');
+      }
+
+      final recipientVaData = recipientData!['safehavenData']?['virtualAccount']?['data'];
+      final recipientAccountNumber = recipientVaData?['attributes']?['accountNumber']?.toString() ?? '';
+      final recipientAccountId = recipientVaData?['id']?.toString();
+      final recipientBankIdRaw = recipientVaData?['attributes']?['bank']?['id'];
+      final recipientBankName = recipientVaData?['attributes']?['bank']?['name']?.toString();
+      final recipientAccountName = recipientVaData?['attributes']?['accountName']?.toString() ?? '';
+      final recipientBankId = await resolveBankId(
+        bankId: recipientBankIdRaw?.toString(),
+        bankName: recipientBankName,
       );
-      setState(() => isLoading = false);
-      return;
-    }
-    final resolvedRecipientDestination =
-        (recipientAccountId != null && recipientAccountId.isNotEmpty)
-        ? recipientAccountId
-        : recipientAccountNumber;
+      if (recipientAccountNumber.isEmpty || recipientBankId == null) {
+        throw Exception('Recipient missing bank details');
+      }
+      final resolvedRecipientDestination = (recipientAccountId != null && recipientAccountId.isNotEmpty)
+          ? recipientAccountId
+          : recipientAccountNumber;
 
-    // First transfer: user to company (book transfer)
-    final amountNaira = double.parse(amountController.text);
-    final fee = 0;
-    final amountToCompanyKobo = (amountNaira + fee) * 100;
-    final narration1 =
-        'Ghost Mode to Company: ${remarkController.text.isNotEmpty ? remarkController.text : 'Transfer'}';
-    final firstResult = await FirebaseFunctions.instance
-        .httpsCallable('safehavenTransferIntra')
-        .call({
-          'fromAccountId': userAccountId,
-          'toAccountId': companyVa['id'],
-          'amount': amountToCompanyKobo,
-          'currency': 'NGN',
-          'narration': narration1,
-          'idempotencyKey': const Uuid().v4(),
-        });
-    final firstStatus = firstResult.data['data']['attributes']['status'];
-    final firstFailureReason =
-        firstResult.data['data']['attributes']['failureReason'];
-    if (firstStatus == "FAILED") {
-      showSimpleDialog(
-        'Transfer to company failed: $firstFailureReason',
-        Colors.red,
+      // Step 1: user → company (intra)
+      final amountToCompanyKobo = amountToSend * 100; // no fee for tag transfers
+      final firstResult = await FirebaseFunctions.instance
+          .httpsCallable('safehavenTransferIntra')
+          .call({
+            'fromAccountId': userAccountId,
+            'toAccountId': companyVa['id'],
+            'amount': amountToCompanyKobo,
+            'currency': 'NGN',
+            'narration': 'Ghost Mode to Company: ${remarkController.text.isNotEmpty ? remarkController.text : 'Transfer'}',
+            'idempotencyKey': const Uuid().v4(),
+          });
+      if (firstResult.data['data']['attributes']['status'] == 'FAILED') {
+        throw Exception('Transfer to company failed: ${firstResult.data['data']['attributes']['failureReason']}');
+      }
+
+      // Step 2: company → recipient (intra)
+      final secondResult = await FirebaseFunctions.instance
+          .httpsCallable('safehavenTransferIntra')
+          .call({
+            'fromAccountId': companyVa['id'],
+            'toAccountId': resolvedRecipientDestination,
+            'toBankCode': recipientBankId,
+            'amount': amountToSend * 100,
+            'currency': 'NGN',
+            'narration': remarkController.text.isNotEmpty ? remarkController.text : 'Ghost Mode Transfer',
+            'idempotencyKey': const Uuid().v4(),
+          });
+      if (secondResult.data['data']['attributes']['status'] == 'FAILED') {
+        throw Exception('Transfer to recipient failed: ${secondResult.data['data']['attributes']['failureReason']}');
+      }
+
+      // Log transaction
+      // await FirebaseFirestore.instance.collection('transactions').add({
+      //   'actualSender': user.uid,
+      //   'userId': 'company',
+      //   'receiverId': receiverUid ?? 'unknown',
+      //   'type': 'ghost_transfer',
+      //   'bank_code': recipientBankId,
+      //   'account_number': recipientAccountNumber,
+      //   'amount': amountToSend,
+      //   'reason': remarkController.text,
+      //   'currency': 'NGN',
+      //   'api_response': secondResult.data,
+      //   'reference': secondResult.data['data']['id'],
+      //   'recipientName': recipientAccountName,
+      //   'bankName': recipientBankName ?? 'Unknown Bank',
+      //   'username': usernameController.text,
+      //   'timestamp': FieldValue.serverTimestamp(),
+      // });
+
+      // Refresh recent transfers
+      _loadRecentTagTransfers();
+
+      showModalBottomSheet(
+        context: context,
+        builder: (context) => PaymentSuccessfulPage(
+          amount: amountController.text,
+          actionText: 'Done',
+          title: 'Payment Successful',
+          description: 'Your transfer has been processed successfully.',
+          recipientName: recipientAccountName,
+          bankName: recipientBankName ?? 'Unknown Bank',
+          bankCode: recipientBankId,
+          accountNumber: recipientAccountNumber,
+          reference: secondResult.data['data']['id'],
+        ),
+        isScrollControlled: true,
       );
-      setState(() => isLoading = false);
-      return;
+
+      // Clear form
+      amountController.clear();
+      remarkController.clear();
+      setState(() {
+        _currentPage = 0;
+        usernameController.clear();
+        recipientData = null;
+        receiverUid = null;
+        isUsernameValid = false;
+      });
+    } catch (e) {
+      debugPrint('ghostTransfer error: $e');
+      showSimpleDialog('Error processing ghost transfer: ${e.toString()}', Colors.red);
+    } finally {
+      if (mounted) setState(() => isLoading = false);
     }
-
-    // Second transfer: company to recipient (intra)
-    final amountToRecipientKobo = amountNaira * 100;
-    final narration2 = remarkController.text.isNotEmpty
-        ? remarkController.text
-        : 'Ghost Mode Transfer';
-    final secondResult = await FirebaseFunctions.instance
-        .httpsCallable('safehavenTransferIntra')
-        .call({
-          'fromAccountId': companyVa['id'],
-          'toAccountId': resolvedRecipientDestination,
-          'toBankCode': recipientBankId,
-          'amount': amountToRecipientKobo,
-          'currency': 'NGN',
-          'narration': narration2,
-          'idempotencyKey': const Uuid().v4(),
-        });
-    final secondStatus = secondResult.data['data']['attributes']['status'];
-    final secondFailureReason =
-        secondResult.data['data']['attributes']['failureReason'];
-    if (secondStatus == "FAILED") {
-      showSimpleDialog(
-        'Transfer to recipient failed: $secondFailureReason',
-        Colors.red,
-      );
-      setState(() => isLoading = false);
-      return;
-    }
-
-    // Log transaction
-    await FirebaseFirestore.instance.collection('transactions').add({
-      'actualSender': user.uid,
-      'userId': 'company',
-      'receiverId': receiverUid ?? 'unknown',
-      'type': 'ghost_transfer',
-      'bank_code': recipientBankId,
-      'account_number': recipientAccountNumber,
-      'amount': amountNaira,
-      'reason': remarkController.text,
-      'currency': 'NGN',
-      'api_response': secondResult.data,
-      'reference': secondResult.data['data']['id'],
-      'recipientName': recipientAccountName,
-      'bankName': recipientBankName,
-      'username': usernameController.text,
-      'timestamp': FieldValue.serverTimestamp(),
-    });
-
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => PaymentSuccessfulPage(
-        amount: amountController.text,
-        actionText: "Done",
-        title: "Payment Successful",
-        description: "Your transfer has been processed successfully.",
-        recipientName: recipientAccountName,
-        bankName: recipientBankName ?? 'Unknown Bank',
-        bankCode: recipientBankId,
-        accountNumber: recipientAccountNumber,
-        reference: secondResult.data['data']['id'] ?? "",
-      ),
-      isScrollControlled: true,
-    );
-    
-    // Clear form after successful transfer
-    amountController.clear();
-    remarkController.clear();
-    setState(() {
-      _currentPage = 0;
-      usernameController.clear();
-      recipientData = null;
-      receiverUid = null;
-      isUsernameValid = false;
-    });
-    
-  } catch (e) {
-    debugPrint('ghostTransfer error: $e');
-    showSimpleDialog('Error processing ghost transfer: ${e.toString()}', Colors.red);
-  } finally {
-    setState(() => isLoading = false);
   }
-}
+
   @override
   void dispose() {
     amountController.removeListener(_updateFee);
@@ -750,7 +689,7 @@ Future<void> _ghostTransfer() async {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
                     Row(
                       children: [
                         InkWell(
@@ -761,28 +700,25 @@ Future<void> _ghostTransfer() async {
                               setState(() => _currentPage = 0);
                             }
                           },
-                          child: Icon(
-                            Icons.arrow_back_ios,
-                            color: Colors.black87,
-                            size: 20,
-                          ),
+                          child: const Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20),
                         ),
-                        Spacer(),
+                        const Spacer(),
                         Text(
-                          "Send Money via Tag",
+                          'Send Money via Tag',
                           style: GoogleFonts.inter(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: Colors.black,
                           ),
                         ),
-                        Spacer(),
+                        const Spacer(),
                       ],
                     ),
-                    SizedBox(height: 30),
-                    // PAGE 1: Username selection
+                    const SizedBox(height: 30),
+
+                    // PAGE 0: Username selection
                     if (_currentPage == 0) ...[
-                      Text('Recipient Tag'),
+                      const Text('Recipient Tag'),
                       const SizedBox(height: 8),
                       TextField(
                         textInputAction: TextInputAction.next,
@@ -795,43 +731,29 @@ Future<void> _ghostTransfer() async {
                             borderRadius: BorderRadius.circular(10),
                             borderSide: BorderSide(color: Colors.grey.shade300),
                           ),
-                          hintText: "username",
+                          hintText: 'username',
                           hintStyle: GoogleFonts.inter(color: Colors.grey.shade600),
-                          prefixIcon: Icon(
-                            Icons.alternate_email,
-                            color: Colors.grey.shade600,
-                          ),
+                          prefixIcon: Icon(Icons.alternate_email, color: Colors.grey.shade600),
                         ),
                         inputFormatters: [
-                          FilteringTextInputFormatter.allow(
-                            RegExp(r'[a-z0-9_]'),
-                          ),
+                          FilteringTextInputFormatter.allow(RegExp(r'[a-z0-9_]')),
                         ],
                       ),
                       const SizedBox(height: 8),
-                      if (usernameController.text.isNotEmpty &&
-                          !isCheckingUsername)
+                      if (usernameController.text.isNotEmpty && !isCheckingUsername)
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
                             Icon(
-                              isUsernameValid
-                                  ? Icons.check_circle
-                                  : Icons.error,
+                              isUsernameValid ? Icons.check_circle : Icons.error,
                               size: 16,
-                              color: isUsernameValid
-                                  ? Colors.green
-                                  : Colors.red,
+                              color: isUsernameValid ? Colors.green : Colors.red,
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              isUsernameValid
-                                  ? 'Username found'
-                                  : 'Username not found',
+                              isUsernameValid ? 'Username found' : 'Username not found',
                               style: GoogleFonts.inter(
-                                color: isUsernameValid
-                                    ? Colors.green
-                                    : Colors.red,
+                                color: isUsernameValid ? Colors.green : Colors.red,
                                 fontSize: 12,
                               ),
                             ),
@@ -839,23 +761,17 @@ Future<void> _ghostTransfer() async {
                         ),
                       const SizedBox(height: 20),
                       ElevatedButton(
-                        onPressed: isCheckingUsername || !isUsernameValid
-                            ? null
-                            : () => setState(() => _currentPage = 1),
+                        onPressed: isCheckingUsername || !isUsernameValid ? null : () => setState(() => _currentPage = 1),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: primaryColor,
                           minimumSize: const Size(double.infinity, 50),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
-                        child: Text(
-                          'Next',
-                          style: GoogleFonts.inter(color: Colors.white),
-                        ),
+                        child: Text('Next', style: GoogleFonts.inter(color: Colors.white)),
                       ),
                     ]
-                    // PAGE 2: Amount & Remark
+
+                    // PAGE 1: Amount & Remark
                     else if (_currentPage == 1) ...[
                       Container(
                         padding: const EdgeInsets.all(12),
@@ -866,15 +782,10 @@ Future<void> _ghostTransfer() async {
                         child: Row(
                           children: [
                             CircleAvatar(
-                              backgroundColor: primaryColor.withValues(
-                                alpha: 0.12,
-                              ),
+                              backgroundColor: primaryColor.withValues(alpha: 0.12),
                               child: Text(
                                 usernameController.text[0].toUpperCase(),
-                                style: GoogleFonts.inter(
-                                  color: primaryColor,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                style: GoogleFonts.inter(color: primaryColor, fontWeight: FontWeight.bold),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -884,17 +795,11 @@ Future<void> _ghostTransfer() async {
                                 children: [
                                   Text(
                                     usernameController.text,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14,
-                                    ),
+                                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                                   ),
                                   Text(
                                     '@${usernameController.text}',
-                                    style: GoogleFonts.inter(
-                                      color: Colors.grey.shade600,
-                                      fontSize: 12,
-                                    ),
+                                    style: GoogleFonts.inter(color: Colors.grey.shade600, fontSize: 12),
                                   ),
                                 ],
                               ),
@@ -903,13 +808,10 @@ Future<void> _ghostTransfer() async {
                         ),
                       ),
                       const SizedBox(height: 24),
-                      Text('Amount to Send'),
+                      const Text('Amount to Send'),
                       const SizedBox(height: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 4,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.grey, width: 1),
                           borderRadius: BorderRadius.circular(8),
@@ -918,42 +820,26 @@ Future<void> _ghostTransfer() async {
                           children: [
                             Padding(
                               padding: const EdgeInsets.only(right: 8.0),
-                              child: Text(
-                                '₦',
-                                style: GoogleFonts.inter(
-                                  fontSize: 16,
-                                  color: Colors.grey.shade600,
-                                ),
-                              ),
+                              child: Text('₦', style: GoogleFonts.inter(fontSize: 16, color: Colors.grey.shade600)),
                             ),
                             Expanded(
                               child: TextField(
                                 keyboardType: TextInputType.number,
                                 controller: amountController,
-                                decoration: InputDecoration(
+                                decoration: const InputDecoration(
                                   border: InputBorder.none,
                                   enabledBorder: InputBorder.none,
                                   focusedBorder: InputBorder.none,
                                   contentPadding: EdgeInsets.zero,
-                                  hintStyle: GoogleFonts.inter(
-                                    color: Colors.grey.shade600,
-                                  ),
                                   hintText: '0.00',
                                 ),
                               ),
                             ),
-                            Text(
-                              feeText,
-                              style: GoogleFonts.inter(
-                                color: primaryColor,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                            Text(feeText, style: GoogleFonts.inter(color: primaryColor, fontWeight: FontWeight.bold)),
                           ],
                         ),
                       ),
                       const SizedBox(height: 12),
-                      // Amount presets
                       GridView.count(
                         crossAxisCount: 3,
                         shrinkWrap: true,
@@ -961,17 +847,13 @@ Future<void> _ghostTransfer() async {
                         mainAxisSpacing: 8,
                         crossAxisSpacing: 8,
                         childAspectRatio: 2.8,
-                        children: [500, 1000, 2000, 5000, 9999, 10000].map((
-                          amt,
-                        ) {
+                        children: [500, 1000, 2000, 5000, 9999, 10000].map((amt) {
                           final fmtAmt = amt.toString().replaceAllMapped(
                             RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
                             (m) => '${m[1]},',
                           );
                           return GestureDetector(
-                            onTap: () => setState(
-                              () => amountController.text = amt.toString(),
-                            ),
+                            onTap: () => setState(() => amountController.text = amt.toString()),
                             child: Container(
                               decoration: BoxDecoration(
                                 color: Colors.grey.shade100,
@@ -979,55 +861,32 @@ Future<void> _ghostTransfer() async {
                                 border: Border.all(color: Colors.grey.shade300),
                               ),
                               alignment: Alignment.center,
-                              child: Text(
-                                '₦$fmtAmt',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13,
-                                ),
-                              ),
+                              child: Text('₦$fmtAmt', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                             ),
                           );
                         }).toList(),
                       ),
                       const SizedBox(height: 16),
-                      Text('Remark'),
+                      const Text('Remark'),
                       const SizedBox(height: 8),
                       TextField(
                         controller: remarkController,
                         decoration: InputDecoration(
-                          hintStyle: GoogleFonts.inter(
-                            color: Colors.grey.shade600,
-                            fontSize: 14,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
+                          hintStyle: GoogleFonts.inter(color: Colors.grey.shade600, fontSize: 14),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                           hintText: 'What is this transfer for? (optional)',
                         ),
                       ),
-                      SizedBox(height: 20),
+                      const SizedBox(height: 20),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                "Ghost Mode",
-                                style: GoogleFonts.inter(
-                                  color: Colors.black26,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              SizedBox(height: 5),
-                              Text(
-                                "Send money anonymously",
-                                style: GoogleFonts.inter(
-                                  color: Colors.black54,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                              Text('Ghost Mode', style: GoogleFonts.inter(color: Colors.black26, fontWeight: FontWeight.w500)),
+                              const SizedBox(height: 5),
+                              Text('Send money anonymously', style: GoogleFonts.inter(color: Colors.black54, fontWeight: FontWeight.w600)),
                             ],
                           ),
                           FlutterSwitch(
@@ -1039,60 +898,41 @@ Future<void> _ghostTransfer() async {
                             value: sendAnonymously,
                             activeColor: primaryColor,
                             inactiveColor: Colors.grey.shade300,
-                            onToggle: (val) async {
-                              setState(() => sendAnonymously = val);
-                            },
+                            onToggle: (val) => setState(() => sendAnonymously = val),
                           ),
                         ],
                       ),
                       const SizedBox(height: 20),
                       ElevatedButton(
-                        onPressed:
-                            isLoading ||
-                                (double.tryParse(amountController.text) ??
-                                        0.0) <=
-                                    0
+                        onPressed: isLoading || (double.tryParse(amountController.text) ?? 0.0) <= 0
                             ? null
                             : () async {
-                                final currentUser =
-                                    FirebaseAuth.instance.currentUser;
-                                if (currentUser != null &&
-                                    receiverUid != null &&
-                                    receiverUid == currentUser.uid) {
-                                  showSimpleDialog(
-                                    'You cannot send money to your own tag',
-                                    Colors.red,
-                                  );
+                                final currentUser = FirebaseAuth.instance.currentUser;
+                                if (currentUser != null && receiverUid != null && receiverUid == currentUser.uid) {
+                                  showSimpleDialog('You cannot send money to your own tag', Colors.red);
                                   return;
                                 }
                                 if (!sendAnonymously) {
-                                  // Direct transfer - no counterparty needed
                                   await _safehavenTransferIntra();
                                 } else {
-                                  // Ghost mode: sender -> company -> recipient
                                   await _ghostTransfer();
                                 }
                               },
-
                         style: ElevatedButton.styleFrom(
                           backgroundColor: primaryColor,
                           minimumSize: const Size(double.infinity, 50),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
                         child: isLoading
-                            ? CircularProgressIndicator(color: Colors.white)
-                            : Text(
-                                'Confirm',
-                                style: GoogleFonts.inter(color: Colors.white),
-                              ),
+                            ? const CircularProgressIndicator(color: Colors.white)
+                            : Text('Confirm', style: GoogleFonts.inter(color: Colors.white)),
                       ),
                     ],
                   ],
                 ),
               ),
-              // Recents section - only on page 0
+
+              // Recent transfers section (page 0 only)
               if (_currentPage == 0) ...[
                 if (_loadingRecents)
                   const Padding(
@@ -1115,29 +955,19 @@ Future<void> _ghostTransfer() async {
                             padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
                             child: Text(
                               'Recents',
-                              style: GoogleFonts.inter(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
-                                color: Colors.black87,
-                              ),
+                              style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87),
                             ),
                           ),
                           ListView.separated(
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             itemCount: _recentTagTransfers.length,
-                            separatorBuilder: (_, __) => Divider(
-                              height: 1,
-                              indent: 16,
-                              endIndent: 16,
-                              color: Colors.grey.shade100,
-                            ),
+                            separatorBuilder: (_, __) => Divider(height: 1, indent: 16, endIndent: 16, color: Colors.grey.shade100),
                             itemBuilder: (context, index) {
                               final r = _recentTagTransfers[index];
                               final name = r['name']?.toString() ?? 'Unknown';
                               final username = r['username']?.toString() ?? '';
-                              final profileImage =
-                                  r['profileImage']?.toString() ?? '';
+                              final profileImage = r['profileImage']?.toString() ?? '';
                               final initials = name
                                   .split(' ')
                                   .where((s) => s.isNotEmpty)
@@ -1145,36 +975,15 @@ Future<void> _ghostTransfer() async {
                                   .map((s) => s[0].toUpperCase())
                                   .join();
                               return ListTile(
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 4,
-                                ),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                                 leading: CircleAvatar(
-                                  backgroundColor: primaryColor.withValues(
-                                    alpha: 0.12,
-                                  ),
-                                  backgroundImage: profileImage.isNotEmpty
-                                      ? NetworkImage(profileImage)
-                                      : null,
+                                  backgroundColor: primaryColor.withValues(alpha: 0.12),
+                                  backgroundImage: profileImage.isNotEmpty ? NetworkImage(profileImage) : null,
                                   child: profileImage.isEmpty
-                                      ? Text(
-                                          initials,
-                                          style: GoogleFonts.inter(
-                                            color: primaryColor,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 14,
-                                          ),
-                                        )
+                                      ? Text(initials, style: GoogleFonts.inter(color: primaryColor, fontWeight: FontWeight.bold, fontSize: 14))
                                       : null,
                                 ),
-                                title: Text(
-                                  '@$username',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14,
-                                  ),
-                                ),
-
+                                title: Text('@$username', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                                 onTap: () {
                                   if (username.isNotEmpty) {
                                     usernameController.text = username;

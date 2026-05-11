@@ -1604,7 +1604,7 @@ class _CardsPageState extends State<CardsPage> {
         'uid': 'company',
         'id': companyAccount['id'],
         'type': companyAccount['accountType'] ?? 'BankAccount',
-        'bankId': '090286', // Safe Haven MFB code
+        'bankId': '090286', // Safe Haven Microfinance Bank code
         'bankName': 'SAFE HAVEN MICROFINANCE BANK',
         'accountNumber': companyAccount['accountNumber'],
         'accountName': companyAccount['accountName'] ?? 'PadiPay Limited',

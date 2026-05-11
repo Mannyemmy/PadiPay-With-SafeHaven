@@ -63,6 +63,8 @@ dependencies:
   uuid: ^4.5.1
   webview_flutter: ^4.10.0
   in_app_update: ^4.2.5
+  confetti: ^0.8.0
+  rxdart: ^0.28.0
 
 dev_dependencies:
   flutter_test:

@@ -1107,7 +1107,8 @@ void main() async {
   } catch (e) {
     debugPrint('[CloudCard] SDK init failed (non-fatal): $e');
   }
-
+// In main() before runApp
+await CloudCardFlutter().init(isSandBox: false);
   runApp(const MainApp());
 
   // Check for Play Store updates after the first frame so we have a navigator/context.

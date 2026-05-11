@@ -1,10 +1,10 @@
 import 'dart:io' show Platform;
 
 import 'package:card_app/utils.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart' as cf;
 import 'package:cloudcard_flutter/cloudcard_flutter.dart';
-// ignore_for_file: unused_element, unused_field, dead_code, unnecessary_cast, unused_import
-
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -13,17 +13,8 @@ import 'package:uuid/uuid.dart';
 
 /// Bottom sheet that walks a user through registering their virtual card
 /// for NFC tap-to-pay at physical POS terminals.
-///
-/// Flow:
-///  1. Check device support, NFC enabled, default payment app.
-///  2. Call `sudoDigitalizeCard` Cloud Function to get the JWT token.
-///  3. Register the card with [CloudCardFlutter.registerCard].
-///  4. Prompt user to set the app as default payment app if needed.
 class NfcPosSheet extends StatefulWidget {
-  /// The Sudo card ID (card_id from Firestore card document).
-  final String cardId;
-
-  /// Optional card details for display (cardholder name, last-four, etc.).
+  final String cardId; // Sudo card ID (card_id from Firestore)
   final String? cardholderName;
   final String? lastFour;
   final String? expiryDate;
@@ -42,64 +33,61 @@ class NfcPosSheet extends StatefulWidget {
 
 class _NfcPosSheetState extends State<NfcPosSheet> {
   final _cloudCard = CloudCardFlutter();
-
   _Step _step = _Step.checking;
   String? _errorMessage;
 
-  // Health-check results
   bool? _deviceSupported;
   bool? _nfcEnabled;
   bool? _isDefaultApp;
+  bool? _alreadyEnabled; // cached from Firestore
 
-  String _firstStringForKeys(dynamic node, Set<String> targetKeys) {
-    if (node is Map) {
-      for (final entry in node.entries) {
-        final key = entry.key.toString().toLowerCase();
-        final value = entry.value;
-        if (targetKeys.contains(key) && value is String && value.trim().isNotEmpty) {
-          return value.trim();
-        }
-      }
-      for (final value in node.values) {
-        final found = _firstStringForKeys(value, targetKeys);
-        if (found.isNotEmpty) return found;
-      }
-    } else if (node is List) {
-      for (final value in node) {
-        final found = _firstStringForKeys(value, targetKeys);
-        if (found.isNotEmpty) return found;
-      }
-    }
-    return '';
-  }
-
-  Future<String> _getOrCreatePaymentAppInstanceId() async {
-    const key = 'cloudcard_payment_app_instance_id';
-    final prefs = await SharedPreferences.getInstance();
-    final existing = prefs.getString(key);
-    if (existing != null && existing.trim().isNotEmpty) {
-      return existing.trim();
-    }
-    final generated = const Uuid().v4();
-    await prefs.setString(key, generated);
-    return generated;
-  }
+  // Firestore document reference for this card
+  String? _cardDocId;
+  DocumentReference? _cardDocRef;
 
   @override
   void initState() {
     super.initState();
-    _runChecks();
+    _initCardDocument().then((_) => _runChecks());
+  }
+
+  Future<void> _initCardDocument() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('cards')
+          .where('card_id', isEqualTo: widget.cardId)
+          .limit(1)
+          .get();
+      if (snapshot.docs.isNotEmpty) {
+        final doc = snapshot.docs.first;
+        _cardDocId = doc.id;
+        _cardDocRef = doc.reference;
+        setState(() {
+          _alreadyEnabled = doc.data()['nfcEnabled'] == true;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching card doc for NFC status: $e');
+    }
   }
 
   Future<void> _runChecks() async {
     if (!Platform.isAndroid) {
-      setState(() {
-        _step = _Step.unsupportedPlatform;
-      });
+      setState(() => _step = _Step.unsupportedPlatform);
       return;
     }
 
     setState(() => _step = _Step.checking);
+
+    // If already enabled in Firestore, skip everything else
+    if (_alreadyEnabled == true) {
+      setState(() => _step = _Step.alreadyEnabled);
+      return;
+    }
 
     try {
       final supported = await _cloudCard.isDeviceSupported();
@@ -131,11 +119,46 @@ class _NfcPosSheetState extends State<NfcPosSheet> {
     }
   }
 
+  String _firstStringForKeys(dynamic node, Set<String> targetKeys) {
+    if (node is Map) {
+      for (final entry in node.entries) {
+        final key = entry.key.toString().toLowerCase();
+        final value = entry.value;
+        if (targetKeys.contains(key) &&
+            value is String &&
+            value.trim().isNotEmpty) {
+          return value.trim();
+        }
+      }
+      for (final value in node.values) {
+        final found = _firstStringForKeys(value, targetKeys);
+        if (found.isNotEmpty) return found;
+      }
+    } else if (node is List) {
+      for (final value in node) {
+        final found = _firstStringForKeys(value, targetKeys);
+        if (found.isNotEmpty) return found;
+      }
+    }
+    return '';
+  }
+
+  Future<String> _getOrCreatePaymentAppInstanceId() async {
+    const key = 'cloudcard_payment_app_instance_id';
+    final prefs = await SharedPreferences.getInstance();
+    final existing = prefs.getString(key);
+    if (existing != null && existing.trim().isNotEmpty) {
+      return existing.trim();
+    }
+    final generated = const Uuid().v4();
+    await prefs.setString(key, generated);
+    return generated;
+  }
+
   Future<void> _registerCard() async {
     setState(() => _step = _Step.registering);
 
     try {
-      // 1. Fetch the digitalization payload from the backend.
       final callable = cf.FirebaseFunctions.instance.httpsCallable(
         'sudoDigitalizeCard',
       );
@@ -143,9 +166,8 @@ class _NfcPosSheetState extends State<NfcPosSheet> {
         'cardId': widget.cardId,
         'platform': 'android',
       });
+      debugPrint('[CloudCard] RAW response: ${response.data}');
 
-      // The Cloud Function should return { walletId, paymentAppInstanceId,
-      // accountId, jwtToken } — or a plain JWT string if the backend wraps it.
       final data = response.data;
       var walletId = '';
       var paymentAppInstanceId = '';
@@ -155,15 +177,11 @@ class _NfcPosSheetState extends State<NfcPosSheet> {
       final accountIdCandidates = <String>[];
 
       if (data is Map) {
-        final map = Map<String, dynamic>.from(data as Map);
-        // Support both flat and nested { data: { ... } } structures.
+        final map = Map<String, dynamic>.from(data);
         final inner = (map['data'] is Map)
             ? Map<String, dynamic>.from(map['data'] as Map)
             : map;
-        walletId = _firstStringForKeys(inner, {
-          'walletid',
-          'wallet_id',
-        });
+        walletId = _firstStringForKeys(inner, {'walletid', 'wallet_id'});
         paymentAppInstanceId = _firstStringForKeys(inner, {
           'paymentappinstanceid',
           'payment_app_instance_id',
@@ -184,21 +202,17 @@ class _NfcPosSheetState extends State<NfcPosSheet> {
           'digitalizationtoken',
           'digitalization_token',
         });
-        secret = _firstStringForKeys(inner, {
-          'secret',
-        });
+        secret = _firstStringForKeys(inner, {'secret'});
 
         final candidatesRaw = inner['accountIdCandidates'];
         if (candidatesRaw is List) {
           for (final item in candidatesRaw) {
             final v = item.toString().trim();
-            if (v.isNotEmpty && !accountIdCandidates.contains(v)) {
+            if (v.isNotEmpty && !accountIdCandidates.contains(v))
               accountIdCandidates.add(v);
-            }
           }
         }
       } else {
-        // Fallback: treat raw string response as the JWT token.
         jwtToken = data.toString();
         walletId = '';
         paymentAppInstanceId = '';
@@ -206,40 +220,28 @@ class _NfcPosSheetState extends State<NfcPosSheet> {
         secret = '';
       }
 
-        final resolvedAccountId = accountId.isEmpty ? widget.cardId : accountId;
-        final originalAccountId = widget.cardId;
+      final resolvedAccountId = accountId.isEmpty ? widget.cardId : accountId;
+      final originalAccountId = widget.cardId;
       final resolvedPaymentAppInstanceId = paymentAppInstanceId.isEmpty
           ? await _getOrCreatePaymentAppInstanceId()
           : paymentAppInstanceId;
 
-      if (!accountIdCandidates.contains(resolvedAccountId)) {
+      if (!accountIdCandidates.contains(resolvedAccountId))
         accountIdCandidates.insert(0, resolvedAccountId);
-      }
-      if (!accountIdCandidates.contains(originalAccountId)) {
+      if (!accountIdCandidates.contains(originalAccountId))
         accountIdCandidates.add(originalAccountId);
-      }
 
       debugPrint(
-        '[CloudCard] digitalize parsed keys: '
-        'walletId=${walletId.isNotEmpty} '
-        'paymentAppInstanceId=${resolvedPaymentAppInstanceId.isNotEmpty} '
-        'accountId=$resolvedAccountId '
-        'candidateCount=${accountIdCandidates.length} '
-        'jwtTokenLen=${jwtToken.length} '
-        'secretLen=${secret.length}',
+        '[CloudCard] digitalize parsed: walletId=$walletId, paymentAppId=$resolvedPaymentAppInstanceId, accountId=$resolvedAccountId, candidates=$accountIdCandidates, jwtTokenLen=${jwtToken.length}',
       );
 
       if (jwtToken.isEmpty) {
         throw Exception(
-          'Digitalization token is empty. '
-          'Check that your sudoDigitalizeCard Cloud Function returns '
-          'jwtToken/onboardingToken/token in its payload.',
+          'Digitalization token is empty. Ensure your sudoDigitalizeCard Cloud Function returns a valid token.',
         );
       }
-
-      if (walletId.isEmpty) {
+      if (walletId.isEmpty)
         throw Exception('Digitalization payload missing walletId.');
-      }
 
       Future<CCResult> registerOnce({
         required String attemptAccountId,
@@ -252,15 +254,9 @@ class _NfcPosSheetState extends State<NfcPosSheet> {
           jwtToken: jwtToken,
           secret: includeSecret ? secret : '',
         );
-        debugPrint(
-          '[CloudCard] registerCard attempt accountId=$attemptAccountId includeSecret=$includeSecret '
-          'secretLen=${includeSecret ? secret.length : 0}',
-        );
         return _cloudCard.registerCard(registrationData);
       }
 
-      // 2. Register the card with the Sudo Cloud Card SDK.
-      // Iterate all candidate IDs with secret first, then without secret.
       CCResult? lastResult;
       Future<bool> tryMode(bool includeSecret) async {
         for (final candidate in accountIdCandidates) {
@@ -269,29 +265,66 @@ class _NfcPosSheetState extends State<NfcPosSheet> {
             includeSecret: includeSecret,
           );
           lastResult = result;
-          if (result.status == Status.SUCCESS) {
-            return true;
-          }
+          if (result.status == Status.SUCCESS) return true;
         }
         return false;
       }
 
       var success = await tryMode(secret.isNotEmpty);
       if (!success && secret.isNotEmpty) {
-        debugPrint('[CloudCard] retrying all candidate IDs without secret');
+        debugPrint('[CloudCard] retrying without secret');
         success = await tryMode(false);
       }
 
       final result = lastResult;
-      if (result == null) {
+      if (result == null)
         throw Exception('CloudCard registration did not return a result.');
-      }
 
-      debugPrint('[CloudCard] registerCard result: status=${result.status} message=${result.message}');
+      debugPrint(
+        '[CloudCard] registerCard result: status=${result.status} message=${result.message}',
+      );
 
       if (!mounted) return;
 
       if (result.status == Status.SUCCESS) {
+        // Extract tokenized card ID safely (result.data might be List or Map)
+        String? tokenizedCardId;
+        if (result.data is Map) {
+          tokenizedCardId = (result.data as Map)['cardId']?.toString();
+        } else if (result.data is List && (result.data as List).isNotEmpty) {
+          final first = (result.data as List).first;
+          if (first is Map) {
+            tokenizedCardId = first['cardId']?.toString();
+          }
+        }
+
+        // Persist NFC enabled flag to Firestore
+        if (_cardDocRef != null) {
+          await _cardDocRef!.update({
+            'nfcEnabled': true,
+            'nfcRegisteredAt': FieldValue.serverTimestamp(),
+            if (tokenizedCardId != null) 'nfcTokenizedCardId': tokenizedCardId,
+          });
+        } else {
+          final user = FirebaseAuth.instance.currentUser;
+          if (user != null) {
+            final snapshot = await FirebaseFirestore.instance
+                .collection('users')
+                .doc(user.uid)
+                .collection('cards')
+                .where('card_id', isEqualTo: widget.cardId)
+                .limit(1)
+                .get();
+            if (snapshot.docs.isNotEmpty) {
+              await snapshot.docs.first.reference.update({
+                'nfcEnabled': true,
+                'nfcRegisteredAt': FieldValue.serverTimestamp(),
+                if (tokenizedCardId != null)
+                  'nfcTokenizedCardId': tokenizedCardId,
+              });
+            }
+          }
+        }
         setState(() => _step = _Step.success);
       } else {
         setState(() {
@@ -300,7 +333,7 @@ class _NfcPosSheetState extends State<NfcPosSheet> {
         });
       }
     } on PlatformException catch (e) {
-      debugPrint('[CloudCard] PlatformException code=${e.code} message=${e.message} details=${e.details}');
+      debugPrint('[CloudCard] PlatformException: ${e.code} ${e.message}');
       if (mounted) {
         setState(() {
           _step = _Step.error;
@@ -308,7 +341,7 @@ class _NfcPosSheetState extends State<NfcPosSheet> {
         });
       }
     } catch (e) {
-      debugPrint('[CloudCard] register flow error: $e');
+      debugPrint('[CloudCard] register error: $e');
       if (mounted) {
         setState(() {
           _step = _Step.error;
@@ -320,8 +353,7 @@ class _NfcPosSheetState extends State<NfcPosSheet> {
 
   Future<void> _openDefaultPaymentSettings() async {
     await _cloudCard.launchDefaultPaymentAppSettings();
-    // Re-check after the user returns from settings.
-    await _runChecks();
+    await _runChecks(); // re-check after returning
   }
 
   @override
@@ -349,28 +381,25 @@ class _NfcPosSheetState extends State<NfcPosSheet> {
           iconColor: Colors.orange,
           title: 'Android Only',
           message:
-              'NFC tap-to-pay at POS terminals is currently supported on Android devices only.',
+              'NFC tap-to-pay is currently supported on Android devices only.',
           actions: [_closeButton(context)],
         );
-
       case _Step.deviceNotSupported:
         return _MessageView(
           icon: Icons.nfc_outlined,
           iconColor: Colors.red,
           title: 'Device Not Supported',
           message:
-              'Your device does not meet the requirements for NFC tap-to-pay. '
-              'An NFC-enabled Android phone with API level 21+ is required.',
+              'An NFC‑enabled Android phone with API level 21+ is required.',
           actions: [_closeButton(context)],
         );
-
       case _Step.nfcDisabled:
         return _MessageView(
           icon: Icons.nfc_outlined,
           iconColor: Colors.orange,
           title: 'NFC Is Off',
           message:
-              'Please enable NFC in your device settings to use tap-to-pay.',
+              'Please enable NFC in your device settings to use tap‑to‑pay.',
           actions: [
             ElevatedButton(
               onPressed: () async {
@@ -378,19 +407,20 @@ class _NfcPosSheetState extends State<NfcPosSheet> {
                 await _runChecks();
               },
               style: ElevatedButton.styleFrom(backgroundColor: primaryColor),
-              child: Text('Open NFC Settings',
-                  style: GoogleFonts.inter(color: Colors.white)),
+              child: Text(
+                'Open NFC Settings',
+                style: GoogleFonts.inter(color: Colors.white),
+              ),
             ),
             _closeButton(context),
           ],
         );
-
       case _Step.checking:
         return const _LoadingView(message: 'Checking device compatibility…');
-
       case _Step.registering:
-        return const _LoadingView(message: 'Setting up your card for tap-to-pay…');
-
+        return const _LoadingView(
+          message: 'Setting up your card for tap‑to‑pay…',
+        );
       case _Step.readyToRegister:
         return _ReadyView(
           cardholderName: widget.cardholderName,
@@ -400,14 +430,20 @@ class _NfcPosSheetState extends State<NfcPosSheet> {
           onDefaultPaymentTap: _openDefaultPaymentSettings,
           onClose: () => Navigator.pop(context),
         );
-
       case _Step.success:
         return _SuccessView(
           isDefaultApp: _isDefaultApp ?? false,
           onSetDefaultTap: _openDefaultPaymentSettings,
           onClose: () => Navigator.pop(context),
+          alreadyEnabled: false,
         );
-
+      case _Step.alreadyEnabled:
+        return _SuccessView(
+          isDefaultApp: _isDefaultApp ?? false,
+          onSetDefaultTap: _openDefaultPaymentSettings,
+          onClose: () => Navigator.pop(context),
+          alreadyEnabled: true,
+        );
       case _Step.error:
         return _MessageView(
           icon: Icons.error_outline,
@@ -418,8 +454,10 @@ class _NfcPosSheetState extends State<NfcPosSheet> {
             ElevatedButton(
               onPressed: _runChecks,
               style: ElevatedButton.styleFrom(backgroundColor: primaryColor),
-              child:
-                  Text('Try Again', style: GoogleFonts.inter(color: Colors.white)),
+              child: Text(
+                'Try Again',
+                style: GoogleFonts.inter(color: Colors.white),
+              ),
             ),
             _closeButton(context),
           ],
@@ -427,14 +465,12 @@ class _NfcPosSheetState extends State<NfcPosSheet> {
     }
   }
 
-  Widget _closeButton(BuildContext context) => TextButton(
-        onPressed: () => Navigator.pop(context),
-        child: Text('Close'),
-      );
+  Widget _closeButton(BuildContext context) =>
+      TextButton(onPressed: () => Navigator.pop(context), child: Text('Close'));
 }
 
 // ---------------------------------------------------------------------------
-// Sub-step enum
+// Enums & reusable sub-widgets
 // ---------------------------------------------------------------------------
 
 enum _Step {
@@ -445,12 +481,9 @@ enum _Step {
   readyToRegister,
   registering,
   success,
+  alreadyEnabled,
   error,
 }
-
-// ---------------------------------------------------------------------------
-// Reusable sub-widgets
-// ---------------------------------------------------------------------------
 
 class _LoadingView extends StatelessWidget {
   final String message;
@@ -481,7 +514,6 @@ class _MessageView extends StatelessWidget {
   final String title;
   final String message;
   final List<Widget> actions;
-
   const _MessageView({
     required this.icon,
     required this.iconColor,
@@ -510,10 +542,12 @@ class _MessageView extends StatelessWidget {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 28),
-        ...actions.map((a) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: SizedBox(width: double.infinity, child: a),
-            )),
+        ...actions.map(
+          (a) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: SizedBox(width: double.infinity, child: a),
+          ),
+        ),
       ],
     );
   }
@@ -526,7 +560,6 @@ class _ReadyView extends StatelessWidget {
   final VoidCallback onSetupTap;
   final VoidCallback onDefaultPaymentTap;
   final VoidCallback onClose;
-
   const _ReadyView({
     required this.cardholderName,
     required this.lastFour,
@@ -553,12 +586,16 @@ class _ReadyView extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         const Center(
-          child: Icon(Icons.contactless_outlined, size: 64, color: primaryColor),
+          child: Icon(
+            Icons.contactless_outlined,
+            size: 64,
+            color: primaryColor,
+          ),
         ),
         const SizedBox(height: 16),
-         Center(
+        Center(
           child: Text(
-            'Set Up Tap-to-Pay',
+            'Set Up Tap‑to‑Pay',
             style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold),
           ),
         ),
@@ -566,8 +603,8 @@ class _ReadyView extends StatelessWidget {
         Center(
           child: Text(
             cardholderName != null && lastFour != null
-                ? 'Card ending in $lastFour will be enabled for NFC\npayments at any contactless POS terminal.'
-                : 'Your virtual card will be enabled for NFC\npayments at any contactless POS terminal.',
+                ? 'Card ending in $lastFour will be enabled for NFC payments.'
+                : 'Your virtual card will be enabled for NFC payments at any contactless POS terminal.',
             style: TextStyle(fontSize: 14, color: Colors.black54),
             textAlign: TextAlign.center,
           ),
@@ -583,12 +620,19 @@ class _ReadyView extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(Icons.info_outline, color: Colors.amber.shade700, size: 20),
+                Icon(
+                  Icons.info_outline,
+                  color: Colors.amber.shade700,
+                  size: 20,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'For tap-to-pay to work, Padi Pay must be set as your default payment app.',
-                    style: GoogleFonts.inter(fontSize: 13, color: Colors.amber.shade900),
+                    'For tap‑to‑pay to work, Padi Pay must be set as your default payment app.',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: Colors.amber.shade900,
+                    ),
                   ),
                 ),
               ],
@@ -612,14 +656,16 @@ class _ReadyView extends StatelessWidget {
               backgroundColor: primaryColor,
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
             child: Text(
-              'Enable Tap-to-Pay',
+              'Enable Tap‑to‑Pay',
               style: GoogleFonts.inter(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600),
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ),
@@ -633,11 +679,13 @@ class _SuccessView extends StatelessWidget {
   final bool isDefaultApp;
   final VoidCallback onSetDefaultTap;
   final VoidCallback onClose;
+  final bool alreadyEnabled;
 
   const _SuccessView({
     required this.isDefaultApp,
     required this.onSetDefaultTap,
     required this.onClose,
+    this.alreadyEnabled = false,
   });
 
   @override
@@ -646,16 +694,24 @@ class _SuccessView extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         const SizedBox(height: 20),
-        const Icon(Icons.check_circle_outline, size: 72, color: Colors.green),
+        Icon(
+          alreadyEnabled ? Icons.check_circle_outline : Icons.check_circle,
+          size: 72,
+          color: Colors.green,
+        ),
         const SizedBox(height: 16),
         Text(
-          'Card Ready for Tap-to-Pay!',
+          alreadyEnabled
+              ? 'Tap‑to‑Pay Already Enabled'
+              : 'Card Ready for Tap‑to‑Pay!',
           style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 12),
         Text(
-          'Hold the back of your phone near any contactless POS terminal to pay.',
+          alreadyEnabled
+              ? 'This card is already registered for NFC payments. You can use it at any contactless POS terminal.'
+              : 'Hold the back of your phone near any contactless POS terminal to pay.',
           style: GoogleFonts.inter(fontSize: 14, color: Colors.black54),
           textAlign: TextAlign.center,
         ),
@@ -670,13 +726,19 @@ class _SuccessView extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(Icons.warning_amber_outlined,
-                    color: Colors.amber.shade700, size: 20),
+                Icon(
+                  Icons.warning_amber_outlined,
+                  color: Colors.amber.shade700,
+                  size: 20,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Padi Pay is not your default payment app yet. Tap below to set it — otherwise NFC payments will use a different app.',
-                    style: GoogleFonts.inter(fontSize: 13, color: Colors.amber.shade900),
+                    'Padi Pay is not your default payment app. Tap below to set it, or payments will use a different app.',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: Colors.amber.shade900,
+                    ),
                   ),
                 ),
               ],
@@ -688,18 +750,17 @@ class _SuccessView extends StatelessWidget {
             child: ElevatedButton(
               onPressed: onSetDefaultTap,
               style: ElevatedButton.styleFrom(backgroundColor: primaryColor),
-              child: Text('Set as Default Payment App',
-                  style: GoogleFonts.inter(color: Colors.white)),
+              child: Text(
+                'Set as Default Payment App',
+                style: GoogleFonts.inter(color: Colors.white),
+              ),
             ),
           ),
           const SizedBox(height: 8),
         ],
         SizedBox(
           width: double.infinity,
-          child: TextButton(
-            onPressed: onClose,
-            child: Text('Done'),
-          ),
+          child: TextButton(onPressed: onClose, child: Text('Done')),
         ),
       ],
     );

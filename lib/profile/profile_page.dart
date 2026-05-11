@@ -268,12 +268,12 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(20),
-                          color: Colors.green.withValues(alpha: 0.2),
+                          color:tier=="0"?Colors.grey.withValues(alpha: 0.2): Colors.green.withValues(alpha: 0.2),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.task_alt, color: Colors.green),
+                             Icon(Icons.task_alt, color:tier=="0"?Colors.grey: Colors.green,),
                             const SizedBox(width: 6),
                             Text(
                               // only append a tier number if there's an actual
@@ -285,7 +285,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                       ? "KYC Not Verified"
                                       : "KYC Verified Tier $tier",
                               style: TextStyle(
-                                color: Colors.green,
+                                color:tier=="0"?Colors.grey: Colors.green,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -604,9 +604,9 @@ class _ProfilePageState extends State<ProfilePage> {
                                   ),
                                   SizedBox(width: 20),
                                   Text(
-                                    'Login with Fingerprint / Face ID',
+                                    'Login with Biometrics',
                                     style: GoogleFonts.inter(
-                                      fontSize: 12,
+                                      fontSize: 15,
                                       fontWeight: FontWeight.w700,
                                       color: Colors.grey.shade700,
                                     ),

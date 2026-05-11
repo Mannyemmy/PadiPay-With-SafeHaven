@@ -100,15 +100,13 @@ class _CardDetailsBottomSheetState extends State<CardDetailsBottomSheet> {
         final response = await callable.call({'cardId': cardId, 'limit': 20});
         if (response.data['status'] == 'success') {
           setState(() {
-            _transactionsMap[cardId] = List.from(
-              response.data['data'] ?? [],
-            );
+            _transactionsMap[cardId] = List.from(response.data['data'] ?? []);
           });
         } else {
           setState(() => _transactionsMap[cardId] = []);
         }
       } else {
-        // NGN: read from Firestore users/{uid}/transactions (same source as transaction history)
+        // NGN: read from Firestore users/{uid}/transactions
         final uid = FirebaseAuth.instance.currentUser?.uid;
         if (uid == null) {
           setState(() => _transactionsMap[cardId] = []);
@@ -122,22 +120,44 @@ class _CardDetailsBottomSheetState extends State<CardDetailsBottomSheet> {
             .orderBy('timestamp', descending: true)
             .limit(20)
             .get();
-        final list = snap.docs.map((d) => d.data()).toList();
-        // Prepend a synthetic 'Card Created' entry so it always appears in activity
+        List<Map<String, dynamic>> list = snap.docs
+            .map((d) => d.data())
+            .toList();
+
+        // Determine the card fee (default 500 NGN for virtual card)
+        final fee = (card['cardFeeNgn'] as num?)?.toDouble() ?? 500.0;
+
+        // Remove any existing "PadiPay" fee transaction that matches the fee amount
+        // and merchant name (so we can replace it with a friendly description).
+        list.removeWhere((tx) {
+          final amount = (tx['amount'] as num?)?.toDouble() ?? 0.0;
+          final merchant = tx['merchant']?.toString().toLowerCase() ?? '';
+          // Match a debit of exactly -fee from PadiPay
+          return amount == -fee && merchant.contains('padipay');
+        });
+
+        // Build synthetic "Card Creation Fee" entry
         final cardCreatedAt = card['createdAt'];
         String createdAtStr = '';
         if (cardCreatedAt is Timestamp) {
           createdAtStr = cardCreatedAt.toDate().toIso8601String();
         }
         final syntheticEntry = <String, dynamic>{
-          'type': 'CREDIT',
-          'description': 'Card Created',
-          'amount': 0,
+          'type': 'DEBIT',
+          'description': 'Card Creation Fee',
+          'amount': -fee, // negative to show debit
           'currency': 'NGN',
           'createdAt': createdAtStr,
+          'merchant': 'Card Creation Fee', // override display title
+          'status': 'Successful',
         };
+
+        // Add the synthetic entry (will appear at the end; transactions are sorted by timestamp,
+        // but the card creation is the oldest, so it will appear at the bottom).
+        list.add(syntheticEntry);
+
         setState(() {
-          _transactionsMap[cardId] = [...list, syntheticEntry];
+          _transactionsMap[cardId] = list;
         });
       }
     } catch (e) {
@@ -151,19 +171,21 @@ class _CardDetailsBottomSheetState extends State<CardDetailsBottomSheet> {
     final double viewportWidth = MediaQuery.of(context).size.width;
     const double cardAspectRatio = 1.6;
     final double pageHeight = (viewportWidth * 0.9) / cardAspectRatio;
-    final String? currentCardId =
-        widget.cards[_currentIndex]['card_id']?.toString();
-    final List<dynamic> transactions =
-        currentCardId != null ? (_transactionsMap[currentCardId] ?? []) : [];
-    final bool isLoading = currentCardId != null &&
-        !_transactionsMap.containsKey(currentCardId);
+    final String? currentCardId = widget.cards[_currentIndex]['card_id']
+        ?.toString();
+    final List<dynamic> transactions = currentCardId != null
+        ? (_transactionsMap[currentCardId] ?? [])
+        : [];
+    final bool isLoading =
+        currentCardId != null && !_transactionsMap.containsKey(currentCardId);
 
     return Container(
       decoration: const BoxDecoration(
         color: Colors.black,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      child: SafeArea(bottom: true,
+      child: SafeArea(
+        bottom: true,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -204,12 +226,13 @@ class _CardDetailsBottomSheetState extends State<CardDetailsBottomSheet> {
                         final String brandLabel = brandStr.contains('master')
                             ? 'MasterCard'
                             : brandStr.contains('verve')
-                                ? 'Verve'
-                                : brandStr.contains('afrigo')
-                                    ? 'AfriGo'
-                                    : 'Visa';
+                            ? 'Verve'
+                            : brandStr.contains('afrigo')
+                            ? 'AfriGo'
+                            : 'Visa';
                         final String currencyCode = _getCardCurrency(card);
-                        final String designId = card['design']?.toString() ?? '';
+                        final String designId =
+                            card['design']?.toString() ?? '';
                         CardTemplate cardTemplate =
                             getTemplateById(designId) ??
                             getTemplatesForCard(brandLabel, currencyCode).first;
@@ -249,7 +272,8 @@ class _CardDetailsBottomSheetState extends State<CardDetailsBottomSheet> {
                             card['nameOnCard']?.toString() ??
                             'CARD HOLDER';
                         // Show branded holder name for anonymous cards in card UI
-                        final cardType = (card['type']?.toString() ?? '').toLowerCase();
+                        final cardType = (card['type']?.toString() ?? '')
+                            .toLowerCase();
                         if (cardType == 'anonymous') {
                           cardName = 'PadiPay';
                         }
@@ -291,20 +315,36 @@ class _CardDetailsBottomSheetState extends State<CardDetailsBottomSheet> {
                                 right: MediaQuery.of(context).size.width * 0.09,
                                 child: GestureDetector(
                                   onTap: () async {
-                                    final cId = widget.cards[index]['card_id']?.toString();
+                                    final cId = widget.cards[index]['card_id']
+                                        ?.toString();
                                     if (cId == null) return;
-                                    final cardPin = widget.cards[index]['pin']?.toString();
-                                    final cardDetails = widget.cards[index]['details'] as Map<String, dynamic>? ?? {};
-                                    final expM = (cardDetails['expiry_month'] ?? widget.cards[index]['expiry_month'])?.toString();
-                                    final expY = (cardDetails['expiry_year'] ?? widget.cards[index]['expiry_year'])?.toString();
-                                    final result = await showModalBottomSheet<String?>(
-                                      context: context,
-                                      isScrollControlled: true,
-                                      backgroundColor: Colors.transparent,
-                                      builder: (_) => const EnterPasscodeSheetForTransaction(),
-                                    );
+                                    final cardPin = widget.cards[index]['pin']
+                                        ?.toString();
+                                    final cardDetails =
+                                        widget.cards[index]['details']
+                                            as Map<String, dynamic>? ??
+                                        {};
+                                    final expM =
+                                        (cardDetails['expiry_month'] ??
+                                                widget
+                                                    .cards[index]['expiry_month'])
+                                            ?.toString();
+                                    final expY =
+                                        (cardDetails['expiry_year'] ??
+                                                widget
+                                                    .cards[index]['expiry_year'])
+                                            ?.toString();
+                                    final result =
+                                        await showModalBottomSheet<String?>(
+                                          context: context,
+                                          isScrollControlled: true,
+                                          backgroundColor: Colors.transparent,
+                                          builder: (_) =>
+                                              const EnterPasscodeSheetForTransaction(),
+                                        );
                                     if (result == null) return;
-                                    if (result == 'BIOMETRIC_SUCCESS' || result == cardPin) {
+                                    if (result == 'BIOMETRIC_SUCCESS' ||
+                                        result == cardPin) {
                                       if (!context.mounted) return;
                                       showModalBottomSheet(
                                         context: context,
@@ -315,11 +355,15 @@ class _CardDetailsBottomSheetState extends State<CardDetailsBottomSheet> {
                                           cardId: cId,
                                           expiryMonth: expM,
                                           expiryYear: expY,
-                                          cardPin: widget.cards[index]['pin']?.toString(),
+                                          cardPin: widget.cards[index]['pin']
+                                              ?.toString(),
                                         ),
                                       );
                                     } else {
-                                      showSimpleDialog('Incorrect PIN', Colors.red);
+                                      showSimpleDialog(
+                                        'Incorrect PIN',
+                                        Colors.red,
+                                      );
                                     }
                                   },
                                   child: const Icon(
@@ -355,118 +399,7 @@ class _CardDetailsBottomSheetState extends State<CardDetailsBottomSheet> {
                 ],
               ),
             ),
-            const SizedBox(height: 30),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        navigateTo(context, SendFundsPage());
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.only(
-                          top: 7,
-                          bottom: 7,
-                          left: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.4),
-                          borderRadius: BorderRadius.circular(55),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Container(
-                              width: 40,
-                              height: 40,
-                              padding: EdgeInsets.only(left: 0, right: 5),
-                              decoration: const BoxDecoration(
-                                color: Colors.black,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Center(
-                                child: Icon(
-                                  FontAwesomeIcons.paperPlane,
-                                  size: 20,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Text(
-                              "Withdraw",
-                              style: GoogleFonts.inter(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 5),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        final currentCard = widget.cards[_currentIndex];
-                        navigateTo(
-                          context,
-                          FundCard(
-                            card: currentCard,
-                            currency: widget.selectedCurrency,
-                          ),
-                        );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.only(
-                          top: 7,
-                          bottom: 7,
-                          left: 8,
-                        ),
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.4),
-                          borderRadius: BorderRadius.circular(55),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Container(
-                              width: 40,
-                              height: 40,
-                              decoration: const BoxDecoration(
-                                color: Colors.black,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Center(
-                                child: Image.asset(
-                                  "assets/deposit_card.png",
-                                  width: 25,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Text(
-                              "Deposit",
-                              style: GoogleFonts.inter(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+
             const SizedBox(height: 20),
             Expanded(
               child: Container(
@@ -494,7 +427,9 @@ class _CardDetailsBottomSheetState extends State<CardDetailsBottomSheet> {
                               showModalBottomSheet(
                                 context: context,
                                 isScrollControlled: true,
-                                builder: (context) => MoreActionsBottomSheet(card: widget.cards[_currentIndex]),
+                                builder: (context) => MoreActionsBottomSheet(
+                                  card: widget.cards[_currentIndex],
+                                ),
                               );
                             },
                             child: Container(
@@ -529,43 +464,58 @@ class _CardDetailsBottomSheetState extends State<CardDetailsBottomSheet> {
                                     final trans =
                                         transactions[idx] as Map? ?? {};
                                     final String type =
-                                        trans['card_transaction_type']?.toString() ??
+                                        trans['card_transaction_type']
+                                            ?.toString() ??
                                         trans['type']?.toString() ??
                                         'DEBIT';
                                     final String typeStr = type.toLowerCase();
-                                    final bool isDeclinedTx = typeStr == 'card_declined';
-                                    final bool isRefundTx = typeStr == 'card_refund';
-                                    final bool isCredit = typeStr == 'credit' || typeStr == 'deposit' || isRefundTx;
-                                    final String sign = (isCredit && !isDeclinedTx) ? '+' : '-';
+                                    final bool isDeclinedTx =
+                                        typeStr == 'card_declined';
+                                    final bool isRefundTx =
+                                        typeStr == 'card_refund';
+                                    final bool isCredit =
+                                        typeStr == 'credit' ||
+                                        typeStr == 'deposit' ||
+                                        isRefundTx;
+                                    final String sign =
+                                        (isCredit && !isDeclinedTx) ? '+' : '-';
                                     double amt = 0;
                                     final rawAmt = trans['amount'];
                                     if (rawAmt is num) {
                                       amt = rawAmt.toDouble();
-                                      if (trans['card_transaction_type'] != null) {
+                                      if (trans['card_transaction_type'] !=
+                                          null) {
                                         amt /= 100;
                                       }
                                     } else if (rawAmt != null) {
-                                      amt = double.tryParse(rawAmt.toString()) ?? 0.0;
+                                      amt =
+                                          double.tryParse(rawAmt.toString()) ??
+                                          0.0;
                                       amt /= 100;
                                     }
                                     final String currencySym =
-                                        (trans['currency']?.toString() ?? '') == 'USD'
-                                            ? '\$'
-                                            : '₦';
-                                    final formatter = NumberFormat('#,###.00', 'en_US');
-                                    final String amountStr =
-                                        isDeclinedTx ? '$currencySym${formatter.format(amt)}'
-                                        : '$sign$currencySym${formatter.format(amt)}';
+                                        (trans['currency']?.toString() ?? '') ==
+                                            'USD'
+                                        ? '\$'
+                                        : '₦';
+                                    final formatter = NumberFormat(
+                                      '#,###.00',
+                                      'en_US',
+                                    );
+                                    final double displayAmount = amt.abs();
+                                    final String amountStr = isDeclinedTx
+                                        ? '$currencySym${formatter.format(displayAmount)}'
+                                        : '$sign$currencySym${formatter.format(displayAmount)}';
                                     final Color color = isDeclinedTx
                                         ? Colors.red
                                         : isRefundTx || isCredit
-                                            ? Colors.green
-                                            : const Color(0xFFE65100);
+                                        ? Colors.green
+                                        : const Color(0xFFE65100);
                                     final String statusLabel = isDeclinedTx
                                         ? 'Declined'
                                         : isRefundTx
-                                            ? 'Refunded'
-                                            : 'Successful';
+                                        ? 'Refunded'
+                                        : 'Successful';
                                     final Color statusColor = color;
                                     final String title =
                                         trans['merchant']?.toString() ??
@@ -576,10 +526,13 @@ class _CardDetailsBottomSheetState extends State<CardDetailsBottomSheet> {
                                     String formattedDate = '';
                                     final rawTs = trans['timestamp'];
                                     if (rawTs is Timestamp) {
-                                      formattedDate = DateFormat('HH:mm • MMMM d, yyyy').format(rawTs.toDate());
+                                      formattedDate = DateFormat(
+                                        'HH:mm • MMMM d, yyyy',
+                                      ).format(rawTs.toDate());
                                     } else {
                                       final String dateStr =
-                                          trans['transaction_date']?.toString() ??
+                                          trans['transaction_date']
+                                              ?.toString() ??
                                           trans['createdAt']?.toString() ??
                                           trans['updatedAt']?.toString() ??
                                           '';
@@ -587,7 +540,9 @@ class _CardDetailsBottomSheetState extends State<CardDetailsBottomSheet> {
                                           DateTime.tryParse(dateStr)?.toUtc() ??
                                           _parseUtcDate(dateStr);
                                       formattedDate = dtUtc != null
-                                          ? DateFormat('HH:mm • MMMM d, yyyy').format(dtUtc.toLocal())
+                                          ? DateFormat(
+                                              'HH:mm • MMMM d, yyyy',
+                                            ).format(dtUtc.toLocal())
                                           : dateStr;
                                     }
                                     return _buildTransactionRow(
@@ -600,14 +555,21 @@ class _CardDetailsBottomSheetState extends State<CardDetailsBottomSheet> {
                                       onTap: () {
                                         final reference =
                                             trans['reference']?.toString() ??
-                                            trans['transactionId']?.toString() ??
+                                            trans['transactionId']
+                                                ?.toString() ??
                                             '';
                                         navigateTo(
                                           context,
                                           ReceiptPage(
                                             reference: reference,
-                                            cardData: typeStr == 'card_debit' || typeStr == 'card_declined' || typeStr == 'card_refund'
-                                                ? Map<String, dynamic>.from(trans)
+                                            cardData:
+                                                typeStr == 'card_debit' ||
+                                                    typeStr ==
+                                                        'card_declined' ||
+                                                    typeStr == 'card_refund'
+                                                ? Map<String, dynamic>.from(
+                                                    trans,
+                                                  )
                                                 : null,
                                           ),
                                           type: NavigationType.push,
@@ -676,7 +638,10 @@ class _CardDetailsBottomSheetState extends State<CardDetailsBottomSheet> {
                       Icon(Icons.schedule, size: 12, color: Colors.grey),
                       Text(
                         date,
-                        style: GoogleFonts.inter(color: Colors.grey, fontSize: 12),
+                        style: GoogleFonts.inter(
+                          color: Colors.grey,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
@@ -693,7 +658,7 @@ class _CardDetailsBottomSheetState extends State<CardDetailsBottomSheet> {
                     color: amountColor,
                   ),
                 ),
-                if (statusLabel != null) ...[  
+                if (statusLabel != null) ...[
                   const SizedBox(height: 2),
                   Text(
                     statusLabel,
@@ -718,8 +683,17 @@ class _CardDetailsBottomSheetState extends State<CardDetailsBottomSheet> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: GoogleFonts.inter(color: Colors.grey.shade600, fontSize: 13)),
-          Flexible(child: Text(value, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13), textAlign: TextAlign.end)),
+          Text(
+            label,
+            style: GoogleFonts.inter(color: Colors.grey.shade600, fontSize: 13),
+          ),
+          Flexible(
+            child: Text(
+              value,
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+              textAlign: TextAlign.end,
+            ),
+          ),
         ],
       ),
     );
@@ -752,7 +726,8 @@ class _MoreActionsBottomSheetState extends State<MoreActionsBottomSheet> {
 
   bool get _isDelivered {
     final status = _physicalTracking['status']?.toString().toLowerCase() ?? '';
-    return widget.card['physicalCardDelivered'] == true || status == 'delivered';
+    return widget.card['physicalCardDelivered'] == true ||
+        status == 'delivered';
   }
 
   bool get _isActivated => widget.card['physicalCardActivated'] == true;
@@ -765,7 +740,8 @@ class _MoreActionsBottomSheetState extends State<MoreActionsBottomSheet> {
 
   Future<void> _toggleFreeze(bool val) async {
     final cardId = widget.card['card_id']?.toString();
-    final firestoreDocId = (widget.card['firestoreDocId'] ?? widget.card['id'])?.toString();
+    final firestoreDocId = (widget.card['firestoreDocId'] ?? widget.card['id'])
+        ?.toString();
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (cardId == null || userId == null) {
       showSimpleDialog('Card ID not found', Colors.red);
@@ -794,7 +770,11 @@ class _MoreActionsBottomSheetState extends State<MoreActionsBottomSheet> {
 
       if (mounted) setState(() => _isFrozen = val);
     } catch (e) {
-      if (mounted) showSimpleDialog('Failed to ${val ? 'freeze' : 'unfreeze'} card: $e', Colors.red);
+      if (mounted)
+        showSimpleDialog(
+          'Failed to ${val ? 'freeze' : 'unfreeze'} card: $e',
+          Colors.red,
+        );
     } finally {
       if (mounted) setState(() => _freezeLoading = false);
     }
@@ -802,7 +782,8 @@ class _MoreActionsBottomSheetState extends State<MoreActionsBottomSheet> {
 
   Future<void> _terminateCard() async {
     final cardId = widget.card['card_id']?.toString();
-    final firestoreDocId = (widget.card['firestoreDocId'] ?? widget.card['id'])?.toString();
+    final firestoreDocId = (widget.card['firestoreDocId'] ?? widget.card['id'])
+        ?.toString();
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (cardId == null || userId == null) {
       showSimpleDialog('Card ID not found', Colors.red);
@@ -847,7 +828,10 @@ class _MoreActionsBottomSheetState extends State<MoreActionsBottomSheet> {
             .doc(userId)
             .collection('cards')
             .doc(firestoreDocId)
-            .update({'deleted': true, 'terminatedAt': FieldValue.serverTimestamp()});
+            .update({
+              'deleted': true,
+              'terminatedAt': FieldValue.serverTimestamp(),
+            });
       }
 
       if (mounted) {
@@ -889,19 +873,13 @@ class _MoreActionsBottomSheetState extends State<MoreActionsBottomSheet> {
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('Close'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Close')),
         ],
       ),
     );
   }
 
-  void _activatePhysicalCardHandler() {
-    // TODO: Implement physical card activation call when backend handler is ready.
-  }
-
+ 
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -909,7 +887,8 @@ class _MoreActionsBottomSheetState extends State<MoreActionsBottomSheet> {
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      child: SafeArea(bottom: true,
+      child: SafeArea(
+        bottom: true,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -934,7 +913,10 @@ class _MoreActionsBottomSheetState extends State<MoreActionsBottomSheet> {
                 const SizedBox(width: 16),
                 Text(
                   'More Actions',
-                  style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.inter(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
@@ -950,8 +932,10 @@ class _MoreActionsBottomSheetState extends State<MoreActionsBottomSheet> {
             ListTile(
               leading: const Icon(Icons.contactless_outlined),
               title: Text('Pay at POS (Tap to Pay)'),
-              subtitle: Text('Use your phone at contactless payment terminals',
-                  style: GoogleFonts.inter(fontSize: 12)),
+              subtitle: Text(
+                'Use your phone at contactless payment terminals',
+                style: GoogleFonts.inter(fontSize: 12),
+              ),
               trailing: const Icon(Icons.arrow_forward_ios, size: 20),
               onTap: () {
                 final cardId = widget.card['card_id']?.toString();
@@ -965,11 +949,14 @@ class _MoreActionsBottomSheetState extends State<MoreActionsBottomSheet> {
                   backgroundColor: Colors.transparent,
                   builder: (_) => NfcPosSheet(
                     cardId: cardId,
-                    cardholderName: widget.card['nameOnCard']?.toString() ??
+                    cardholderName:
+                        widget.card['nameOnCard']?.toString() ??
                         widget.card['cardHolderName']?.toString(),
-                    lastFour: widget.card['last4']?.toString() ??
+                    lastFour:
+                        widget.card['last4']?.toString() ??
                         widget.card['lastFour']?.toString(),
-                    expiryDate: widget.card['expiryMonth'] != null &&
+                    expiryDate:
+                        widget.card['expiryMonth'] != null &&
                             widget.card['expiryYear'] != null
                         ? '${widget.card['expiryMonth']}/${widget.card['expiryYear']}'
                         : widget.card['expiryDate']?.toString(),
@@ -982,11 +969,14 @@ class _MoreActionsBottomSheetState extends State<MoreActionsBottomSheet> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                   Row(
+                  Row(
                     children: [
                       Icon(FontAwesomeIcons.snowflake, size: 20),
                       SizedBox(width: 12),
-                      Text('Freeze Card', style: GoogleFonts.inter(fontSize: 16)),
+                      Text(
+                        'Freeze Card',
+                        style: GoogleFonts.inter(fontSize: 16),
+                      ),
                     ],
                   ),
                   FlutterSwitch(
@@ -1041,31 +1031,13 @@ class _MoreActionsBottomSheetState extends State<MoreActionsBottomSheet> {
                 leading: const Icon(Icons.local_shipping_outlined),
                 title: Text('Track Physical Card'),
                 subtitle: Text(
-                  'Status: ${( _physicalTracking['status']?.toString() ?? 'pending').toUpperCase()}',
+                  'Status: ${(_physicalTracking['status']?.toString() ?? 'pending').toUpperCase()}',
                   style: TextStyle(fontSize: 12),
                 ),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 20),
                 onTap: _showTrackPhysicalCard,
               ),
-            if (_isPhysicalCard)
-              ListTile(
-                leading: Icon(
-                  _isActivated ? Icons.check_circle : Icons.power_settings_new,
-                  color: _isActivated ? Colors.green : Colors.black87,
-                ),
-                title: Text(_isActivated ? 'Physical Card Activated' : 'Activate Physical Card'),
-                subtitle: Text(
-                  _isDelivered
-                      ? 'Tap to activate this delivered card'
-                      : 'Activation becomes available when delivery is marked completed',
-                  style: TextStyle(fontSize: 12),
-                ),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 20),
-                onTap: _isDelivered && !_isActivated
-                    ? _activatePhysicalCardHandler
-                    : null,
-              ),
-            ListTile(
+             ListTile(
               leading: const Icon(Icons.lock),
               title: Text('Change PIN'),
               trailing: const Icon(Icons.arrow_forward_ios, size: 20),
@@ -1092,11 +1064,19 @@ class _MoreActionsBottomSheetState extends State<MoreActionsBottomSheet> {
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.red),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.red,
+                      ),
                     )
                   : const Icon(Icons.cancel, color: Colors.red),
-              title: Text('Terminate Card',
-                  style: GoogleFonts.inter(color: Colors.red, fontWeight: FontWeight.w600)),
+              title: Text(
+                'Terminate Card',
+                style: GoogleFonts.inter(
+                  color: Colors.red,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               trailing: const Icon(Icons.arrow_forward_ios, size: 20),
               onTap: _terminateLoading ? null : _terminateCard,
             ),
@@ -1122,7 +1102,8 @@ class _EnterPasscodeSheetState extends State<EnterPasscodeSheet> {
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      child: SafeArea(bottom: true,
+      child: SafeArea(
+        bottom: true,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -1140,7 +1121,10 @@ class _EnterPasscodeSheetState extends State<EnterPasscodeSheet> {
               const SizedBox(height: 20),
               Text(
                 'Enter Account Passcode',
-                style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold),
+                style: GoogleFonts.inter(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 20),
               Text(
@@ -1167,10 +1151,7 @@ class _EnterPasscodeSheetState extends State<EnterPasscodeSheet> {
                     ),
                     child: Center(
                       child: isEntered
-                          ? Text(
-                              pin[index],
-                              style: TextStyle(fontSize: 20),
-                            )
+                          ? Text(pin[index], style: TextStyle(fontSize: 20))
                           : null,
                     ),
                   );
@@ -1201,12 +1182,17 @@ class _EnterPasscodeSheetState extends State<EnterPasscodeSheet> {
                         }
                       : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: pin.length == 4 ? Colors.blue : Colors.grey,
+                    backgroundColor: pin.length == 4
+                        ? Colors.blue
+                        : Colors.grey,
                     disabledBackgroundColor: Colors.grey[300],
                   ),
                   child: Text(
                     'Continue',
-                    style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold),
+                    style: GoogleFonts.inter(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
@@ -1276,7 +1262,8 @@ class _CreatePasscodeSheetState extends State<CreatePasscodeSheet> {
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      child: SafeArea(bottom: true,
+      child: SafeArea(
+        bottom: true,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -1346,7 +1333,10 @@ class _CreatePasscodeSheetState extends State<CreatePasscodeSheet> {
                     if (val == null) {
                       if (currentPin.isNotEmpty) {
                         if (isConfirming) {
-                          confirmPin = confirmPin.substring(0, confirmPin.length - 1);
+                          confirmPin = confirmPin.substring(
+                            0,
+                            confirmPin.length - 1,
+                          );
                         } else {
                           pin = pin.substring(0, pin.length - 1);
                         }
@@ -1376,12 +1366,17 @@ class _CreatePasscodeSheetState extends State<CreatePasscodeSheet> {
                         }
                       : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: currentPin.length == 4 ? Colors.blue : Colors.grey,
+                    backgroundColor: currentPin.length == 4
+                        ? Colors.blue
+                        : Colors.grey,
                     disabledBackgroundColor: Colors.grey[300],
                   ),
                   child: Text(
                     isConfirming ? 'Confirm' : 'Next',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
@@ -1407,7 +1402,8 @@ class _CardTypeBottomSheetState extends State<CardTypeBottomSheet> {
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      child: SafeArea(bottom: true,
+      child: SafeArea(
+        bottom: true,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: SingleChildScrollView(
@@ -1565,43 +1561,437 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
   final TextEditingController _fundAmountController = TextEditingController();
 
   static const Map<String, List<String>> _stateCities = {
-    'Abia': ['Aba', 'Umuahia', 'Ohafia', 'Arochukwu', 'Bende', 'Isuikwuato', 'Ikwuano', 'Isiala Ngwa', 'Obingwa', 'Osisioma'],
-    'Adamawa': ['Yola', 'Mubi', 'Numan', 'Ganye', 'Gombi', 'Guyuk', 'Hong', 'Jada', 'Lamurde', 'Madagali'],
-    'Akwa Ibom': ['Uyo', 'Eket', 'Ikot Abasi', 'Oron', 'Abak', 'Ikot Ekpene', 'Etinan', 'Essien Udim', 'Ini', 'Itu'],
-    'Anambra': ['Awka', 'Onitsha', 'Nnewi', 'Ekwulobia', 'Aguata', 'Ayamelum', 'Dunukofia', 'Idemili', 'Ogbaru', 'Orumba'],
-    'Bauchi': ['Bauchi', 'Azare', 'Misau', 'Ningi', 'Alkaleri', 'Bogoro', 'Darazo', 'Dass', 'Gamawa', 'Giade'],
-    'Bayelsa': ['Yenagoa', 'Ogbia', 'Brass', 'Nembe', 'Ekeremor', 'Kolokuma', 'Sagbama', 'Southern Ijaw'],
-    'Benue': ['Makurdi', 'Gboko', 'Katsina-Ala', 'Otukpo', 'Adoka', 'Ado', 'Agatu', 'Apa', 'Logo', 'Obi'],
-    'Borno': ['Maiduguri', 'Biu', 'Konduga', 'Damboa', 'Askira', 'Bama', 'Chibok', 'Dikwa', 'Gwoza', 'Hawul'],
-    'Cross River': ['Calabar', 'Ogoja', 'Ikom', 'Obudu', 'Akamkpa', 'Akpabuyo', 'Bekwarra', 'Biase', 'Boki', 'Etung'],
-    'Delta': ['Asaba', 'Warri', 'Sapele', 'Ughelli', 'Agbor', 'Isoko', 'Ndokwa', 'Okpe', 'Oshimili', 'Patani'],
-    'Ebonyi': ['Abakaliki', 'Afikpo', 'Onueke', 'Ikwo', 'Ezza', 'Ishielu', 'Ivo', 'Izzi', 'Ohaozara', 'Ohaukwu'],
-    'Edo': ['Benin City', 'Auchi', 'Ekpoma', 'Uromi', 'Akoko-Edo', 'Egor', 'Etsako', 'Igueben', 'Ikpoba-Okha', 'Orhionmwon'],
-    'Ekiti': ['Ado-Ekiti', 'Ikere-Ekiti', 'Ijero-Ekiti', 'Emure', 'Gbonyin', 'Ido-Osi', 'Ilejemeje', 'Ikole', 'Moba', 'Oye'],
-    'Enugu': ['Enugu', 'Nsukka', 'Agbani', 'Awgu', 'Ezeagu', 'Igbo-Etiti', 'Igboeze', 'Isi-Uzo', 'Nkanu', 'Oji River'],
+    'Abia': [
+      'Aba',
+      'Umuahia',
+      'Ohafia',
+      'Arochukwu',
+      'Bende',
+      'Isuikwuato',
+      'Ikwuano',
+      'Isiala Ngwa',
+      'Obingwa',
+      'Osisioma',
+    ],
+    'Adamawa': [
+      'Yola',
+      'Mubi',
+      'Numan',
+      'Ganye',
+      'Gombi',
+      'Guyuk',
+      'Hong',
+      'Jada',
+      'Lamurde',
+      'Madagali',
+    ],
+    'Akwa Ibom': [
+      'Uyo',
+      'Eket',
+      'Ikot Abasi',
+      'Oron',
+      'Abak',
+      'Ikot Ekpene',
+      'Etinan',
+      'Essien Udim',
+      'Ini',
+      'Itu',
+    ],
+    'Anambra': [
+      'Awka',
+      'Onitsha',
+      'Nnewi',
+      'Ekwulobia',
+      'Aguata',
+      'Ayamelum',
+      'Dunukofia',
+      'Idemili',
+      'Ogbaru',
+      'Orumba',
+    ],
+    'Bauchi': [
+      'Bauchi',
+      'Azare',
+      'Misau',
+      'Ningi',
+      'Alkaleri',
+      'Bogoro',
+      'Darazo',
+      'Dass',
+      'Gamawa',
+      'Giade',
+    ],
+    'Bayelsa': [
+      'Yenagoa',
+      'Ogbia',
+      'Brass',
+      'Nembe',
+      'Ekeremor',
+      'Kolokuma',
+      'Sagbama',
+      'Southern Ijaw',
+    ],
+    'Benue': [
+      'Makurdi',
+      'Gboko',
+      'Katsina-Ala',
+      'Otukpo',
+      'Adoka',
+      'Ado',
+      'Agatu',
+      'Apa',
+      'Logo',
+      'Obi',
+    ],
+    'Borno': [
+      'Maiduguri',
+      'Biu',
+      'Konduga',
+      'Damboa',
+      'Askira',
+      'Bama',
+      'Chibok',
+      'Dikwa',
+      'Gwoza',
+      'Hawul',
+    ],
+    'Cross River': [
+      'Calabar',
+      'Ogoja',
+      'Ikom',
+      'Obudu',
+      'Akamkpa',
+      'Akpabuyo',
+      'Bekwarra',
+      'Biase',
+      'Boki',
+      'Etung',
+    ],
+    'Delta': [
+      'Asaba',
+      'Warri',
+      'Sapele',
+      'Ughelli',
+      'Agbor',
+      'Isoko',
+      'Ndokwa',
+      'Okpe',
+      'Oshimili',
+      'Patani',
+    ],
+    'Ebonyi': [
+      'Abakaliki',
+      'Afikpo',
+      'Onueke',
+      'Ikwo',
+      'Ezza',
+      'Ishielu',
+      'Ivo',
+      'Izzi',
+      'Ohaozara',
+      'Ohaukwu',
+    ],
+    'Edo': [
+      'Benin City',
+      'Auchi',
+      'Ekpoma',
+      'Uromi',
+      'Akoko-Edo',
+      'Egor',
+      'Etsako',
+      'Igueben',
+      'Ikpoba-Okha',
+      'Orhionmwon',
+    ],
+    'Ekiti': [
+      'Ado-Ekiti',
+      'Ikere-Ekiti',
+      'Ijero-Ekiti',
+      'Emure',
+      'Gbonyin',
+      'Ido-Osi',
+      'Ilejemeje',
+      'Ikole',
+      'Moba',
+      'Oye',
+    ],
+    'Enugu': [
+      'Enugu',
+      'Nsukka',
+      'Agbani',
+      'Awgu',
+      'Ezeagu',
+      'Igbo-Etiti',
+      'Igboeze',
+      'Isi-Uzo',
+      'Nkanu',
+      'Oji River',
+    ],
     'FCT (Abuja)': ['Abuja', 'Gwagwalada', 'Kuje', 'Bwari', 'Kwali', 'Abaji'],
-    'Gombe': ['Gombe', 'Kaltungo', 'Billiri', 'Balanga', 'Dukku', 'Funakaye', 'Kwami', 'Nafada', 'Shongom', 'Yamaltu'],
-    'Imo': ['Owerri', 'Orlu', 'Okigwe', 'Ahiazu', 'Ehime-Mbano', 'Ezinihitte', 'Ideato', 'Ihitte-Uboma', 'Ikeduru', 'Isiala Mbano'],
-    'Jigawa': ['Dutse', 'Hadejia', 'Gumel', 'Birnin Kudu', 'Auyo', 'Babura', 'Buji', 'Birniwa', 'Guri', 'Gwaram'],
-    'Kaduna': ['Kaduna', 'Zaria', 'Kafanchan', 'Chikun', 'Birnin Gwari', 'Giwa', 'Igabi', 'Ikara', 'Jaba', 'Kaura'],
-    'Kano': ['Kano', 'Wudil', 'Gaya', 'Bichi', 'Ajingi', 'Albasu', 'Bagwai', 'Bebeji', 'Danbatta', 'Gwarzo'],
-    'Katsina': ['Katsina', 'Daura', 'Funtua', 'Malumfashi', 'Bakori', 'Batagarawa', 'Batsari', 'Bindawa', 'Charanchi', 'Dan Musa'],
-    'Kebbi': ['Birnin Kebbi', 'Argungu', 'Koko', 'Jega', 'Aleiro', 'Arewa', 'Augie', 'Bagudo', 'Bunza', 'Dandi'],
-    'Kogi': ['Lokoja', 'Kabba', 'Ankpa', 'Idah', 'Adavi', 'Ajaokuta', 'Bassa', 'Dekina', 'Ibaji', 'Igalamela'],
-    'Kwara': ['Ilorin', 'Offa', 'Omu-Aran', 'Kaiama', 'Asa', 'Baruten', 'Edu', 'Ifelodun', 'Irepodun', 'Moro'],
-    'Lagos': ['Lagos Island', 'Ikeja', 'Victoria Island', 'Lekki', 'Surulere', 'Alimosho', 'Apapa', 'Badagry', 'Epe', 'Eti-Osa'],
-    'Nasarawa': ['Lafia', 'Keffi', 'Akwanga', 'Nasarawa', 'Awe', 'Doma', 'Keana', 'Kokona', 'Nasarawa Egon', 'Obi'],
-    'Niger': ['Minna', 'Suleja', 'Bida', 'Kontagora', 'Agaie', 'Agwara', 'Borgu', 'Bosso', 'Chanchaga', 'Edati'],
-    'Ogun': ['Abeokuta', 'Sagamu', 'Ijebu-Ode', 'Ilaro', 'Ado-Odo', 'Ewekoro', 'Ifo', 'Ijebu East', 'Imeko Afon', 'Ipokia'],
-    'Ondo': ['Akure', 'Ondo Town', 'Owo', 'Ikare', 'Ese-Odo', 'Idanre', 'Ifedore', 'Ilaje', 'Ile-Oluji', 'Odigbo'],
-    'Osun': ['Osogbo', 'Ilesha', 'Ife', 'Ede', 'Aiyedaade', 'Aiyedire', 'Boluwaduro', 'Boripe', 'Ejigbo', 'Ife North'],
-    'Oyo': ['Ibadan', 'Ogbomoso', 'Oyo', 'Iseyin', 'Akinyele', 'Afijio', 'Atiba', 'Atisbo', 'Egbeda', 'Ibadan North'],
-    'Plateau': ['Jos', 'Bukuru', 'Shendam', 'Pankshin', 'Barkin Ladi', 'Bassa', 'Bokkos', 'Jos East', 'Jos North', 'Jos South'],
-    'Rivers': ['Port Harcourt', 'Obio-Akpor', 'Bonny', 'Eleme', 'Abua-Odual', 'Ahoada', 'Akuku-Toru', 'Andoni', 'Asari-Toru', 'Degema'],
-    'Sokoto': ['Sokoto', 'Wamako', 'Binji', 'Bodinga', 'Dange Shuni', 'Gada', 'Goronyo', 'Gudu', 'Gwadabawa', 'Illela'],
-    'Taraba': ['Jalingo', 'Wukari', 'Bali', 'Donga', 'Gashaka', 'Gassol', 'Ibi', 'Karim Lamido', 'Kurmi', 'Lau'],
-    'Yobe': ['Damaturu', 'Nguru', 'Potiskum', 'Gashua', 'Bade', 'Bursari', 'Fika', 'Fune', 'Geidam', 'Gulani'],
-    'Zamfara': ['Gusau', 'Kaura Namoda', 'Talata Mafara', 'Anka', 'Bakura', 'Birnin Magaji', 'Bukkuyum', 'Bungudu', 'Gummi', 'Maru'],
+    'Gombe': [
+      'Gombe',
+      'Kaltungo',
+      'Billiri',
+      'Balanga',
+      'Dukku',
+      'Funakaye',
+      'Kwami',
+      'Nafada',
+      'Shongom',
+      'Yamaltu',
+    ],
+    'Imo': [
+      'Owerri',
+      'Orlu',
+      'Okigwe',
+      'Ahiazu',
+      'Ehime-Mbano',
+      'Ezinihitte',
+      'Ideato',
+      'Ihitte-Uboma',
+      'Ikeduru',
+      'Isiala Mbano',
+    ],
+    'Jigawa': [
+      'Dutse',
+      'Hadejia',
+      'Gumel',
+      'Birnin Kudu',
+      'Auyo',
+      'Babura',
+      'Buji',
+      'Birniwa',
+      'Guri',
+      'Gwaram',
+    ],
+    'Kaduna': [
+      'Kaduna',
+      'Zaria',
+      'Kafanchan',
+      'Chikun',
+      'Birnin Gwari',
+      'Giwa',
+      'Igabi',
+      'Ikara',
+      'Jaba',
+      'Kaura',
+    ],
+    'Kano': [
+      'Kano',
+      'Wudil',
+      'Gaya',
+      'Bichi',
+      'Ajingi',
+      'Albasu',
+      'Bagwai',
+      'Bebeji',
+      'Danbatta',
+      'Gwarzo',
+    ],
+    'Katsina': [
+      'Katsina',
+      'Daura',
+      'Funtua',
+      'Malumfashi',
+      'Bakori',
+      'Batagarawa',
+      'Batsari',
+      'Bindawa',
+      'Charanchi',
+      'Dan Musa',
+    ],
+    'Kebbi': [
+      'Birnin Kebbi',
+      'Argungu',
+      'Koko',
+      'Jega',
+      'Aleiro',
+      'Arewa',
+      'Augie',
+      'Bagudo',
+      'Bunza',
+      'Dandi',
+    ],
+    'Kogi': [
+      'Lokoja',
+      'Kabba',
+      'Ankpa',
+      'Idah',
+      'Adavi',
+      'Ajaokuta',
+      'Bassa',
+      'Dekina',
+      'Ibaji',
+      'Igalamela',
+    ],
+    'Kwara': [
+      'Ilorin',
+      'Offa',
+      'Omu-Aran',
+      'Kaiama',
+      'Asa',
+      'Baruten',
+      'Edu',
+      'Ifelodun',
+      'Irepodun',
+      'Moro',
+    ],
+    'Lagos': [
+      'Lagos Island',
+      'Ikeja',
+      'Victoria Island',
+      'Lekki',
+      'Surulere',
+      'Alimosho',
+      'Apapa',
+      'Badagry',
+      'Epe',
+      'Eti-Osa',
+    ],
+    'Nasarawa': [
+      'Lafia',
+      'Keffi',
+      'Akwanga',
+      'Nasarawa',
+      'Awe',
+      'Doma',
+      'Keana',
+      'Kokona',
+      'Nasarawa Egon',
+      'Obi',
+    ],
+    'Niger': [
+      'Minna',
+      'Suleja',
+      'Bida',
+      'Kontagora',
+      'Agaie',
+      'Agwara',
+      'Borgu',
+      'Bosso',
+      'Chanchaga',
+      'Edati',
+    ],
+    'Ogun': [
+      'Abeokuta',
+      'Sagamu',
+      'Ijebu-Ode',
+      'Ilaro',
+      'Ado-Odo',
+      'Ewekoro',
+      'Ifo',
+      'Ijebu East',
+      'Imeko Afon',
+      'Ipokia',
+    ],
+    'Ondo': [
+      'Akure',
+      'Ondo Town',
+      'Owo',
+      'Ikare',
+      'Ese-Odo',
+      'Idanre',
+      'Ifedore',
+      'Ilaje',
+      'Ile-Oluji',
+      'Odigbo',
+    ],
+    'Osun': [
+      'Osogbo',
+      'Ilesha',
+      'Ife',
+      'Ede',
+      'Aiyedaade',
+      'Aiyedire',
+      'Boluwaduro',
+      'Boripe',
+      'Ejigbo',
+      'Ife North',
+    ],
+    'Oyo': [
+      'Ibadan',
+      'Ogbomoso',
+      'Oyo',
+      'Iseyin',
+      'Akinyele',
+      'Afijio',
+      'Atiba',
+      'Atisbo',
+      'Egbeda',
+      'Ibadan North',
+    ],
+    'Plateau': [
+      'Jos',
+      'Bukuru',
+      'Shendam',
+      'Pankshin',
+      'Barkin Ladi',
+      'Bassa',
+      'Bokkos',
+      'Jos East',
+      'Jos North',
+      'Jos South',
+    ],
+    'Rivers': [
+      'Port Harcourt',
+      'Obio-Akpor',
+      'Bonny',
+      'Eleme',
+      'Abua-Odual',
+      'Ahoada',
+      'Akuku-Toru',
+      'Andoni',
+      'Asari-Toru',
+      'Degema',
+    ],
+    'Sokoto': [
+      'Sokoto',
+      'Wamako',
+      'Binji',
+      'Bodinga',
+      'Dange Shuni',
+      'Gada',
+      'Goronyo',
+      'Gudu',
+      'Gwadabawa',
+      'Illela',
+    ],
+    'Taraba': [
+      'Jalingo',
+      'Wukari',
+      'Bali',
+      'Donga',
+      'Gashaka',
+      'Gassol',
+      'Ibi',
+      'Karim Lamido',
+      'Kurmi',
+      'Lau',
+    ],
+    'Yobe': [
+      'Damaturu',
+      'Nguru',
+      'Potiskum',
+      'Gashua',
+      'Bade',
+      'Bursari',
+      'Fika',
+      'Fune',
+      'Geidam',
+      'Gulani',
+    ],
+    'Zamfara': [
+      'Gusau',
+      'Kaura Namoda',
+      'Talata Mafara',
+      'Anka',
+      'Bakura',
+      'Birnin Magaji',
+      'Bukkuyum',
+      'Bungudu',
+      'Gummi',
+      'Maru',
+    ],
   };
   @override
   void initState() {
@@ -1663,15 +2053,17 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
       final address = data['address'] as Map<String, dynamic>?;
       final userState = address?['state']?.toString();
       final userCity = address?['city']?.toString();
-      final resolvedState =
-          (_stateCities.containsKey(userState)) ? userState : null;
-      final resolvedCity = (resolvedState != null &&
+      final resolvedState = (_stateCities.containsKey(userState))
+          ? userState
+          : null;
+      final resolvedCity =
+          (resolvedState != null &&
               (_stateCities[resolvedState]?.contains(userCity) ?? false))
           ? userCity
           : null;
       setState(() {
         _nameController.text = widget.cardType == 'Anonymous'
-              ? ''
+            ? ''
             : '${data['firstName']} ${data['lastName']}';
         _address1Controller.text = address?['street']?.toString() ?? '';
         if (resolvedState != null) _selectedState = resolvedState;
@@ -1693,9 +2085,15 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      child: SafeArea(bottom: true,
+      child: SafeArea(
+        bottom: true,
         child: Padding(
-          padding: EdgeInsets.fromLTRB(18, 18, 18, 18 + MediaQuery.of(context).viewInsets.bottom),
+          padding: EdgeInsets.fromLTRB(
+            18,
+            18,
+            18,
+            18 + MediaQuery.of(context).viewInsets.bottom,
+          ),
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1715,7 +2113,10 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                 SizedBox(height: 30),
                 Text(
                   'Basic Details',
-                  style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.inter(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -1730,9 +2131,223 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                   backgroundColor: Colors.grey.shade300,
                   color: primaryColor,
                 ),
+                SizedBox(height: 20),
+                Text('Select Currency'),
+                const SizedBox(height: 5),
+                DropdownButtonFormField<String>(
+                  decoration: InputDecoration(
+                    fillColor: Colors.white,
+                    filled: true,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    hintText: 'Select currency',
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 15,
+                    ),
+                  ),
+                  initialValue: selectedCurrency,
+                  dropdownColor:
+                      Colors.white, // sets dropdown item background color
+                  items:
+                      (widget.cardType == 'Physical' ? ['NGN'] : ['USD', 'NGN'])
+                          .map(
+                            (name) => DropdownMenuItem(
+                              value: name,
+                              child: Text(name),
+                            ),
+                          )
+                          .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      selectedCurrency = value!;
+                      _selectedScheme = '';
+                      if (selectedCurrency.contains('USD') &&
+                          _fundAmountController.text.trim().isEmpty) {
+                        _fundAmountController.text = _minimumUsdFundingAmount
+                            .toString();
+                      }
+                    });
+                  },
+                ),
+                if (selectedCurrency.contains('USD')) ...[
+                  const SizedBox(height: 20),
+                  Text('Funding Amount (USD)'),
+                  const SizedBox(height: 5),
+                  TextField(
+                    controller: _fundAmountController,
+                    keyboardType: TextInputType.numberWithOptions(
+                      decimal: false,
+                    ),
+                    onChanged: (_) {
+                      if (mounted) setState(() {});
+                    },
+                    decoration: InputDecoration(
+                      prefixText: selectedCurrency.contains('USD')
+                          ? '\$ '
+                          : '₦ ',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(6),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      hintText: selectedCurrency.contains('USD')
+                          ? 'e.g. 20'
+                          : 'e.g. 5000',
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Builder(
+                    builder: (context) {
+                      final parsedUsd = int.tryParse(
+                        _fundAmountController.text.trim(),
+                      );
+                      final equivalent = parsedUsd == null
+                          ? null
+                          : _computeNgnEquivalent(parsedUsd);
+                      final feeEquivalent = _computeNgnEquivalent(
+                        _usdVirtualCardFee,
+                      );
+                      final totalEquivalent = parsedUsd == null
+                          ? null
+                          : _computeNgnEquivalent(
+                              parsedUsd + _usdVirtualCardFee,
+                            );
+                      final rate = _usdNgnRate;
+
+                      return Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          border: Border.all(color: Colors.blue.shade200),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _rateLoading
+                                  ? 'Loading USD/NGN rate...'
+                                  : rate == null
+                                  ? 'USD/NGN rate unavailable. Please try again shortly.'
+                                  : 'Rate: 1 USD = ₦${NumberFormat('#,##0.##').format(rate)}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            if (equivalent != null) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                'Funding equivalent: \u20A6${NumberFormat('#,##0.##').format(equivalent)}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 4),
+                            Text(
+                              'Card fee: \$$_usdVirtualCardFee',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            if (feeEquivalent != null) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                'Fee equivalent: \u20A6${NumberFormat('#,##0.##').format(feeEquivalent)}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ],
+                            if (totalEquivalent != null) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                'Total debit: \u20A6${NumberFormat('#,##0.##').format(totalEquivalent)}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                  if (widget.cardType != 'Anonymous' &&
+                      (_bvnMissing || _dobMissing)) ...[
+                    const SizedBox(height: 20),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.shade50,
+                        border: Border.all(color: Colors.amber.shade300),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline, color: Colors.amber),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'USD cards require identity verification. Please provide your BVN.',
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (_bvnMissing) ...[
+                      const SizedBox(height: 16),
+                      Text('BVN (Bank Verification Number)'),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _bvnController,
+                        keyboardType: TextInputType.number,
+                        maxLength: 11,
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(6),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          hintText: '11-digit BVN',
+                          counterText: '',
+                        ),
+                      ),
+                    ],
+                    if (_dobMissing) ...[
+                      const SizedBox(height: 16),
+                      Text('Date of Birth'),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _dobController,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [DateInputFormatter()],
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(6),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          hintText: 'DD/MM/YYYY',
+                        ),
+                      ),
+                    ],
+                  ],
+                ],
                 const SizedBox(height: 20),
                 Text('Scheme'),
-                const SizedBox(height: 10),
+                const SizedBox(height: 5),
                 Container(
                   width: double.infinity,
                   padding: EdgeInsets.all(16),
@@ -1804,205 +2419,7 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                   ),
                   const SizedBox(height: 20),
                 ],
-                Text('Select Currency'),
-                const SizedBox(height: 10),
-                DropdownButtonFormField<String>(
-                  decoration: InputDecoration(
-                    fillColor: Colors.white,
-                    filled: true,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(6),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    hintText: 'Select currency',
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 15,
-                    ),
-                  ),
-                  initialValue: selectedCurrency,
-                  dropdownColor:
-                      Colors.white, // sets dropdown item background color
-                  items: (widget.cardType == 'Physical'
-                        ? ['NGN']
-                        : ['USD', 'NGN'])
-                      .map(
-                        (name) =>
-                            DropdownMenuItem(value: name, child: Text(name)),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      selectedCurrency = value!;
-                      _selectedScheme = '';
-                      if (selectedCurrency.contains('USD') &&
-                          _fundAmountController.text.trim().isEmpty) {
-                        _fundAmountController.text =
-                            _minimumUsdFundingAmount.toString();
-                      }
-                    });
-                  },
-                ),
-                if (selectedCurrency.contains('USD')) ...[
-                  const SizedBox(height: 20),
-                  Text('Funding Amount (USD)'),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: _fundAmountController,
-                    keyboardType: TextInputType.numberWithOptions(decimal: false),
-                    onChanged: (_) {
-                      if (mounted) setState(() {});
-                    },
-                    decoration: InputDecoration(
-                      prefixText: selectedCurrency.contains('USD') ? '\$ ' : '₦ ',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(6),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                      ),
-                      hintText: selectedCurrency.contains('USD') ? 'e.g. 20' : 'e.g. 5000',
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Builder(
-                    builder: (context) {
-                      final parsedUsd = int.tryParse(_fundAmountController.text.trim());
-                      final equivalent =
-                          parsedUsd == null ? null : _computeNgnEquivalent(parsedUsd);
-                      final feeEquivalent =
-                          _computeNgnEquivalent(_usdVirtualCardFee);
-                      final totalEquivalent = parsedUsd == null
-                          ? null
-                          : _computeNgnEquivalent(
-                              parsedUsd + _usdVirtualCardFee,
-                            );
-                      final rate = _usdNgnRate;
 
-                      return Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
-                          border: Border.all(color: Colors.blue.shade200),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _rateLoading
-                                  ? 'Loading USD/NGN rate...'
-                                  : rate == null
-                                      ? 'USD/NGN rate unavailable. Please try again shortly.'
-                                      : 'Rate: 1 USD = ₦${NumberFormat('#,##0.##').format(rate)}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            if (equivalent != null) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                'Funding equivalent: \u20A6${NumberFormat('#,##0.##').format(equivalent)}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                            ],
-                            const SizedBox(height: 4),
-                            Text(
-                              'Card fee: \$$_usdVirtualCardFee',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            if (feeEquivalent != null) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                'Fee equivalent: \u20A6${NumberFormat('#,##0.##').format(feeEquivalent)}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                            ],
-                            if (totalEquivalent != null) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                'Total debit: \u20A6${NumberFormat('#,##0.##').format(totalEquivalent)}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                  if (widget.cardType != 'Anonymous' && (_bvnMissing || _dobMissing)) ...[
-                    const SizedBox(height: 20),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.amber.shade50,
-                        border: Border.all(color: Colors.amber.shade300),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child:  Row(
-                        children: [
-                          Icon(Icons.info_outline, color: Colors.amber),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'USD cards require identity verification. Please provide your BVN.',
-                              style: GoogleFonts.inter(fontSize: 12, color: Colors.black87),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (_bvnMissing) ...[
-                      const SizedBox(height: 16),
-                      Text('BVN (Bank Verification Number)'),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _bvnController,
-                        keyboardType: TextInputType.number,
-                        maxLength: 11,
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(6),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                          hintText: '11-digit BVN',
-                          counterText: '',
-                        ),
-                      ),
-                    ],
-                    if (_dobMissing) ...[  
-                      const SizedBox(height: 16),
-                      Text('Date of Birth'),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _dobController,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [DateInputFormatter()],
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(6),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                          hintText: 'DD/MM/YYYY',
-                        ),
-                      ),
-                    ],
-                  ],
-                ],
-                SizedBox(height: 20),
                 Transform.translate(
                   offset: Offset(-15, 0),
                   child: Row(
@@ -2081,7 +2498,9 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                   Text('City'),
                   const SizedBox(height: 10),
                   _buildSearchablePicker(
-                    hint: _selectedState == null ? 'Select a state first' : 'Select City',
+                    hint: _selectedState == null
+                        ? 'Select a state first'
+                        : 'Select City',
                     value: _selectedCity,
                     onTap: _selectedState == null ? null : _openCitySelector,
                   ),
@@ -2094,7 +2513,9 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                       return;
                     }
                     if (selectedCurrency.contains('USD')) {
-                      final parsed = int.tryParse(_fundAmountController.text.trim());
+                      final parsed = int.tryParse(
+                        _fundAmountController.text.trim(),
+                      );
                       if (parsed == null || parsed < _minimumUsdFundingAmount) {
                         showSimpleDialog(
                           'Enter a valid funding amount (minimum \$$_minimumUsdFundingAmount)',
@@ -2104,19 +2525,29 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                       }
                       final rate = _usdNgnRate;
                       if (rate == null || rate <= 0) {
-                        showSimpleDialog('USD/NGN rate is unavailable. Please try again.', Colors.red);
+                        showSimpleDialog(
+                          'USD/NGN rate is unavailable. Please try again.',
+                          Colors.red,
+                        );
                         return;
                       }
                       // BVN/DOB only needed for individual (non-anonymous) USD cards
-                      if (widget.cardType != 'Anonymous' && (_bvnMissing || _dobMissing)) {
+                      if (widget.cardType != 'Anonymous' &&
+                          (_bvnMissing || _dobMissing)) {
                         final bvn = _bvnController.text.trim();
                         final dob = _dobController.text.trim();
                         if (_bvnMissing && (bvn.isEmpty || bvn.length != 11)) {
-                          showSimpleDialog('Enter a valid 11-digit BVN', Colors.red);
+                          showSimpleDialog(
+                            'Enter a valid 11-digit BVN',
+                            Colors.red,
+                          );
                           return;
                         }
                         if (_dobMissing && (dob.isEmpty || dob.length < 8)) {
-                          showSimpleDialog('Enter your date of birth (DD/MM/YYYY)', Colors.red);
+                          showSimpleDialog(
+                            'Enter your date of birth (DD/MM/YYYY)',
+                            Colors.red,
+                          );
                           return;
                         }
                         // Save to Firestore in background
@@ -2133,20 +2564,30 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                       }
                     }
                     if (!agreeWithTerms) {
-                      showSimpleDialog("Agree with terms and conditions", Colors.red);
+                      showSimpleDialog(
+                        "Agree with terms and conditions",
+                        Colors.red,
+                      );
                       return;
                     }
 
                     if (_selectedScheme.isEmpty ||
-                        (widget.cardType != 'Anonymous' && _nameController.text.isEmpty)) {
-                      showSimpleDialog("Please fill in all details", Colors.red);
+                        (widget.cardType != 'Anonymous' &&
+                            _nameController.text.isEmpty)) {
+                      showSimpleDialog(
+                        "Please fill in all details",
+                        Colors.red,
+                      );
                       return;
                     }
                     if (widget.cardType == 'Physical' &&
                         (_address1Controller.text.isEmpty ||
                             _selectedCity == null ||
                             _selectedState == null)) {
-                      showSimpleDialog('Please fill in shipping details', Colors.red);
+                      showSimpleDialog(
+                        'Please fill in shipping details',
+                        Colors.red,
+                      );
                       return;
                     }
                     Map<String, dynamic> data = {
@@ -2158,10 +2599,13 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                           widget.cardType != 'Physical')
                         'cardFeeNgn': _ngnVirtualCardFee,
                       if (selectedCurrency.contains('USD'))
-                        'fundAmount': int.parse(_fundAmountController.text.trim()),
+                        'fundAmount': int.parse(
+                          _fundAmountController.text.trim(),
+                        ),
                       if (selectedCurrency.contains('USD'))
                         'cardFeeUsd': _usdVirtualCardFee,
-                      if (selectedCurrency.contains('USD') && _usdNgnRate != null)
+                      if (selectedCurrency.contains('USD') &&
+                          _usdNgnRate != null)
                         'usdNgnRate': _usdNgnRate,
                       if (selectedCurrency.contains('USD'))
                         'fundAmountNgnEquivalent': _computeNgnEquivalent(
@@ -2279,7 +2723,9 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
         child: StatefulBuilder(
           builder: (ctx, setModal) {
             final filtered = items
-                .where((i) => i.toLowerCase().contains(searchQuery.toLowerCase()))
+                .where(
+                  (i) => i.toLowerCase().contains(searchQuery.toLowerCase()),
+                )
                 .toList();
             return Container(
               constraints: BoxConstraints(
@@ -2289,13 +2735,20 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
+                    ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(title,
-                            style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.w600)),
+                        Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                         GestureDetector(
                           onTap: () => Navigator.pop(ctx),
                           child: Container(
@@ -2311,13 +2764,19 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     child: TextField(
                       autofocus: true,
                       onChanged: (v) => setModal(() => searchQuery = v),
                       decoration: InputDecoration(
                         hintText: 'Search...',
-                        prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                        prefixIcon: const Icon(
+                          Icons.search,
+                          color: Colors.grey,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: BorderSide(color: Colors.grey.shade300),
@@ -2330,7 +2789,9 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                           borderRadius: BorderRadius.circular(8),
                           borderSide: BorderSide(color: Colors.grey.shade400),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                        ),
                       ),
                     ),
                   ),
@@ -2338,8 +2799,13 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                   Expanded(
                     child: filtered.isEmpty
                         ? Center(
-                            child: Text('No results found',
-                                style: GoogleFonts.inter(color: Colors.grey.shade500)))
+                            child: Text(
+                              'No results found',
+                              style: GoogleFonts.inter(
+                                color: Colors.grey.shade500,
+                              ),
+                            ),
+                          )
                         : ListView.builder(
                             itemCount: filtered.length,
                             padding: const EdgeInsets.all(16),
@@ -2385,8 +2851,11 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
                                         ),
                                       ),
                                       if (isSelected)
-                                        Icon(Icons.check_circle,
-                                            color: primaryColor, size: 20),
+                                        Icon(
+                                          Icons.check_circle,
+                                          color: primaryColor,
+                                          size: 20,
+                                        ),
                                     ],
                                   ),
                                 ),
@@ -2403,11 +2872,7 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
     );
   }
 
-  Widget _buildSchemeOption(
-    String icon,
-    String label,
-    Color color,
-  ) {
+  Widget _buildSchemeOption(String icon, String label, Color color) {
     final isSelected = _selectedScheme == label;
     return GestureDetector(
       onTap: () => setState(() {
@@ -2435,7 +2900,7 @@ class _BasicDetailsBottomSheetState extends State<BasicDetailsBottomSheet> {
 }
 
 class CustomizeCardBottomSheet extends StatefulWidget {
-  final String scheme;   // 'Visa', 'MasterCard', 'Verve', 'AfriGo'
+  final String scheme; // 'Visa', 'MasterCard', 'Verve', 'AfriGo'
   final String currency; // 'NGN', 'USD'
   final String cardType; // 'Virtual', 'Anonymous', 'Physical'
   final String nameOnCard;
@@ -2504,7 +2969,10 @@ class _CustomizeCardBottomSheetState extends State<CustomizeCardBottomSheet>
               ),
               Text(
                 'Customize Your Card',
-                style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold),
+                style: GoogleFonts.inter(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
@@ -2525,7 +2993,9 @@ class _CustomizeCardBottomSheetState extends State<CustomizeCardBottomSheet>
                   template: _selectedTemplate,
                   brand: widget.scheme,
                   currency: widget.currency,
-                  cardHolder: widget.cardType == 'Anonymous' ? 'PadiPay' : widget.nameOnCard,
+                  cardHolder: widget.cardType == 'Anonymous'
+                      ? 'PadiPay'
+                      : widget.nameOnCard,
                   cardType: widget.cardType,
                   colorOverride: _colorOverride,
                 ),
@@ -2536,10 +3006,7 @@ class _CustomizeCardBottomSheetState extends State<CustomizeCardBottomSheet>
                   _colorOverride != null
                       ? 'Custom Color'
                       : _selectedTemplate.name,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
               const SizedBox(height: 16),
@@ -2559,7 +3026,7 @@ class _CustomizeCardBottomSheetState extends State<CustomizeCardBottomSheet>
                         color: Colors.black12,
                         blurRadius: 4,
                         offset: Offset(0, 2),
-                      )
+                      ),
                     ],
                   ),
                   indicatorSize: TabBarIndicatorSize.tab,
@@ -2625,10 +3092,18 @@ class _CustomizeCardBottomSheetState extends State<CustomizeCardBottomSheet>
   Widget _buildColorPicker() {
     // A row of preset swatches + a "pick" button
     const presets = [
-      Color(0xFFE53935), Color(0xFFE91E63), Color(0xFF9C27B0),
-      Color(0xFF3F51B5), Color(0xFF2196F3), Color(0xFF00BCD4),
-      Color(0xFF4CAF50), Color(0xFFFF9800), Color(0xFF795548),
-      Color(0xFF607D8B), Color(0xFF212121), Color(0xFFF5F5F5),
+      Color(0xFFE53935),
+      Color(0xFFE91E63),
+      Color(0xFF9C27B0),
+      Color(0xFF3F51B5),
+      Color(0xFF2196F3),
+      Color(0xFF00BCD4),
+      Color(0xFF4CAF50),
+      Color(0xFFFF9800),
+      Color(0xFF795548),
+      Color(0xFF607D8B),
+      Color(0xFF212121),
+      Color(0xFFF5F5F5),
     ];
     return Row(
       children: [
@@ -2677,8 +3152,12 @@ class _CustomizeCardBottomSheetState extends State<CustomizeCardBottomSheet>
               border: Border.all(color: Colors.grey.shade300),
               gradient: const SweepGradient(
                 colors: [
-                  Color(0xFFFF0000), Color(0xFFFFFF00), Color(0xFF00FF00),
-                  Color(0xFF00FFFF), Color(0xFF0000FF), Color(0xFFFF00FF),
+                  Color(0xFFFF0000),
+                  Color(0xFFFFFF00),
+                  Color(0xFF00FF00),
+                  Color(0xFF00FFFF),
+                  Color(0xFF0000FF),
+                  Color(0xFFFF00FF),
                   Color(0xFFFF0000),
                 ],
               ),
@@ -2723,7 +3202,8 @@ class _CustomizeCardBottomSheetState extends State<CustomizeCardBottomSheet>
   }
 
   Widget _buildTemplateOption(CardTemplate template) {
-    final isSelected = _selectedTemplate.id == template.id && _colorOverride == null;
+    final isSelected =
+        _selectedTemplate.id == template.id && _colorOverride == null;
     return GestureDetector(
       onTap: () => setState(() {
         _selectedTemplate = template;
@@ -2765,7 +3245,11 @@ class _CustomizeCardBottomSheetState extends State<CustomizeCardBottomSheet>
                     ),
             ),
             child: isSelected
-                ? const Icon(FontAwesomeIcons.check, color: Colors.white, size: 16)
+                ? const Icon(
+                    FontAwesomeIcons.check,
+                    color: Colors.white,
+                    size: 16,
+                  )
                 : null,
           ),
         ),
@@ -2793,40 +3277,46 @@ class ReviewConfirmBottomSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final template = getTemplateById(selectedDesign);
-    final fallbackTemplates = getTemplatesForCard(selectedScheme, selectedCurrency);
+    final fallbackTemplates = getTemplatesForCard(
+      selectedScheme,
+      selectedCurrency,
+    );
     final displayTemplate = template ?? fallbackTemplates.first;
     final displayColor = colorOverride != null ? Color(colorOverride!) : null;
-    final designName = colorOverride != null ? 'Custom Color' : displayTemplate.name;
+    final designName = colorOverride != null
+        ? 'Custom Color'
+        : displayTemplate.name;
     final usdRate = basicData['usdNgnRate'] is num
-      ? (basicData['usdNgnRate'] as num).toDouble()
-      : double.tryParse(basicData['usdNgnRate']?.toString() ?? '');
+        ? (basicData['usdNgnRate'] as num).toDouble()
+        : double.tryParse(basicData['usdNgnRate']?.toString() ?? '');
     final usdAmount = basicData['fundAmount'] is num
-      ? (basicData['fundAmount'] as num).toDouble()
-      : double.tryParse(basicData['fundAmount']?.toString() ?? '');
+        ? (basicData['fundAmount'] as num).toDouble()
+        : double.tryParse(basicData['fundAmount']?.toString() ?? '');
     final ngnEquivalent = basicData['fundAmountNgnEquivalent'] is num
-      ? (basicData['fundAmountNgnEquivalent'] as num).toDouble()
-      : (usdAmount != null && usdRate != null ? usdAmount * usdRate : null);
+        ? (basicData['fundAmountNgnEquivalent'] as num).toDouble()
+        : (usdAmount != null && usdRate != null ? usdAmount * usdRate : null);
     final usdCardFee = basicData['cardFeeUsd'] is num
-      ? (basicData['cardFeeUsd'] as num).toDouble()
-      : 2.0;
+        ? (basicData['cardFeeUsd'] as num).toDouble()
+        : 2.0;
     final usdFeeNgnEquivalent = basicData['cardFeeNgnEquivalent'] is num
-      ? (basicData['cardFeeNgnEquivalent'] as num).toDouble()
-      : (usdRate != null ? usdCardFee * usdRate : null);
+        ? (basicData['cardFeeNgnEquivalent'] as num).toDouble()
+        : (usdRate != null ? usdCardFee * usdRate : null);
     final totalSafehavenDebit = basicData['safehavenChargeAmountNgn'] is num
-      ? (basicData['safehavenChargeAmountNgn'] as num).toDouble()
-      : (ngnEquivalent != null && usdFeeNgnEquivalent != null
-          ? ngnEquivalent + usdFeeNgnEquivalent
-          : null);
+        ? (basicData['safehavenChargeAmountNgn'] as num).toDouble()
+        : (ngnEquivalent != null && usdFeeNgnEquivalent != null
+              ? ngnEquivalent + usdFeeNgnEquivalent
+              : null);
     final ngnCardFee = basicData['cardFeeNgn'] is num
-      ? (basicData['cardFeeNgn'] as num).toDouble()
-      : 500.0;
+        ? (basicData['cardFeeNgn'] as num).toDouble()
+        : 500.0;
 
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      child: SafeArea(bottom: true,
+      child: SafeArea(
+        bottom: true,
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -2847,7 +3337,10 @@ class ReviewConfirmBottomSheet extends StatelessWidget {
                 ),
                 Text(
                   'Review & Confirm',
-                  style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.inter(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -2861,7 +3354,10 @@ class ReviewConfirmBottomSheet extends StatelessWidget {
                 const SizedBox(height: 20),
                 Text(
                   'Your New Card',
-                  style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.inter(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 10),
                 Center(
@@ -2871,7 +3367,9 @@ class ReviewConfirmBottomSheet extends StatelessWidget {
                       template: displayTemplate,
                       brand: selectedScheme,
                       currency: selectedCurrency,
-                      cardHolder: cardType == 'Anonymous' ? 'PadiPay' : (basicData['nameOnCard'] ?? 'CARD HOLDER'),
+                      cardHolder: cardType == 'Anonymous'
+                          ? 'PadiPay'
+                          : (basicData['nameOnCard'] ?? 'CARD HOLDER'),
                       cardType: cardType,
                       colorOverride: displayColor,
                       width: MediaQuery.of(context).size.width * 0.85,
@@ -2906,22 +3404,20 @@ class ReviewConfirmBottomSheet extends StatelessWidget {
                           children: [
                             Text(
                               'Summary',
-                              style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+                              style: GoogleFonts.inter(
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             if (selectedCurrency.contains("USD"))
                               Text(
                                 "\$${NumberFormat('#,##0.##').format(usdCardFee)} Fee",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                             if (selectedCurrency.contains("NGN") &&
                                 cardType != 'Physical')
                               Text(
                                 "\u20A6${NumberFormat('#,##0.##').format(ngnCardFee)} Fee",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                           ],
                         ),
@@ -2981,9 +3477,7 @@ class ReviewConfirmBottomSheet extends StatelessWidget {
                           ),
                         _buildSummaryRow(
                           'DELIVERY',
-                          cardType == 'Physical'
-                          ? 'Up to 2 Weeks'
-                              : 'Instant',
+                          cardType == 'Physical' ? 'Up to 2 Weeks' : 'Instant',
                         ),
                       ],
                     ),
@@ -2997,7 +3491,7 @@ class ReviewConfirmBottomSheet extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Column(
-                    children:  [
+                    children: [
                       Row(
                         children: [
                           Icon(Icons.security, color: Colors.green),
@@ -3109,7 +3603,7 @@ class _SudoSecureCardSheetState extends State<SudoSecureCardSheet> {
   String? _error;
 
   // Sandbox vault ID — swap to 'vdl2xefo5' when moving to production
-  static const String _vaultId = 'we0dsa28s';
+  static const String _vaultId = 'vdl2xefo5';
 
   @override
   void initState() {
@@ -3128,8 +3622,10 @@ class _SudoSecureCardSheetState extends State<SudoSecureCardSheet> {
 
       Future<DocumentSnapshot<Map<String, dynamic>>?> userFuture;
       if (uid != null) {
-        userFuture =
-            FirebaseFirestore.instance.collection('users').doc(uid).get();
+        userFuture = FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .get();
       } else {
         userFuture = Future.value(null);
       }
@@ -3151,19 +3647,31 @@ class _SudoSecureCardSheetState extends State<SudoSecureCardSheet> {
           // Use dynamic throughout to avoid Map<String, dynamic>.from() cast errors.
           dynamic billing;
           final sc = userData?['sudoCustomer'];
-          print('[SecureCard] sudoCustomer type: ${sc?.runtimeType}, value: $sc');
+          print(
+            '[SecureCard] sudoCustomer type: ${sc?.runtimeType}, value: $sc',
+          );
           if (sc is Map) {
             final d = sc['data'];
-            print('[SecureCard] sudoCustomer[data] type: ${d?.runtimeType}, value: $d');
+            print(
+              '[SecureCard] sudoCustomer[data] type: ${d?.runtimeType}, value: $d',
+            );
             if (d is Map) {
               billing = d['billingAddress'];
-              print('[SecureCard] billingAddress from data: type=${billing?.runtimeType}, value=$billing');
+              print(
+                '[SecureCard] billingAddress from data: type=${billing?.runtimeType}, value=$billing',
+              );
             }
           }
 
           if (billing is Map) {
             final parts = <String>[];
-            for (final key in ['line1', 'city', 'state', 'country', 'postalCode']) {
+            for (final key in [
+              'line1',
+              'city',
+              'state',
+              'country',
+              'postalCode',
+            ]) {
               final v = billing[key];
               if (v != null) {
                 final s = v.toString();
@@ -3171,15 +3679,21 @@ class _SudoSecureCardSheetState extends State<SudoSecureCardSheet> {
               }
             }
             billingAddress = parts.join(', ');
-            print('[SecureCard] resolved billingAddress (sudo): $billingAddress');
+            print(
+              '[SecureCard] resolved billingAddress (sudo): $billingAddress',
+            );
           } else {
-            print('[SecureCard] billing is not a Map (${billing?.runtimeType}), trying profile address fallback');
+            print(
+              '[SecureCard] billing is not a Map (${billing?.runtimeType}), trying profile address fallback',
+            );
           }
 
           // Fall back to user profile address
           if (billingAddress.isEmpty) {
             final address = userData?['address'];
-            print('[SecureCard] profile address: type=${address?.runtimeType}, value=$address');
+            print(
+              '[SecureCard] profile address: type=${address?.runtimeType}, value=$address',
+            );
             if (address is Map) {
               final parts = <String>[];
               for (final key in ['street', 'city', 'state', 'country']) {
@@ -3190,7 +3704,9 @@ class _SudoSecureCardSheetState extends State<SudoSecureCardSheet> {
                 }
               }
               billingAddress = parts.join(', ');
-              print('[SecureCard] resolved billingAddress (profile fallback): $billingAddress');
+              print(
+                '[SecureCard] resolved billingAddress (profile fallback): $billingAddress',
+              );
             }
           }
         } else {
@@ -3207,7 +3723,9 @@ class _SudoSecureCardSheetState extends State<SudoSecureCardSheet> {
           ? '$expM/${expY.substring(expY.length - 2)}'
           : (expM.isNotEmpty || expY.isNotEmpty ? '$expM/$expY' : '--');
 
-      print('[SecureCard] final billingAddress before HTML build: "$billingAddress"');
+      print(
+        '[SecureCard] final billingAddress before HTML build: "$billingAddress"',
+      );
 
       final billingFields = <String, String>{};
       if (billingAddress.isNotEmpty) {
@@ -3220,7 +3738,13 @@ class _SudoSecureCardSheetState extends State<SudoSecureCardSheet> {
             if (d is Map) {
               final b = d['billingAddress'];
               if (b is Map) {
-                for (final key in ['line1', 'city', 'state', 'postalCode', 'country']) {
+                for (final key in [
+                  'line1',
+                  'city',
+                  'state',
+                  'postalCode',
+                  'country',
+                ]) {
                   final v = b[key]?.toString() ?? '';
                   if (v.isNotEmpty) billingFields[key] = v;
                 }
@@ -3251,16 +3775,25 @@ class _SudoSecureCardSheetState extends State<SudoSecureCardSheet> {
             }
           },
         )
-        ..setNavigationDelegate(NavigationDelegate(
-          onPageFinished: (_) {
-            if (mounted) setState(() => _loading = false);
-          },
-          onWebResourceError: (e) {
-            if (mounted) setState(() => _error = e.description);
-          },
-        ))
+        ..setNavigationDelegate(
+          NavigationDelegate(
+            onPageFinished: (_) {
+              if (mounted) setState(() => _loading = false);
+            },
+            onWebResourceError: (e) {
+              if (mounted) setState(() => _error = e.description);
+            },
+          ),
+        )
         ..loadHtmlString(
-            _buildHtml(widget.cardId, token, expiry, billingFields, cardPin: widget.cardPin));
+          _buildHtml(
+            widget.cardId,
+            token,
+            expiry,
+            billingFields,
+            cardPin: widget.cardPin,
+          ),
+        );
 
       if (mounted) setState(() => _webController = controller);
     } catch (e) {
@@ -3274,13 +3807,19 @@ class _SudoSecureCardSheetState extends State<SudoSecureCardSheet> {
   }
 
   String _buildHtml(
-      String cardId, String token, String expiry, Map<String, String> billingFields, {String? cardPin}) {
+    String cardId,
+    String token,
+    String expiry,
+    Map<String, String> billingFields, {
+    String? cardPin,
+  }) {
     final safeExpJS = expiry.replaceAll("'", "\\'");
     final safePinJS = (cardPin ?? '').replaceAll("'", "\\'");
 
     String billingHtml = '';
     if (billingFields.isNotEmpty) {
-      String safeCopy(String v) => v.replaceAll("'", "\\'").replaceAll('"', '\\"');
+      String safeCopy(String v) =>
+          v.replaceAll("'", "\\'").replaceAll('"', '\\"');
 
       // Street address spans full width; city+state are side by side; zip+country side by side
       final line1 = billingFields['line1'];
@@ -3290,9 +3829,11 @@ class _SudoSecureCardSheetState extends State<SudoSecureCardSheet> {
       final country = billingFields['country'];
       final fallback = billingFields['address'];
 
-      final copyIcon = '''<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>''';
+      final copyIcon =
+          '''<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>''';
 
-      String fieldHtml(String label, String value, String btnId) => '''
+      String fieldHtml(String label, String value, String btnId) =>
+          '''
   <div class="field">
     <div class="field-header">
       <span class="label">$label</span>
@@ -3305,7 +3846,8 @@ class _SudoSecureCardSheetState extends State<SudoSecureCardSheet> {
         billingHtml = fieldHtml('Billing Address', fallback, 'billCopyBtn');
       } else {
         final buf = StringBuffer();
-        if (line1 != null) buf.write(fieldHtml('Street Address', line1, 'billLine1Btn'));
+        if (line1 != null)
+          buf.write(fieldHtml('Street Address', line1, 'billLine1Btn'));
         if (city != null && state != null) {
           buf.write('''
   <div class="half-row">
@@ -3320,7 +3862,8 @@ class _SudoSecureCardSheetState extends State<SudoSecureCardSheet> {
   </div>''');
         } else {
           if (city != null) buf.write(fieldHtml('City', city, 'billCityBtn'));
-          if (state != null) buf.write(fieldHtml('State', state, 'billStateBtn'));
+          if (state != null)
+            buf.write(fieldHtml('State', state, 'billStateBtn'));
         }
         if (zip != null && country != null) {
           buf.write('''
@@ -3335,8 +3878,10 @@ class _SudoSecureCardSheetState extends State<SudoSecureCardSheet> {
     </div>
   </div>''');
         } else {
-          if (zip != null) buf.write(fieldHtml('Postal Code', zip, 'billZipBtn'));
-          if (country != null) buf.write(fieldHtml('Country', country, 'billCountryBtn'));
+          if (zip != null)
+            buf.write(fieldHtml('Postal Code', zip, 'billZipBtn'));
+          if (country != null)
+            buf.write(fieldHtml('Country', country, 'billCountryBtn'));
         }
         billingHtml = buf.toString();
       }
@@ -3524,7 +4069,11 @@ class _SudoSecureCardSheetState extends State<SudoSecureCardSheet> {
                       const SizedBox(height: 2),
                       Row(
                         children: [
-                          Icon(Icons.lock, color: Colors.green.shade600, size: 12),
+                          Icon(
+                            Icons.lock,
+                            color: Colors.green.shade600,
+                            size: 12,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             'PCI-DSS Compliant',
@@ -3546,7 +4095,11 @@ class _SudoSecureCardSheetState extends State<SudoSecureCardSheet> {
                         color: Colors.grey.shade100,
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(Icons.close, color: Colors.grey.shade700, size: 18),
+                      child: Icon(
+                        Icons.close,
+                        color: Colors.grey.shade700,
+                        size: 18,
+                      ),
                     ),
                   ),
                 ],
@@ -3564,8 +4117,11 @@ class _SudoSecureCardSheetState extends State<SudoSecureCardSheet> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.error_outline,
-                                color: Colors.red.shade300, size: 48),
+                            Icon(
+                              Icons.error_outline,
+                              color: Colors.red.shade300,
+                              size: 48,
+                            ),
                             const SizedBox(height: 12),
                             Text(
                               'Could not load secure card view:\n$_error',
@@ -3580,32 +4136,37 @@ class _SudoSecureCardSheetState extends State<SudoSecureCardSheet> {
                       ),
                     )
                   : _webController == null || _loading
-                      ? Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              CircularProgressIndicator(
-                                color: primaryColor,
-                                strokeWidth: 2,
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                'Loading card details...',
-                                style: GoogleFonts.inter(color: Colors.grey.shade500),
-                              ),
-                            ],
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(
+                            color: primaryColor,
+                            strokeWidth: 2,
                           ),
-                        )
-                      : WebViewWidget(controller: _webController!),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Loading card details...',
+                            style: GoogleFonts.inter(
+                              color: Colors.grey.shade500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : WebViewWidget(controller: _webController!),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.lock_outline, color: Colors.grey.shade400, size: 12),
+                  Icon(
+                    Icons.lock_outline,
+                    color: Colors.grey.shade400,
+                    size: 12,
+                  ),
                   const SizedBox(width: 4),
-                
                 ],
               ),
             ),
@@ -3615,8 +4176,6 @@ class _SudoSecureCardSheetState extends State<SudoSecureCardSheet> {
     );
   }
 }
-
-
 
 class ChangeSudoCardPinSheet extends StatefulWidget {
   final String cardId;
@@ -3650,9 +4209,15 @@ class _ChangeSudoCardPinSheetState extends State<ChangeSudoCardPinSheet> {
     setState(() {
       if (digit == null) {
         // backspace
-        if (_step == 0 && _enteredOld.isNotEmpty) _enteredOld = _enteredOld.substring(0, _enteredOld.length - 1);
-        if (_step == 1 && _enteredNew.isNotEmpty) _enteredNew = _enteredNew.substring(0, _enteredNew.length - 1);
-        if (_step == 2 && _enteredConfirm.isNotEmpty) _enteredConfirm = _enteredConfirm.substring(0, _enteredConfirm.length - 1);
+        if (_step == 0 && _enteredOld.isNotEmpty)
+          _enteredOld = _enteredOld.substring(0, _enteredOld.length - 1);
+        if (_step == 1 && _enteredNew.isNotEmpty)
+          _enteredNew = _enteredNew.substring(0, _enteredNew.length - 1);
+        if (_step == 2 && _enteredConfirm.isNotEmpty)
+          _enteredConfirm = _enteredConfirm.substring(
+            0,
+            _enteredConfirm.length - 1,
+          );
       } else {
         if (_step == 0 && _enteredOld.length < 4) _enteredOld += digit;
         if (_step == 1 && _enteredNew.length < 4) _enteredNew += digit;
@@ -3665,20 +4230,32 @@ class _ChangeSudoCardPinSheetState extends State<ChangeSudoCardPinSheet> {
   void _checkAdvance() {
     if (_step == 0 && _enteredOld.length == 4) {
       if (_enteredOld != widget.currentPin) {
-        setState(() { _enteredOld = ''; });
+        setState(() {
+          _enteredOld = '';
+        });
         showSimpleDialog('Incorrect current PIN', Colors.red);
         return;
       }
       Future.delayed(const Duration(milliseconds: 200), () {
-        if (mounted) setState(() { _step = 1; });
+        if (mounted)
+          setState(() {
+            _step = 1;
+          });
       });
     } else if (_step == 1 && _enteredNew.length == 4) {
       Future.delayed(const Duration(milliseconds: 200), () {
-        if (mounted) setState(() { _step = 2; });
+        if (mounted)
+          setState(() {
+            _step = 2;
+          });
       });
     } else if (_step == 2 && _enteredConfirm.length == 4) {
       if (_enteredNew != _enteredConfirm) {
-        setState(() { _enteredConfirm = ''; _step = 1; _enteredNew = ''; });
+        setState(() {
+          _enteredConfirm = '';
+          _step = 1;
+          _enteredNew = '';
+        });
         showSimpleDialog("PINs don't match. Try again.", Colors.red);
         return;
       }
@@ -3688,18 +4265,29 @@ class _ChangeSudoCardPinSheetState extends State<ChangeSudoCardPinSheet> {
 
   Future<void> _changePin() async {
     setState(() => _loading = true);
-    debugPrint('[ChangeSudoCardPinSheet] Calling sudoChangeCardPin for cardId: ${widget.cardId}');
+    debugPrint(
+      '[ChangeSudoCardPinSheet] Calling sudoChangeCardPin for cardId: ${widget.cardId}',
+    );
     try {
       final result = await FirebaseFunctions.instance
           .httpsCallable('sudoChangeCardPin')
-          .call({'cardId': widget.cardId, 'oldPin': _enteredOld, 'newPin': _enteredNew});
+          .call({
+            'cardId': widget.cardId,
+            'oldPin': _enteredOld,
+            'newPin': _enteredNew,
+          });
       debugPrint('[ChangeSudoCardPinSheet] Response: ${result.data}');
       final data = result.data;
-      final succeeded = data['success'] == true ||
+      final succeeded =
+          data['success'] == true ||
           data['statusCode'] == 200 ||
-          (data['message'] as String? ?? '').toLowerCase().contains('updated successfully');
+          (data['message'] as String? ?? '').toLowerCase().contains(
+            'updated successfully',
+          );
       if (succeeded) {
-        debugPrint('[ChangeSudoCardPinSheet] PIN changed successfully for cardId: ${widget.cardId}');
+        debugPrint(
+          '[ChangeSudoCardPinSheet] PIN changed successfully for cardId: ${widget.cardId}',
+        );
         if (mounted) {
           Navigator.pop(context);
           showSimpleDialog('PIN changed successfully!', Colors.green);
@@ -3740,22 +4328,39 @@ class _ChangeSudoCardPinSheetState extends State<ChangeSudoCardPinSheet> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
           const SizedBox(height: 20),
-          Text('Change Card PIN', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(
+            'Change Card PIN',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 8),
-          Text(_stepTitle, style: GoogleFonts.inter(color: Colors.grey.shade600)),
+          Text(
+            _stepTitle,
+            style: GoogleFonts.inter(color: Colors.grey.shade600),
+          ),
           const SizedBox(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(4, (i) => Container(
-              margin: const EdgeInsets.symmetric(horizontal: 10),
-              width: 16, height: 16,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: i < dots ? Colors.black : Colors.grey.shade300,
+            children: List.generate(
+              4,
+              (i) => Container(
+                margin: const EdgeInsets.symmetric(horizontal: 10),
+                width: 16,
+                height: 16,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: i < dots ? Colors.black : Colors.grey.shade300,
+                ),
               ),
-            )),
+            ),
           ),
           const SizedBox(height: 32),
           if (_loading)
@@ -3777,7 +4382,8 @@ class ConfirmTransactionBottomSheet extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      child: SafeArea(bottom: true,
+      child: SafeArea(
+        bottom: true,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -3812,15 +4418,21 @@ class ConfirmTransactionBottomSheet extends StatelessWidget {
                   children: [
                     Text(
                       'Summary',
-                      style: GoogleFonts.inter(fontSize: 14, color: Colors.grey),
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: Colors.grey,
+                      ),
                     ),
                     const SizedBox(height: 16),
-                     Row(
+                    Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           'AMOUNT:',
-                          style: GoogleFonts.inter(color: Colors.grey, fontSize: 12),
+                          style: GoogleFonts.inter(
+                            color: Colors.grey,
+                            fontSize: 12,
+                          ),
                         ),
                         Text(
                           '₦20,000',
@@ -3832,12 +4444,15 @@ class ConfirmTransactionBottomSheet extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 16),
-                     Row(
+                    Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           'MERCHANT/POS:',
-                          style: GoogleFonts.inter(color: Colors.grey, fontSize: 12),
+                          style: GoogleFonts.inter(
+                            color: Colors.grey,
+                            fontSize: 12,
+                          ),
                         ),
                         Text(
                           'Zenith Bank POS - Lekki Branch',
@@ -3849,12 +4464,15 @@ class ConfirmTransactionBottomSheet extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 16),
-                     Row(
+                    Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           'CARD:',
-                          style: GoogleFonts.inter(color: Colors.grey, fontSize: 12),
+                          style: GoogleFonts.inter(
+                            color: Colors.grey,
+                            fontSize: 12,
+                          ),
                         ),
                         Text(
                           'Virtual Card (••• 4821)',

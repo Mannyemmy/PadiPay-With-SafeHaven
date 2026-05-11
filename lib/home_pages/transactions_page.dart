@@ -35,7 +35,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
   DateTime? _customEndDate;
   bool _showCustomDateRange = false;
   final TextEditingController _searchController = TextEditingController();
-  bool _filtersExpanded = false;
+  bool _filtersExpanded = true;
   List<String> _searchSuggestions = [];
   bool _showSuggestions = false;
   final FocusNode _searchFocusNode = FocusNode();
@@ -781,7 +781,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
                     Text(
                       'Transaction History',
                       style: GoogleFonts.inter(
-                        fontSize: 20,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -816,7 +816,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
                                 Text(
                                   'Filters',
                                   style: GoogleFonts.inter(
-                                    fontSize: 16,
+                                    fontSize: 14,
                                     fontWeight: FontWeight.w600,
                                     color: Colors.blue,
                                   ),
@@ -934,13 +934,14 @@ class _TransactionsPageState extends State<TransactionsPage> {
                                     hintText: 'Search by name, number...',
                                     hintStyle: GoogleFonts.inter(
                                       color: Colors.blueGrey.withOpacity(0.5),
+                                      fontSize: 14
                                     ),
                                     prefixIcon: const Icon(
                                       Icons.search,
                                       color: Colors.blue,
                                     ),
                                     contentPadding: const EdgeInsets.symmetric(
-                                      vertical: 15,
+                                      vertical: 10,
                                     ),
                                     border: InputBorder.none,
                                     suffixIcon: _searchQuery.isNotEmpty
@@ -1374,12 +1375,12 @@ class _TransactionsPageState extends State<TransactionsPage> {
                               },
                               icon: const Icon(
                                 Icons.download_rounded,
-                                size: 20,
+                                size: 18,
                               ),
                               label: Text(
                                 'Download as PDF',
                                 style: GoogleFonts.inter(
-                                  fontSize: 16,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -1681,18 +1682,46 @@ class _TransactionsPageState extends State<TransactionsPage> {
                                     (data['transactionId'] as String?) ??
                                     '';
 
+                                // amount text color rules:
+                                // - failed/declined => red
+                                // - pending => orange
+                                // - otherwise decide from displayed sign: '+' => green, '-' => gray
+                                Color amountTextColor;
+                                final isFailedStatus = [
+                                  'failed',
+                                  'unsuccessful',
+                                  'declined'
+                                ].contains(status);
+                                final isPendingStatus = [
+                                  'pending',
+                                  'to be paid'
+                                ].contains(status);
+                                if (isFailedStatus) {
+                                  amountTextColor = Colors.red;
+                                } else if (isPendingStatus) {
+                                  amountTextColor = Colors.orange;
+                                } else {
+                                  if (type == 'card_declined') {
+                                    amountTextColor = Colors.grey.shade600;
+                                  } else if (type == 'card_refund') {
+                                    amountTextColor = Colors.green;
+                                  } else {
+                                    if (amountSign.startsWith('+')) {
+                                      amountTextColor = Colors.green;
+                                    } else if (amountSign.startsWith('-')) {
+                                      amountTextColor = Colors.grey.shade600;
+                                    } else {
+                                      amountTextColor = Colors.grey.shade600;
+                                    }
+                                  }
+                                }
+
                                 return TransactionItem(
                                   docId: doc.id,
                                   icon: icon,
                                   otherId: otherId,
                                   amount: '$amountSign₦$formattedAmount',
-                                  amountColor: isCardTx
-                                      ? (type == 'card_refund'
-                                            ? Colors.green
-                                            : type == 'card_declined'
-                                            ? Colors.grey.shade600
-                                            : Colors.red)
-                                      : statusColor,
+                                  amountColor: amountTextColor,
                                   formattedTime: formattedTime,
                                   formattedDate: formattedDate,
                                   status: isCardTx

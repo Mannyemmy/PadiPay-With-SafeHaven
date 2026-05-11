@@ -84,7 +84,7 @@ class _DevicesListScreenState extends State<DevicesListScreen>
         safehavenVa?['attributes']?['bank']?['name']?.toString() ??
             setup['safehavenBankName']?.toString();
     final bankId =
-        await resolveBankId(bankId: rawBankId, bankName: bankName) ?? '999240';
+        await resolveBankId(bankId: rawBankId, bankName: bankName) ?? '090286';
     final accountName =
         safehavenVa?['attributes']?['accountName']?.toString() ??
             setup['safehavenAccountName']?.toString();
@@ -1422,7 +1422,7 @@ Future<String> _getUserNameById(String userId) async {
         return false;
       }
 
-      final recipientBankId = payload['bankId']?.toString() ?? '999240';
+      final recipientBankId = payload['bankId']?.toString() ?? '090286';
       final recipientBankName = payload['bankName'];
       final recipientAccountName = payload['accountName'];
 

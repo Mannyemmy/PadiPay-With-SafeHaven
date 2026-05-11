@@ -238,7 +238,7 @@ class _TargetedGiveawayPageState extends State<TargetedGiveawayPage> {
           data['safehavenBankCode']?.toString() ??
           data['safehaven_bank_code']?.toString() ??
           data['bankId']?.toString() ??
-          '999240';
+          '090286';
       final companyId =
           (rawCompanyId.isNotEmpty && !rawCompanyId.toLowerCase().contains('anc_acc'))
               ? rawCompanyId
@@ -739,7 +739,7 @@ If none found, return an empty array: []
           payload: {
             'fromAccountId': _accountId,
             'toAccountId': companyDestination,
-            'toBankCode': _companyVa!['bankId'] ?? '999240',
+            'toBankCode': _companyVa!['bankId'] ?? '090286',
             'amount': transferAmountKobo,
             'currency': 'NGN',
             'narration': 'Targeted Giveaway Funding',
