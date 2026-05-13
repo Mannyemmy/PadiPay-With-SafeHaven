@@ -35,7 +35,6 @@ class _NfcPosSheetState extends State<NfcPosSheet> {
   final _cloudCard = CloudCardFlutter();
   _Step _step = _Step.checking;
   String? _errorMessage;
-
   bool? _deviceSupported;
   bool? _nfcEnabled;
   bool? _isDefaultApp;

@@ -1168,7 +1168,7 @@ void main() async {
   // isSandBox: set to false before going to production.
   try {
     await CloudCardFlutter().init(
-      isSandBox: true,
+      isSandBox: false,
       onCardScanned: (CloudCardEvent event) {
         print('[CloudCard] scan started: ${event.eventType} ${event.message}');
       },
