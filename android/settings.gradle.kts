@@ -14,6 +14,29 @@ pluginManagement {
         google()
         mavenCentral()
         gradlePluginPortal()
+        maven {
+            url = uri("https://sdk.sudo.africa/repository/maven-releases/")
+            credentials {
+                username = System.getenv("MAVEN_REPO_USERNAME") ?: ""
+                password = System.getenv("MAVEN_REPO_PASSWORD") ?: ""
+            }
+        }
+    }
+}
+
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url = uri("https://jitpack.io") }
+        maven { url = uri("https://repo.qoreid.com/repository/maven-releases/") }
+        maven {
+            url = uri("https://sdk.sudo.africa/repository/maven-releases/")
+            credentials {
+                username = providers.gradleProperty("maven.repo.username").orElse("allgood").get()
+                password = providers.gradleProperty("maven.repo.password").orElse("H3\$yQ7@N5t").get()
+            }
+        }
     }
 }
 

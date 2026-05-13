@@ -19,6 +19,7 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:cloudcard_flutter/cloudcard_flutter.dart';
+import 'package:uuid/uuid.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'dart:ui' as ui;
@@ -1055,6 +1056,81 @@ Future<Map<String, dynamic>> simulateIncomingPaymentNotification({
 }
 
 // =========================================================
+// REFRESH NFC CARD TOKENS ON STARTUP
+// =========================================================
+Future<void> _refreshDigitalizedCardTokens() async {
+  try {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final cardsSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('cards')
+        .where('nfcEnabled', isEqualTo: true)
+        .get();
+
+    if (cardsSnapshot.docs.isEmpty) return;
+
+    for (final cardDoc in cardsSnapshot.docs) {
+      final cardData = cardDoc.data();
+      final cardId = cardData['card_id']?.toString();
+      if (cardId == null || cardId.isEmpty) continue;
+
+      try {
+        // 1. Get a fresh token (expires in 6 min, so always refresh)
+        final digitalizableResponse = await FirebaseFunctions.instance
+            .httpsCallable('sudoDigitalizeCard')
+            .call({'cardId': cardId, 'platform': 'android'});
+
+        final respData = digitalizableResponse.data;
+        if (respData is! Map) continue;
+
+        final respMap = Map<String, dynamic>.from(respData);
+        final innerData = (respMap['data'] is Map)
+            ? Map<String, dynamic>.from(respMap['data'] as Map)
+            : respMap;
+
+        final walletId = innerData['walletId']?.toString() ?? '';
+        final jwtToken = innerData['token']?.toString() ?? '';
+        final secret = innerData['secret']?.toString() ?? '';
+
+        if (walletId.isEmpty || jwtToken.isEmpty) {
+          print('[CloudCard] Missing credentials for $cardId');
+          continue;
+        }
+
+        // 2. Register the fresh token with the SDK so HCEService can use it
+        // Check your CloudCard SDK docs for the exact method name —
+        // it is likely one of these:
+        final registrationData = RegistrationData(
+          walletId: walletId,
+          secret: secret,
+          jwtToken: jwtToken,
+        );
+
+        final result = await CloudCardFlutter().registerCard(registrationData);
+        if (result.status == Status.SUCCESS) {
+          // Card successfully registered
+          print('[CloudCard] Token registered for card: $cardId');
+        } else {
+          print('[CloudCard] Failed to register token for card: $cardId');
+          print('[CloudCard] Error: ${result.status}: ${result.message}');
+        }
+        // OR:
+        // await CloudCardFlutter().activateCard(token: jwtToken, walletId: walletId);
+        // OR:
+        // await CloudCardFlutter().setCardCredentials(token: jwtToken, walletId: walletId, secret: secret);
+      } catch (cardErr) {
+        print('[CloudCard] Error for card $cardId: $cardErr');
+      }
+    }
+  } catch (e) {
+    print('[CloudCard] Error in token refresh: $e');
+  }
+}
+
+// =========================================================
 // MAIN
 // =========================================================
 void main() async {
@@ -1092,23 +1168,26 @@ void main() async {
   // isSandBox: set to false before going to production.
   try {
     await CloudCardFlutter().init(
-      isSandBox: false,
+      isSandBox: true,
       onCardScanned: (CloudCardEvent event) {
-        debugPrint(
-          '[CloudCard] scan started: ${event.eventType} ${event.message}',
-        );
+        print('[CloudCard] scan started: ${event.eventType} ${event.message}');
       },
       onScanComplete: (CloudCardEvent event) {
-        debugPrint(
+        print(
           '[CloudCard] scan complete: success=${event.isSuccess} amount=${event.amount}',
         );
       },
     );
+    print('[CloudCard] SDK initialized successfully');
   } catch (e) {
-    debugPrint('[CloudCard] SDK init failed (non-fatal): $e');
+    print('[CloudCard] SDK init failed (non-fatal): $e');
   }
-// In main() before runApp
-await CloudCardFlutter().init(isSandBox: false);
+
+  // Refresh digitalized card tokens (in case they expired while app was closed)
+  await _refreshDigitalizedCardTokens();
+
+  // In main() before runApp
+  // await CloudCardFlutter().init(isSandBox: false);
   runApp(const MainApp());
 
   // Check for Play Store updates after the first frame so we have a navigator/context.
@@ -1123,7 +1202,9 @@ await CloudCardFlutter().init(isSandBox: false);
             context: ctx,
             builder: (context) => AlertDialog(
               title: Text('Update available'),
-              content: Text('A newer version is available on Google Play. Update now?'),
+              content: Text(
+                'A newer version is available on Google Play. Update now?',
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
@@ -1342,7 +1423,8 @@ class _AppLauncherState extends State<AppLauncher> with WidgetsBindingObserver {
       // Run plugin-based jailbreak/root detection
       Future.microtask(() async {
         try {
-          final compromised = await JailbreakDetector.isDeviceRootedOrJailbroken();
+          final compromised =
+              await JailbreakDetector.isDeviceRootedOrJailbroken();
           if (compromised && mounted) {
             showDialog(
               context: navigatorKey.currentContext!,
@@ -1350,7 +1432,9 @@ class _AppLauncherState extends State<AppLauncher> with WidgetsBindingObserver {
               builder: (ctx) {
                 return AlertDialog(
                   title: Text('Security Warning'),
-                  content: Text('This device appears to be rooted or jailbroken. For your security, certain features may be disabled.'),
+                  content: Text(
+                    'This device appears to be rooted or jailbroken. For your security, certain features may be disabled.',
+                  ),
                   actions: [
                     TextButton(
                       onPressed: () {
@@ -1411,4 +1495,3 @@ class _AppLauncherState extends State<AppLauncher> with WidgetsBindingObserver {
     );
   }
 }
-

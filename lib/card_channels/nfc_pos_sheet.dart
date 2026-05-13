@@ -181,6 +181,7 @@ class _NfcPosSheetState extends State<NfcPosSheet> {
         final inner = (map['data'] is Map)
             ? Map<String, dynamic>.from(map['data'] as Map)
             : map;
+        debugPrint('[CloudCard] digitalize raw inner payload: $inner');
         walletId = _firstStringForKeys(inner, {'walletid', 'wallet_id'});
         paymentAppInstanceId = _firstStringForKeys(inner, {
           'paymentappinstanceid',
